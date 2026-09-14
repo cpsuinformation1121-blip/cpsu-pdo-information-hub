@@ -152,7 +152,7 @@ function ColumnChart({
               ].map((series) => (
                 <div
                   key={series.label}
-                  className="flex h-full min-w-0 flex-1 flex-col justify-end"
+                  className="flex h-full w-9 min-w-0 shrink flex-col justify-end"
                 >
                   <span className="mb-2 truncate text-center text-[0.65rem] font-semibold tabular-nums text-foreground">
                     {chartValueLabel(series.display, series.numeric)}

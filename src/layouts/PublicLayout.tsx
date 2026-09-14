@@ -4,12 +4,12 @@ import { PublicHeader } from "../components/layout/PublicHeader";
 
 export function PublicLayout() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
       <PublicHeader />
-      <main id="main-content">
+      <main id="main-content" className="min-w-0 flex-1">
         <Outlet />
       </main>
       <PublicFooter />

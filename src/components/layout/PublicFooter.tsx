@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 
 export function PublicFooter() {
   return (
-    <footer className="bg-primary text-primary-foreground">
+    <footer className="shrink-0 bg-primary text-primary-foreground">
       <div className="mx-auto grid max-w-content gap-6 px-5 py-8 sm:px-8 md:grid-cols-[1fr_auto] md:items-end lg:px-10">
         <div>
           <p className="text-xs font-bold tracking-[0.14em]">

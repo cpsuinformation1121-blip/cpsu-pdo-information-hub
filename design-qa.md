@@ -146,3 +146,75 @@ Previous result: passed
 - No header, search, navigation, or repository-introduction copy changed.
 
 final result: passed
+
+
+---
+
+# Contact Strip QA — 2026-09-14
+
+- Source visual truth: user-provided contact-strip attachment, 1416 × 112 pixels; local source path unavailable.
+- Implementation: C:\Users\reign\AppData\Local\Temp/contact-strip-desktop.png (1328 × 108 pixels), C:\Users\reign\AppData\Local\Temp/contact-strip-mobile.png (350 × 314 pixels).
+- Viewports: desktop 1416 × 900 and mobile 390 × 844 CSS pixels, deviceScaleFactor 1. Both captures are contact-list element crops. Source and implementation viewed in this conversation; width difference reflects the existing site content gutter.
+- State: guest `/contact`, four supplied contact methods, no draft placeholders.
+
+## Full-view and focused comparison
+
+The supplied strip and rendered element capture show the same order, phone number, Teams and Facebook display names, email, white background, and green desktop separators. The single-strip crop is also the focused region: every icon and label is readable. Mobile intentionally stacks the four rows.
+
+## Fidelity surfaces
+
+- Typography: retained the existing institutional Poppins font; supplied text remains complete without truncation. This is an intentional product constraint rather than substituting a new font for this one section.
+- Spacing: four compact horizontally aligned contact methods on desktop, three green dividers, mobile rows with horizontal separators.
+- Colors: existing CPSU green divider token, bright green phone icon, library brand colors.
+- Assets: local SVGs retrieved from the Iconify Logos library, no handcrafted brand artwork or remote runtime icon requests. Library Facebook and Gmail variants differ slightly from the supplied artwork; the recognizable brand/color treatment is accepted for this scoped contact update.
+- Copy: exact supplied values; draft address, telephone, and office-hours placeholders removed.
+
+## Findings and comparison history
+
+- No actionable P0/P1/P2 layout, content, or interaction mismatch remains.
+- Initial placeholder-card section replaced with the requested compact strip; post-change desktop and mobile captures confirm the result.
+- P3: Teams and Facebook remain descriptive names, not links, because verified destination URLs were not supplied. Do not guess institutional accounts.
+
+## Interaction and technical checks
+
+- Phone href: `tel:+639177152338`; email href: `mailto:cpsu_pdo@cpsu.edu.ph`.
+- Phone link accepts keyboard focus; mobile menu opens and exposes repository navigation.
+- All three local image assets load; no Vite overlay, page errors, console errors, or mobile document overflow.
+- In-app browser unavailable; used previously approved standalone Playwright fallback.
+- TypeScript and lint pass. Phone/email handler applications were not launched.
+
+final result: passed
+
+
+---
+
+# Contact Website-Style Revision — 2026-09-14
+
+- Accepted direction: user explicitly requested the website style rather than matching the supplied strip. Source: existing About-page institutional cards, C:\Users\reign\AppData\Local\Temp/website-card-style-reference.png.
+- Rendered evidence: C:\Users\reign\AppData\Local\Temp/contact-cards-desktop.png and C:\Users\reign\AppData\Local\Temp/contact-cards-mobile.png.
+- Viewports: 1440 × 1000 desktop and 390 × 844 mobile at density 1. Region captures use native CSS size. About card reference captured at mobile size; compare component typography, colors, border, and icon treatment, not whole-page proportions.
+- State: public `/contact`, four unchanged contact methods; Facebook linked to the user-supplied URL.
+- Full and focused inspection: source website card and contact-list crops emitted together for comparison. Local view_image failed because the filesystem sandbox helper is unavailable; actual image bytes were inspected through the browser/runtime image output instead.
+
+## Fidelity ledger
+
+- Layout: four equal desktop cards and one mobile column, replacing the strip as requested; no document overflow.
+- Typography: existing Poppins, muted labels, bold contact values; no new marketing copy, truncation, or fake account data.
+- Palette: site surface, border, primary, primary-soft, and muted text tokens; no bright brand-color strip.
+- Container: existing rounded borders and subtle institutional shadows reused.
+- Icons: supported Lucide outline icons in green panels; directional icons only on actionable cards. Teams remains informational until a verified URL is provided.
+- Content: supplied number, names, and email preserved; Facebook uses https://www.facebook.com/cpsu.pdo.
+
+## Findings and correction history
+
+- Initial browser check caught an unsupported Facebook icon export. Replaced it with the supported MessageCircle icon and reloaded. Post-fix browser checks show the page renders with no page errors or overlay.
+- No actionable P0/P1/P2 visual mismatch remains against the requested existing-site style.
+- Intentional deviation: Facebook uses a site-style social-message icon rather than a colored brand logo. This follows the user request for website consistency.
+
+## Interaction proof
+
+- Clicking the whole Facebook card opens the exact supplied destination in a new tab with noopener noreferrer; original contact page remains open. The destination was intercepted with a test response, so external Facebook content was not inspected.
+- Keyboard focus on Facebook card verified; mobile layout has no document overflow.
+- TypeScript, lint, production build, and all 138 tests pass.
+
+final result: passed
