@@ -13,18 +13,20 @@ import {
 } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { AppDialog } from "../../components/ui/AppDialog";
-import type { AccomplishmentResourceData } from "../../contracts/accomplishmentResource";
+import type { OpcrResourceData } from "../../contracts/opcrResource";
 import { ChartColorLegend } from "../../features/accomplishments/AccomplishmentChart";
 import {
-  calculatePeriodTotal,
   getAccomplishmentReportYears,
-  isQuarterInputValid,
 } from "../../features/accomplishments/reportCalculations";
+import {
+  calculateHalfYearTotal,
+  isHalfYearInputValid,
+} from "../../features/opcr/opcrCalculations";
 import { useAuth } from "../../features/auth/useAuth";
 import {
-  getAccomplishmentResource,
-  saveAccomplishmentResource,
-} from "../../services/accomplishmentResource";
+  getOpcrResource,
+  saveOpcrResource,
+} from "../../services/opcrResource";
 
 type NodeType = "section" | "group" | "indicator";
 type TreeNode = {
@@ -35,7 +37,7 @@ type TreeNode = {
 };
 type DataRowType = "results" | "rawData";
 type ValueType = "target" | "accomplishment";
-type PeriodField = "q1" | "q2" | "q3" | "q4" | "total";
+type PeriodField = "h1" | "h2" | "total";
 type PeriodEntry = Record<PeriodField, string>;
 type DataRowEntry = Record<ValueType, PeriodEntry>;
 type IndicatorEntry = Record<DataRowType, DataRowEntry>;
@@ -49,10 +51,8 @@ type EditorState = {
 };
 
 const periodFields = [
-  { id: "q1", label: "Q1" },
-  { id: "q2", label: "Q2" },
-  { id: "q3", label: "Q3" },
-  { id: "q4", label: "Q4" },
+  { id: "h1", label: "H1" },
+  { id: "h2", label: "H2" },
   { id: "total", label: "Total" },
 ] as const;
 const dataRows = [
@@ -85,7 +85,7 @@ const actionClass =
   "inline-flex min-h-9 cursor-pointer items-center gap-1 px-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function emptyPeriodEntry(): PeriodEntry {
-  return { q1: "", q2: "", q3: "", q4: "", total: "" };
+  return { h1: "", h2: "", total: "" };
 }
 
 function emptyDataRowEntry(): DataRowEntry {
@@ -151,13 +151,13 @@ function NodeActions({
   );
 }
 
-export function AdminAccomplishResourcePage() {
+export function AdminOpcrPage() {
   const { user } = useAuth();
   const resourceQuery = useQuery({
-    queryKey: ["admin-accomplishment-resource"],
+    queryKey: ["admin-opcr-resource"],
     queryFn: () => {
       if (!user) throw new Error("Please sign in to load this resource.");
-      return getAccomplishmentResource(user);
+      return getOpcrResource(user);
     },
     enabled: Boolean(user),
     staleTime: Number.POSITIVE_INFINITY,
@@ -182,19 +182,19 @@ export function AdminAccomplishResourcePage() {
     );
 
   return (
-    <AccomplishmentResourceEditor
+    <OpcrResourceEditor
       user={user}
       initialData={resourceQuery.data}
     />
   );
 }
 
-function AccomplishmentResourceEditor({
+function OpcrResourceEditor({
   user,
   initialData,
 }: {
   user: User;
-  initialData: AccomplishmentResourceData;
+  initialData: OpcrResourceData;
 }) {
   const queryClient = useQueryClient();
   const currentYear = new Date().getFullYear();
@@ -227,15 +227,15 @@ function AccomplishmentResourceEditor({
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      return saveAccomplishmentResource(user, {
-        version: 2,
+      return saveOpcrResource(user, {
+        version: 1,
         nodes,
         entries,
         chartType,
       });
     },
     onSuccess: (savedData) => {
-      queryClient.setQueryData(["admin-accomplishment-resource"], savedData);
+      queryClient.setQueryData(["admin-opcr-resource"], savedData);
       void queryClient.invalidateQueries({
         queryKey: ["public-accomplishment-resource"],
       });
@@ -341,7 +341,7 @@ function AccomplishmentResourceEditor({
               };
 
               if (field !== "total") {
-                period.total = calculatePeriodTotal(period);
+                period.total = calculateHalfYearTotal(period);
               }
 
               return period;
@@ -374,12 +374,12 @@ function AccomplishmentResourceEditor({
         <div>
           <h1
             id="accomplishment-title"
-            className="font-serif text-3xl tracking-tight sm:text-4xl"
+            className="font-serif text-3xl tracking-tight sm:whitespace-nowrap sm:text-4xl"
           >
-            Accomplishment Report
+            Office Performance Commitment and Review (OPCR)
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Set targets and quarterly results.
+            Set targets and half-year results.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -443,24 +443,24 @@ function AccomplishmentResourceEditor({
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_28px_rgba(20,83,45,0.05)]">
         <div
-          id="quarterly-table-help"
+          id="opcr-table-help"
           className="flex items-center gap-2 border-b border-border bg-surface-secondary px-4 py-3 text-xs font-medium text-muted-foreground lg:hidden"
         >
           <ArrowLeftRight
             className="size-4 shrink-0 text-primary"
             aria-hidden="true"
           />
-          Scroll to view all quarters
+          Scroll to view both half-year periods
         </div>
         <div className="overflow-x-auto">
           <table
-            aria-describedby="quarterly-table-help"
+            aria-describedby="opcr-table-help"
             className="w-full min-w-[90rem] table-fixed border-collapse text-left"
           >
             <colgroup>
               <col className="w-[22rem]" />
               <col className="w-32" />
-              {Array.from({ length: 10 }, (_, index) => (
+              {Array.from({ length: 6 }, (_, index) => (
                 <col key={index} className="w-24" />
               ))}
             </colgroup>
@@ -484,7 +484,7 @@ function AccomplishmentResourceEditor({
                   <th
                     key={group.id}
                     scope="colgroup"
-                    colSpan={5}
+                    colSpan={3}
                     className={`${index === 1 ? "border-l-2 border-primary/35" : "border-l border-strong-border"} ${group.headerClass} px-5 py-3 text-center`}
                   >
                     <span className="font-semibold">{group.label}</span>
@@ -497,7 +497,7 @@ function AccomplishmentResourceEditor({
                     <th
                       key={`${group.id}-${field.id}`}
                       scope="col"
-                      className={`${groupIndex === 1 && field.id === "q1" ? "border-l-2 border-primary/35" : "border-l border-border"} ${group.quarterClass} ${field.id === "total" ? group.totalClass : ""} px-3 py-3 text-center text-xs font-semibold uppercase tracking-[0.1em]`}
+                      className={`${groupIndex === 1 && field.id === "h1" ? "border-l-2 border-primary/35" : "border-l border-border"} ${group.quarterClass} ${field.id === "total" ? group.totalClass : ""} px-3 py-3 text-center text-xs font-semibold uppercase tracking-[0.1em]`}
                     >
                       {field.label}
                     </th>
@@ -534,7 +534,7 @@ function AccomplishmentResourceEditor({
                         {renderActions(section)}
                       </div>
                     </th>
-                    <td colSpan={11} className="bg-primary-soft" />
+                    <td colSpan={7} className="bg-primary-soft" />
                   </tr>
                   {isOpen(section.id)
                     ? childrenOf(section.id).map((group) => (
@@ -565,7 +565,7 @@ function AccomplishmentResourceEditor({
                                 {renderActions(group)}
                               </div>
                             </th>
-                            <td colSpan={11} className="bg-surface-secondary/80" />
+                            <td colSpan={7} className="bg-surface-secondary/80" />
                           </tr>
                           {isOpen(group.id)
                             ? childrenOf(group.id).map((indicator) => {
@@ -619,7 +619,7 @@ function AccomplishmentResourceEditor({
                                               periodFields.map((field) => (
                                                 <td
                                                   key={`${group.id}-${field.id}`}
-                                                  className={`${groupIndex === 1 && field.id === "q1" ? "border-l-2 border-primary/35" : "border-l border-border"} ${field.id === "total" ? group.totalClass : group.cellClass} p-2.5`}
+                                                  className={`${groupIndex === 1 && field.id === "h1" ? "border-l-2 border-primary/35" : "border-l border-border"} ${field.id === "total" ? group.totalClass : group.cellClass} p-2.5`}
                                                 >
                                                   <div className="relative">
                                                     <input
@@ -642,7 +642,7 @@ function AccomplishmentResourceEditor({
                                                       onChange={(event) => {
                                                         if (
                                                           field.id !== "total" &&
-                                                          !isQuarterInputValid(
+                                                          !isHalfYearInputValid(
                                                             event.target.value,
                                                           )
                                                         )
@@ -812,7 +812,7 @@ function AccomplishmentResourceEditor({
           <div className="min-w-0 flex-1">
             <p className="font-semibold">Changes saved</p>
             <p className="mt-1 text-sm text-primary-foreground/85">
-              The Accomplishment Report was updated successfully.
+              The OPCR was updated successfully.
             </p>
           </div>
           <button

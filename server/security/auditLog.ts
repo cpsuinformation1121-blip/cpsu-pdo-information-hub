@@ -12,6 +12,7 @@ export const auditActions = [
   'resource.accessed',
   'structure.changed',
   'accomplishment-resource.saved',
+  'opcr-resource.saved',
   'administrator.created',
   'administrator.updated',
   'administrator.deleted',

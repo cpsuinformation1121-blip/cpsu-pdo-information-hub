@@ -2,21 +2,20 @@ import { useQueries } from "@tanstack/react-query";
 import { ChevronDown, TableProperties } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import type { AccomplishmentResourceData } from "../contracts/accomplishmentResource";
+import type { OpcrResourceData } from "../contracts/opcrResource";
 import {
-  AccomplishmentComparisonChart,
+  AccomplishmentDataChart,
   AccomplishmentIndicatorSeriesChart,
   ChartColorLegend,
 } from "../features/accomplishments/AccomplishmentChart";
+import { formatPercentageValue } from "../features/accomplishments/chartData";
 import {
-  annualComparisonFields,
-  createAnnualIndicatorChartData,
-  createAnnualIndicatorSeriesChartData,
-  formatPercentageValue,
-  quarterlyComparisonFields,
-} from "../features/accomplishments/chartData";
+  createOpcrAnnualIndicatorChartData,
+  createOpcrAnnualIndicatorSeriesChartData,
+  createOpcrComparisonChartData,
+} from "../features/opcr/opcrChartData";
 import { getAccomplishmentReportYears } from "../features/accomplishments/reportCalculations";
-import { getPublicAccomplishmentResource } from "../services/accomplishmentResource";
+import { getPublicOpcrResource } from "../services/opcrResource";
 
 const rows = [
   { id: "results", label: "Percentage" },
@@ -24,20 +23,18 @@ const rows = [
 ] as const;
 
 type IndicatorEntry =
-  AccomplishmentResourceData["entries"][string][string];
+  OpcrResourceData["entries"][string][string];
 
 const periods = [
-  { id: "q1", label: "Q1" },
-  { id: "q2", label: "Q2" },
-  { id: "q3", label: "Q3" },
-  { id: "q4", label: "Q4" },
+  { id: "h1", label: "H1" },
+  { id: "h2", label: "H2" },
   { id: "total", label: "Total" },
 ] as const;
 
 function displayValue(value: string | undefined, isPercentage: boolean) {
   const percentageValue = formatPercentageValue(value);
   if (isPercentage && percentageValue) return percentageValue;
-  return value?.trim() || "—";
+  return value?.trim() || "â€”";
 }
 
 function IndicatorDataTable({
@@ -83,7 +80,7 @@ function IndicatorDataTable({
                     <th
                       key={`${group}-${period.id}`}
                       scope="col"
-                      className={`${group === "accomplishment" && period.id === "q1" ? "border-l-2 border-primary/30" : "border-l border-border"} ${period.id === "total" ? "font-bold text-foreground" : ""} px-3 py-2.5 text-center`}
+                      className={`${group === "accomplishment" && period.id === "h1" ? "border-l-2 border-primary/30" : "border-l border-border"} ${period.id === "total" ? "font-bold text-foreground" : ""} px-3 py-2.5 text-center`}
                     >
                       {period.label}
                     </th>
@@ -101,7 +98,7 @@ function IndicatorDataTable({
                     periods.map((period) => (
                       <td
                         key={`${group}-${period.id}`}
-                        className={`${group === "accomplishment" && period.id === "q1" ? "border-l-2 border-primary/30" : "border-l border-border"} ${period.id === "total" ? "bg-primary-soft/50 font-semibold" : ""} px-3 py-3 text-center tabular-nums`}
+                        className={`${group === "accomplishment" && period.id === "h1" ? "border-l-2 border-primary/30" : "border-l border-border"} ${period.id === "total" ? "bg-primary-soft/50 font-semibold" : ""} px-3 py-3 text-center tabular-nums`}
                       >
                         {displayValue(
                           entry?.[row.id][
@@ -129,7 +126,7 @@ function IndicatorResults({
 }: {
   title: string;
   entry?: IndicatorEntry;
-  chartType: AccomplishmentResourceData["chartType"];
+  chartType: OpcrResourceData["chartType"];
 }) {
   const percentage = entry?.results;
 
@@ -143,21 +140,25 @@ function IndicatorResults({
       </div>
 
       <div className="grid gap-4 border-t border-border bg-surface-secondary/45 p-4 sm:p-5 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.2fr)]">
-        <AccomplishmentComparisonChart
+        <AccomplishmentDataChart
           type={chartType}
           title="Annual total"
           description="Cumulative target and accomplishment."
-          target={percentage?.target}
-          accomplishment={percentage?.accomplishment}
-          fields={annualComparisonFields}
+          data={createOpcrComparisonChartData(
+            percentage?.target,
+            percentage?.accomplishment,
+            ["total"],
+          )}
         />
-        <AccomplishmentComparisonChart
+        <AccomplishmentDataChart
           type={chartType}
-          title="Quarterly performance"
-          description="Target compared with accomplishment for each quarter."
-          target={percentage?.target}
-          accomplishment={percentage?.accomplishment}
-          fields={quarterlyComparisonFields}
+          title="Half-year performance"
+          description="Target compared with accomplishment for each half-year period."
+          data={createOpcrComparisonChartData(
+            percentage?.target,
+            percentage?.accomplishment,
+            ["h1", "h2"],
+          )}
         />
       </div>
 
@@ -166,16 +167,16 @@ function IndicatorResults({
   );
 }
 
-export function AccomplishmentsPage() {
+export function OpcrPublicPage() {
   const currentYear = new Date().getFullYear();
   const years = getAccomplishmentReportYears(currentYear);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedIndicatorId, setSelectedIndicatorId] = useState("");
   const resourceQueries = useQueries({
     queries: years.map((year) => ({
-      queryKey: ["public-accomplishment-resource", year],
+      queryKey: ["public-opcr-resource", year],
       queryFn: ({ signal }: { signal: AbortSignal }) =>
-        getPublicAccomplishmentResource(year, signal),
+        getPublicOpcrResource(year, signal),
       staleTime: 0,
       refetchOnMount: "always" as const,
       refetchOnWindowFocus: true,
@@ -205,7 +206,7 @@ export function AccomplishmentsPage() {
   const activeIndicator = indicators.find(
     (indicator) => indicator.id === activeIndicatorId,
   );
-  const annualIndicatorData = createAnnualIndicatorSeriesChartData(
+  const annualIndicatorData = createOpcrAnnualIndicatorSeriesChartData(
     activeIndicatorId,
     years.map((year, index) => ({
       year,
@@ -213,10 +214,10 @@ export function AccomplishmentsPage() {
         resourceQueries[index]?.data?.entries[String(year)] ?? {},
     })),
   );
-  const annualOverviewData = createAnnualIndicatorChartData(indicators, entries);
+  const annualOverviewData = createOpcrAnnualIndicatorChartData(indicators, entries);
 
   return (
-    <section aria-labelledby="accomplishments-title">
+    <section aria-labelledby="opcr-title">
       <div className="border-b border-border bg-surface-secondary/45">
         <div className="mx-auto max-w-content px-5 py-8 sm:px-8 sm:py-12 lg:px-10 lg:py-14">
           <nav
@@ -229,26 +230,26 @@ export function AccomplishmentsPage() {
             <span className="mx-2" aria-hidden="true">
               /
             </span>
-            <span aria-current="page">Accomplishment Report</span>
+            <span aria-current="page">Office Performance Commitment and Review (OPCR)</span>
           </nav>
 
-          <div className="mt-6 grid gap-6 sm:grid-cols-3 sm:items-end lg:grid-cols-4">
-            <div className="max-w-3xl border-l-2 border-primary pl-4 sm:col-span-2 sm:pl-5 lg:col-span-3">
+          <div className="mt-6 grid gap-6 sm:grid-cols-3 sm:items-end lg:grid-cols-[minmax(0,1fr)_12rem]">
+            <div className="min-w-0 max-w-3xl border-l-2 border-primary pl-4 sm:col-span-2 sm:pl-5 lg:col-span-1">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
                 Our performance
               </p>
               <h1
-                id="accomplishments-title"
-                className="mt-2 font-serif text-3xl tracking-tight sm:text-[2.5rem]"
+                id="opcr-title"
+                className="mt-2 font-serif text-3xl tracking-tight lg:whitespace-nowrap lg:text-[2.25rem]"
               >
-                Accomplishment Report
+                Office Performance Commitment and Review (OPCR)
               </h1>
               <p className="mt-3 text-base leading-7 text-muted-foreground">
-                View annual targets and quarterly results.
+                View annual targets and half-year results.
               </p>
             </div>
 
-            <label className="w-full">
+            <label className="w-full min-w-0 lg:col-span-1">
               <span className="block text-sm font-semibold">Year</span>
               <select
                 value={selectedYear}
@@ -274,7 +275,7 @@ export function AccomplishmentsPage() {
             className="rounded-2xl border border-border bg-surface px-5 py-10 text-center text-sm text-muted-foreground"
             role="status"
           >
-            Loading accomplishments...
+            Loading OPCR data...
           </div>
         ) : null}
 
@@ -286,7 +287,7 @@ export function AccomplishmentsPage() {
             <p className="text-sm text-danger">
               {selectedQuery.error instanceof Error
                 ? selectedQuery.error.message
-                : "The accomplishment data could not be loaded."}
+                : "The OPCR data could not be loaded."}
             </p>
             <button
               type="button"
@@ -300,9 +301,9 @@ export function AccomplishmentsPage() {
 
         {data && indicatorCount === 0 ? (
           <div className="rounded-2xl border border-border bg-surface px-5 py-10 text-center">
-            <h2 className="font-semibold">No accomplishments available</h2>
+            <h2 className="font-semibold">No OPCR data available</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              No performance areas are available for {selectedYear}.
+              No OPCR performance areas are available for {selectedYear}.
             </p>
           </div>
         ) : null}
@@ -311,15 +312,15 @@ export function AccomplishmentsPage() {
           <div className="space-y-6">
             {annualIndicatorData.length > 0 ? (
               <section
-                aria-labelledby="annual-physical-performance-title"
+                aria-labelledby="annual-opcr-performance-title"
                 className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_28px_rgba(20,83,45,0.05)]"
               >
                 <div className="border-b border-strong-border bg-primary-soft px-4 py-5 text-center sm:px-5">
                   <h2
-                    id="annual-physical-performance-title"
+                    id="annual-opcr-performance-title"
                     className="text-lg font-semibold text-foreground"
                   >
-                    Annual Physical Performance Accomplishment
+                    Annual OPCR Performance
                   </h2>
                   <div className="mt-3 flex justify-center">
                     <ChartColorLegend compact />
@@ -329,7 +330,7 @@ export function AccomplishmentsPage() {
                   <AccomplishmentIndicatorSeriesChart
                     type={data.chartType}
                     title="Annual performance by indicator"
-                    description="Annual target and accomplishment totals for the selected report year."
+                    description="Annual target and accomplishment totals for the selected OPCR year."
                     data={annualOverviewData}
                     hideCaption
                     preserveCategoryWidth
@@ -367,7 +368,7 @@ export function AccomplishmentsPage() {
                       <AccomplishmentIndicatorSeriesChart
                         type={data.chartType}
                         title={`${activeIndicator?.title ?? "Indicator"} annual performance by year`}
-                        description="Annual target and accomplishment totals by report year."
+                        description="Annual OPCR target and accomplishment totals by report year."
                         data={annualIndicatorData}
                         hideCaption
                         preserveCategoryWidth

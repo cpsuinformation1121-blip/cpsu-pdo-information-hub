@@ -21,7 +21,7 @@ export function PublicFooter() {
             Repository
           </NavLink>
           <NavLink className="hover:underline" to="/accomplishments">
-            Accomplishments
+            Accomplishment Report
           </NavLink>
           <NavLink className="hover:underline" to="/about">
             About

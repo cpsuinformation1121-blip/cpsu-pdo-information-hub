@@ -1,6 +1,5 @@
 import {
   ChevronRight,
-  Eye,
   File,
   FileImage,
   FileText,
@@ -88,9 +87,7 @@ function ResourceRow({
                 className="size-4 animate-spin motion-reduce:animate-none"
                 aria-hidden="true"
               />
-            ) : (
-              <Eye className="size-4" aria-hidden="true" />
-            )}
+            ) : null}
             <span className="text-sm">
               {isPending ? "Opening..." : "Preview"}
             </span>

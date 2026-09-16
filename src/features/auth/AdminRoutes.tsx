@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { AdminLayout } from "../../layouts/AdminLayout";
 import { AdminHomePage } from "../../pages/admin/AdminHomePage";
 import { AdminAccomplishResourcePage } from "../../pages/admin/AdminAccomplishResourcePage";
+import { AdminOpcrPage } from "../../pages/admin/AdminOpcrPage";
 import { AdminLoginPage } from "../../pages/admin/AdminLoginPage";
 import { AdminResourcesPage } from "../../pages/admin/AdminResourcesPage";
 import { AdminResourceUploadPage } from "../../pages/admin/AdminResourceUploadPage";
@@ -28,6 +29,7 @@ export function AdminRoutes() {
               path="accomplish-resource"
               element={<AdminAccomplishResourcePage />}
             />
+            <Route path="opcr" element={<AdminOpcrPage />} />
             <Route
               path="structure"
               element={<AdminRepositoryStructurePage />}

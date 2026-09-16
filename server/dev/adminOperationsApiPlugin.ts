@@ -9,6 +9,8 @@ import { handleAdminResourceAccessRequest } from "../http/adminResourceAccessHan
 import { createDevRequest, writeDevResponse } from "./httpAdapter.ts";
 import { handleAccomplishmentResourceRequest } from "../http/accomplishmentResourceHandler.ts";
 import { handlePublicAccomplishmentResourceRequest } from "../http/publicAccomplishmentResourceHandler.ts";
+import { handleOpcrResourceRequest } from "../http/opcrResourceHandler.ts";
+import { handlePublicOpcrResourceRequest } from "../http/publicOpcrResourceHandler.ts";
 export function adminOperationsApiPlugin(
   environment: NodeJS.ProcessEnv,
 ): Plugin {
@@ -50,8 +52,24 @@ export function adminOperationsApiPlugin(
           await writeDevResponse(response, apiResponse);
           return;
         }
+        if (path === "/api/admin/opcr-resource") {
+          const apiResponse = await handleOpcrResourceRequest(
+            await createDevRequest(request),
+            environment,
+          );
+          await writeDevResponse(response, apiResponse);
+          return;
+        }
         if (path === "/api/accomplishments") {
           const apiResponse = await handlePublicAccomplishmentResourceRequest(
+            await createDevRequest(request),
+            environment,
+          );
+          await writeDevResponse(response, apiResponse);
+          return;
+        }
+        if (path === "/api/opcr") {
+          const apiResponse = await handlePublicOpcrResourceRequest(
             await createDevRequest(request),
             environment,
           );

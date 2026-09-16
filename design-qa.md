@@ -218,3 +218,61 @@ final result: passed
 - TypeScript, lint, production build, and all 138 tests pass.
 
 final result: passed
+
+---
+
+# Annual Summary Copy and Alignment QA - 2026-09-15
+
+**Comparison target**
+
+- Source visual truth path: user-provided annual summary screenshot in this conversation; local source path unavailable, approximately 1394 x 543 pixels.
+- Implementation screenshot path: `C:\\cpsu-pdo-information-hub\\artifacts\\annual-summary-region.png` (1328 x 429 pixels).
+- Full-page evidence: `C:\\cpsu-pdo-information-hub\\artifacts\\annual-summary-desktop.png` and `C:\\cpsu-pdo-information-hub\\artifacts\\annual-summary-mobile.png`.
+- Viewports: 1440 x 1000 desktop and 390 x 844 mobile CSS pixels at deviceScaleFactor 1. Native-density screenshots required no normalization.
+- State: public `/accomplishments` report for 2026 with three annual indicator comparisons.
+
+**Full-view comparison evidence**
+
+The desktop and mobile renders retain the report structure and chart data. The annual card has one centered title with its centered legend and no duplicate explanatory copy. Neither viewport has document-level horizontal overflow, and Playwright recorded no console errors.
+
+**Focused region comparison evidence**
+
+The full annual summary region was captured and visually inspected. The title and legend share the horizontal center, while the chart begins immediately below without a second visible heading or description. This crop contains every typography, spacing, color, copy, and chart element affected by the request, so another focused crop was unnecessary.
+
+**Required fidelity surfaces**
+
+- Fonts and typography: the existing Poppins family, weights, line heights, and chart-label hierarchy are preserved; the remaining title is centered and readable.
+- Spacing and layout rhythm: header padding is balanced; title and legend form one compact group; unused copy space is removed.
+- Colors and visual tokens: the existing primary-soft background, borders, chart colors, and text tokens are unchanged.
+- Image quality and asset fidelity: no raster or decorative asset changes were needed; the chart remains sharp at native density.
+- Copy and content: removed `Annual summary`, the reported-indicator count sentence, `Annual performance by indicator`, and its explanatory sentence. The requested title and all data labels remain.
+
+**Findings**
+
+- No actionable P0, P1, or P2 findings remain.
+- The chart retains its detailed programmatic `aria-label`, so removing the duplicate visible caption does not remove its accessible data description.
+
+**Comparison history**
+
+- Initial post-change check found the screen-reader-only duplicate caption still registered as a visible one-pixel element in automation.
+- Fix: omit the caption node for this compact annual series while preserving the chart's descriptive `aria-label`.
+- Post-fix evidence: Playwright reports zero removed-text nodes, centered title and legend on both viewports, no horizontal overflow, and no console errors.
+
+**Primary interactions tested**
+
+- Public route loaded with report data.
+- Annual chart and accessible label rendered.
+- Desktop and mobile responsive layouts were checked.
+
+**Implementation checklist**
+
+- Remove redundant annual copy: complete.
+- Center title and legend: complete.
+- Preserve graph data, colors, and accessibility: complete.
+- TypeScript, lint, 145 tests, and production build: passed.
+
+**Follow-up polish**
+
+- None required for this scoped change.
+
+final result: passed

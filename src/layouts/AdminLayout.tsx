@@ -58,7 +58,8 @@ export function AdminLayout() {
               ["/admin", "Overview"],
               ["/admin/resources", "Resources"],
               ["/admin/resources/upload", "Upload"],
-              ["/admin/accomplish-resource", "Accomplishments"],
+              ["/admin/accomplish-resource", "Accomplishment Report"],
+              ["/admin/opcr", "OPCR"],
               ["/admin/structure", "Structure"],
               ["/admin/users", "Staff"],
             ].map(([to, label]) => (

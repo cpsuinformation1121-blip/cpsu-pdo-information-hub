@@ -169,7 +169,10 @@ function ColumnChart({
                 </div>
               ))}
             </div>
-            <span className="pt-3 text-center text-xs font-semibold text-muted-foreground">
+            <span
+              title={item.label}
+              className="line-clamp-2 min-h-8 pt-3 text-center text-xs font-semibold leading-4 text-muted-foreground"
+            >
               {item.label}
             </span>
           </div>
@@ -315,6 +318,36 @@ function LineChart({ title, data }: { title: string; data: ComparisonDatum[] }) 
   );
 }
 
+function ComparisonChartVisual({
+  type,
+  title,
+  data,
+  preserveCategoryWidth = false,
+}: {
+  type: ChartType;
+  title: string;
+  data: ComparisonDatum[];
+  preserveCategoryWidth?: boolean;
+}) {
+  const chart = (
+    <>
+      {type === "bar" ? <BarChart title={title} data={data} /> : null}
+      {type === "column" ? <ColumnChart title={title} data={data} /> : null}
+      {type === "line" ? <LineChart title={title} data={data} /> : null}
+    </>
+  );
+
+  if (!preserveCategoryWidth || type === "bar") return chart;
+
+  return (
+    <div className="overflow-x-auto pb-2">
+      <div style={{ minWidth: `${Math.max(40, data.length * 10)}rem` }}>
+        {chart}
+      </div>
+    </div>
+  );
+}
+
 export function AccomplishmentComparisonChart({
   type,
   title,
@@ -340,9 +373,66 @@ export function AccomplishmentComparisonChart({
           {description}
         </p>
       </figcaption>
-      {type === "bar" ? <BarChart title={title} data={data} /> : null}
-      {type === "column" ? <ColumnChart title={title} data={data} /> : null}
-      {type === "line" ? <LineChart title={title} data={data} /> : null}
+      <ComparisonChartVisual type={type} title={title} data={data} />
+    </figure>
+  );
+}
+
+export function AccomplishmentDataChart({
+  type,
+  title,
+  description,
+  data,
+}: {
+  type: ChartType;
+  title: string;
+  description: string;
+  data: ComparisonDatum[];
+}) {
+  return (
+    <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
+      <figcaption className="mb-5">
+        <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          {description}
+        </p>
+      </figcaption>
+      <ComparisonChartVisual type={type} title={title} data={data} />
+    </figure>
+  );
+}
+
+export function AccomplishmentIndicatorSeriesChart({
+  type,
+  title,
+  description,
+  data,
+  hideCaption = false,
+  preserveCategoryWidth = true,
+}: {
+  type: ChartType;
+  title: string;
+  description: string;
+  data: ComparisonDatum[];
+  hideCaption?: boolean;
+  preserveCategoryWidth?: boolean;
+}) {
+  return (
+    <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
+      {!hideCaption ? (
+        <figcaption className="mb-5">
+          <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {description}
+          </p>
+        </figcaption>
+      ) : null}
+      <ComparisonChartVisual
+        type={type}
+        title={title}
+        data={data}
+        preserveCategoryWidth={preserveCategoryWidth}
+      />
     </figure>
   );
 }
