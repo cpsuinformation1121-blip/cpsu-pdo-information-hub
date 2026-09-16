@@ -21,6 +21,7 @@ export type ComparisonDatum = {
   accomplishmentDisplay: string;
   accomplishmentNumeric: number | null;
   status: ComparisonStatus;
+  colorKey?: string;
 };
 
 type AnnualPerformanceEntry = {
@@ -88,6 +89,7 @@ export function createAnnualIndicatorChartData(
           formatPercentageValue(accomplishmentValue) || "Not reported",
         accomplishmentNumeric,
         status: getComparisonStatus(targetNumeric, accomplishmentNumeric),
+        colorKey: `${indicator.id}:total`,
       },
     ];
   });
@@ -118,6 +120,7 @@ export function createAnnualIndicatorSeriesChartData(
         formatPercentageValue(accomplishmentValue) || "Not reported",
       accomplishmentNumeric,
       status: getComparisonStatus(targetNumeric, accomplishmentNumeric),
+      colorKey: `${indicatorId}:${year}:total`,
     };
   });
 }
@@ -134,6 +137,7 @@ export function createComparisonChartData(
   target: ComparisonValues | undefined,
   accomplishment: ComparisonValues | undefined,
   fields: ReadonlyArray<{ id: ComparisonField; label: string }>,
+  colorKeyPrefix?: string,
 ): ComparisonDatum[] {
   return fields.map((field) => {
     const targetValue = target?.[field.id]?.trim() ?? "";
@@ -153,6 +157,7 @@ export function createComparisonChartData(
         formatPercentageValue(accomplishmentValue) || "Not reported",
       accomplishmentNumeric,
       status: getComparisonStatus(targetNumeric, accomplishmentNumeric),
+      colorKey: colorKeyPrefix ? `${colorKeyPrefix}:${field.id}` : undefined,
     };
   });
 }

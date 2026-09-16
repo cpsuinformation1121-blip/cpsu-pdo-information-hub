@@ -15,11 +15,19 @@ import { Fragment, useEffect, useState } from "react";
 import { AppDialog } from "../../components/ui/AppDialog";
 import type { AccomplishmentResourceData } from "../../contracts/accomplishmentResource";
 import { ChartColorLegend } from "../../features/accomplishments/AccomplishmentChart";
+import { ReportGraphOverview } from "../../features/accomplishments/ReportGraphOverview";
+import {
+  resolveReportLegend,
+  restoreReportAppearance,
+  upsertCustomLegendItem,
+  type ReportLegendItem,
+} from "../../features/accomplishments/reportAppearance";
 import {
   calculatePeriodTotal,
   getAccomplishmentReportYears,
   isQuarterInputValid,
 } from "../../features/accomplishments/reportCalculations";
+import { buildAccomplishmentOverviewGroups } from "../../features/accomplishments/reportOverview";
 import { useAuth } from "../../features/auth/useAuth";
 import {
   getAccomplishmentResource,
@@ -204,6 +212,12 @@ function AccomplishmentResourceEditor({
   const [entries, setEntries] = useState<EntriesByYear>(initialData.entries);
   const [openNodes, setOpenNodes] = useState<Record<string, boolean>>({});
   const [chartType, setChartType] = useState(initialData.chartType);
+  const [legend, setLegend] = useState<ReportLegendItem[]>(() =>
+    resolveReportLegend(initialData.appearance?.legend),
+  );
+  const [barColors, setBarColors] = useState<Record<string, string>>(
+    initialData.appearance?.barColors ?? {},
+  );
   const [saveStatus, setSaveStatus] = useState<"saved" | "unsaved">("saved");
   const [saveConfirmationVisible, setSaveConfirmationVisible] = useState(false);
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -232,6 +246,7 @@ function AccomplishmentResourceEditor({
         nodes,
         entries,
         chartType,
+        appearance: { legend, barColors },
       });
     },
     onSuccess: (savedData) => {
@@ -352,6 +367,71 @@ function AccomplishmentResourceEditor({
     }));
     markUnsaved();
   }
+
+  function updateLegendItem(
+    id: string,
+    patch: Partial<Pick<ReportLegendItem, "label" | "color">>,
+  ) {
+    setLegend((items) =>
+      items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+    markUnsaved();
+  }
+
+  function removeLegendItem(id: string) {
+    setLegend((items) => items.filter((item) => item.id !== id));
+    setBarColors((colors) =>
+      Object.fromEntries(
+        Object.entries(colors).filter(([, legendId]) => legendId !== id),
+      ),
+    );
+    markUnsaved();
+  }
+
+  function updateBarColor(colorKey: string, legendId: string | undefined) {
+    setBarColors((colors) => {
+      const next = { ...colors };
+      if (legendId === undefined) delete next[colorKey];
+      else next[colorKey] = legendId;
+      return next;
+    });
+    markUnsaved();
+  }
+
+  function applyCustomBarColor(
+    colorKey: string,
+    color: string,
+    label: string,
+  ) {
+    const result = upsertCustomLegendItem(legend, color, label);
+    setLegend(result.legend);
+    setBarColors((colors) => ({ ...colors, [colorKey]: result.id }));
+    markUnsaved();
+  }
+
+  function restoreDefaults(options: {
+    legend: boolean;
+    indicatorIds: string[];
+  }) {
+    const next = restoreReportAppearance({ legend, barColors }, options);
+    setLegend(next.legend);
+    setBarColors(next.barColors);
+    markUnsaved();
+  }
+
+  const overviewGroups = buildAccomplishmentOverviewGroups(
+    nodes,
+    entries[selectedYear] ?? {},
+  );
+  const overriddenIndicatorIds = new Set(
+    Object.keys(barColors).map((key) => key.split(":")[0]),
+  );
+  const restorableIndicators = nodes
+    .filter(
+      (node) =>
+        node.type === "indicator" && overriddenIndicatorIds.has(node.id),
+    )
+    .map((node) => ({ id: node.id, title: node.title }));
 
   const renderActions = (node: TreeNode) => (
     <NodeActions
@@ -697,7 +777,7 @@ function AccomplishmentResourceEditor({
           <div>
             <p className="text-sm font-semibold">Public chart colors</p>
             <div className="mt-2">
-              <ChartColorLegend compact />
+              <ChartColorLegend compact legend={legend} />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               Accomplishment colors compare each value with its matching target.
@@ -722,6 +802,19 @@ function AccomplishmentResourceEditor({
           </label>
         </div>
       </div>
+
+      <ReportGraphOverview
+        chartType={chartType}
+        groups={overviewGroups}
+        legend={legend}
+        barColors={barColors}
+        onLegendItemChange={updateLegendItem}
+        onRemoveLegendItem={removeLegendItem}
+        onBarColorChange={updateBarColor}
+        onCustomBarColor={applyCustomBarColor}
+        restorableIndicators={restorableIndicators}
+        onRestore={restoreDefaults}
+      />
 
       {editor ? (
         <AppDialog

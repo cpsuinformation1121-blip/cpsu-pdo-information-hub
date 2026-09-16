@@ -15,6 +15,7 @@ import {
   formatPercentageValue,
   quarterlyComparisonFields,
 } from "../features/accomplishments/chartData";
+import type { ReportAppearance } from "../features/accomplishments/reportAppearance";
 import { getAccomplishmentReportYears } from "../features/accomplishments/reportCalculations";
 import { getPublicAccomplishmentResource } from "../services/accomplishmentResource";
 
@@ -126,10 +127,12 @@ function IndicatorResults({
   title,
   entry,
   chartType,
+  appearance,
 }: {
   title: string;
   entry?: IndicatorEntry;
   chartType: AccomplishmentResourceData["chartType"];
+  appearance?: ReportAppearance;
 }) {
   const percentage = entry?.results;
 
@@ -138,7 +141,7 @@ function IndicatorResults({
       <div className="px-4 py-4 sm:px-5">
         <h4 className="text-sm font-semibold sm:text-base">{title}</h4>
         <div className="mt-3">
-          <ChartColorLegend compact />
+          <ChartColorLegend compact legend={appearance?.legend} />
         </div>
       </div>
 
@@ -150,6 +153,7 @@ function IndicatorResults({
           target={percentage?.target}
           accomplishment={percentage?.accomplishment}
           fields={annualComparisonFields}
+          appearance={appearance}
         />
         <AccomplishmentComparisonChart
           type={chartType}
@@ -158,6 +162,7 @@ function IndicatorResults({
           target={percentage?.target}
           accomplishment={percentage?.accomplishment}
           fields={quarterlyComparisonFields}
+          appearance={appearance}
         />
       </div>
 
@@ -322,7 +327,7 @@ export function AccomplishmentsPage() {
                     Annual Physical Performance Accomplishment
                   </h2>
                   <div className="mt-3 flex justify-center">
-                    <ChartColorLegend compact />
+                    <ChartColorLegend compact legend={data.appearance?.legend} />
                   </div>
                 </div>
                 <div className="bg-surface-secondary/45 p-4 sm:p-5">
@@ -333,6 +338,7 @@ export function AccomplishmentsPage() {
                     data={annualOverviewData}
                     hideCaption
                     preserveCategoryWidth
+                    appearance={data.appearance}
                   />
                 </div>
                 <details className="group border-t border-border bg-surface">
@@ -371,6 +377,7 @@ export function AccomplishmentsPage() {
                         data={annualIndicatorData}
                         hideCaption
                         preserveCategoryWidth
+                        appearance={data.appearance}
                       />
                     </div>
                   </div>
@@ -411,6 +418,7 @@ export function AccomplishmentsPage() {
                         title={indicator.title}
                         entry={entries[indicator.id]}
                         chartType={data.chartType}
+                        appearance={data.appearance}
                       />
                     ))}
                   </section>

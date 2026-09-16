@@ -1,22 +1,28 @@
+import type { CSSProperties, KeyboardEvent } from "react";
 import type { AccomplishmentResourceData } from "../../contracts/accomplishmentResource";
 import {
   createComparisonChartData,
   getComparisonScaleMax,
   type ComparisonDatum,
   type ComparisonField,
-  type ComparisonStatus,
   type ComparisonValues,
 } from "./chartData";
+import {
+  reportBarColorKey,
+  resolveBarColor,
+  resolveReportLegend,
+  type ReportAppearance,
+  type ReportLegendItem,
+} from "./reportAppearance";
 
 type ChartType = AccomplishmentResourceData["chartType"];
+type SeriesId = "target" | "accomplishment";
 
-const targetColor = "var(--chart-target)";
-
-function accomplishmentColor(status: ComparisonStatus) {
-  if (status === "met") return "var(--primary)";
-  if (status === "below") return "var(--danger)";
-  return "var(--muted-foreground)";
-}
+export type ChartInteraction = {
+  appearance?: ReportAppearance;
+  onSelectBar?: (colorKey: string, label: string, color: string) => void;
+  selectedBarKey?: string;
+};
 
 function chartValueLabel(display: string, numeric: number | null) {
   return numeric === null ? "—" : display;
@@ -31,13 +37,14 @@ function chartDescription(title: string, data: ComparisonDatum[]) {
     .join("; ")}`;
 }
 
-export function ChartColorLegend({ compact = false }: { compact?: boolean }) {
-  const items = [
-    { label: "Target", color: targetColor },
-    { label: "Met target", color: "var(--primary)" },
-    { label: "Below target", color: "var(--danger)" },
-    { label: "No comparison", color: "var(--muted-foreground)" },
-  ];
+export function ChartColorLegend({
+  compact = false,
+  legend,
+}: {
+  compact?: boolean;
+  legend?: readonly ReportLegendItem[];
+}) {
+  const items = resolveReportLegend(legend);
 
   return (
     <div
@@ -45,7 +52,7 @@ export function ChartColorLegend({ compact = false }: { compact?: boolean }) {
       className={`flex flex-wrap items-center ${compact ? "gap-x-4 gap-y-2" : "gap-x-5 gap-y-2"} text-xs text-muted-foreground`}
     >
       {items.map((item) => (
-        <span key={item.label} className="inline-flex items-center gap-2">
+        <span key={item.id} className="inline-flex items-center gap-2">
           <span
             className="size-2.5 rounded-full"
             style={{ backgroundColor: item.color }}
@@ -58,12 +65,85 @@ export function ChartColorLegend({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function BarChart({ title, data }: { title: string; data: ComparisonDatum[] }) {
+function SeriesBar({
+  datum,
+  series,
+  seriesLabel,
+  appearance,
+  onSelectBar,
+  selectedBarKey,
+  className,
+  style,
+}: {
+  datum: ComparisonDatum;
+  series: SeriesId;
+  seriesLabel: string;
+  className: string;
+  style: CSSProperties;
+} & ChartInteraction) {
+  const color = resolveBarColor(appearance, datum, series);
+  const colorKey = reportBarColorKey(datum.colorKey, series);
+  const label = `${datum.label} ${seriesLabel}`;
+  const selected = Boolean(colorKey && colorKey === selectedBarKey);
+  const barStyle = { ...style, backgroundColor: color, borderRadius: 0 };
+  const barClass = `${className}${selected ? " ring-2 ring-foreground" : ""}`;
+
+  if (!onSelectBar || !colorKey) {
+    return <span className={barClass} style={barStyle} aria-hidden="true" />;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelectBar(colorKey, label, color)}
+      aria-pressed={selected}
+      aria-label={`Change color for ${label}`}
+      title={`Change color for ${label}`}
+      className={`${barClass} cursor-pointer appearance-none border-0 p-0`}
+      style={barStyle}
+    />
+  );
+}
+
+function pointInteraction(
+  datum: ComparisonDatum,
+  series: SeriesId,
+  seriesLabel: string,
+  color: string,
+  onSelectBar?: (colorKey: string, label: string, color: string) => void,
+) {
+  const colorKey = reportBarColorKey(datum.colorKey, series);
+  if (!onSelectBar || !colorKey) return {};
+  const label = `${datum.label} ${seriesLabel}`;
+  const select = () => onSelectBar(colorKey, label, color);
+  return {
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-label": `Change color for ${label}`,
+    onClick: select,
+    onKeyDown: (event: KeyboardEvent<SVGCircleElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select();
+      }
+    },
+    className: "cursor-pointer",
+  };
+}
+
+function BarChart({
+  title,
+  data,
+  appearance,
+  onSelectBar,
+  selectedBarKey,
+}: { title: string; data: ComparisonDatum[] } & ChartInteraction) {
   const maximum = getComparisonScaleMax(data);
+  const interactive = Boolean(onSelectBar);
 
   return (
     <div
-      role="img"
+      role={interactive ? "group" : "img"}
       aria-label={chartDescription(title, data)}
       data-chart-type="bar"
       className="space-y-5"
@@ -73,33 +153,36 @@ function BarChart({ title, data }: { title: string; data: ComparisonDatum[] }) {
           <p className="text-xs font-semibold text-foreground">{item.label}</p>
           {[
             {
+              id: "target" as const,
               label: "Target",
               display: item.targetDisplay,
               numeric: item.targetNumeric,
-              color: targetColor,
             },
             {
+              id: "accomplishment" as const,
               label: "Accomplishment",
               display: item.accomplishmentDisplay,
               numeric: item.accomplishmentNumeric,
-              color: accomplishmentColor(item.status),
             },
           ].map((series) => (
             <div
-              key={series.label}
+              key={series.id}
               className="grid grid-cols-[6.6rem_minmax(0,1fr)_3.5rem] items-center gap-2"
             >
               <span className="truncate text-[0.68rem] font-medium text-muted-foreground">
                 {series.label}
               </span>
-              <span className="h-5 overflow-hidden rounded bg-surface-secondary">
+              <span className="h-5 overflow-hidden bg-surface-secondary">
                 {series.numeric !== null ? (
-                  <span
-                    className="block h-full min-w-1 rounded"
-                    style={{
-                      backgroundColor: series.color,
-                      width: `${(series.numeric / maximum) * 100}%`,
-                    }}
+                  <SeriesBar
+                    datum={item}
+                    series={series.id}
+                    seriesLabel={series.label}
+                    appearance={appearance}
+                    onSelectBar={onSelectBar}
+                    selectedBarKey={selectedBarKey}
+                    className="block h-full min-w-1"
+                    style={{ width: `${(series.numeric / maximum) * 100}%` }}
                   />
                 ) : null}
               </span>
@@ -117,15 +200,16 @@ function BarChart({ title, data }: { title: string; data: ComparisonDatum[] }) {
 function ColumnChart({
   title,
   data,
-}: {
-  title: string;
-  data: ComparisonDatum[];
-}) {
+  appearance,
+  onSelectBar,
+  selectedBarKey,
+}: { title: string; data: ComparisonDatum[] } & ChartInteraction) {
   const maximum = getComparisonScaleMax(data);
+  const interactive = Boolean(onSelectBar);
 
   return (
     <div
-      role="img"
+      role={interactive ? "group" : "img"}
       aria-label={chartDescription(title, data)}
       data-chart-type="column"
     >
@@ -138,30 +222,35 @@ function ColumnChart({
             <div className="flex h-44 items-end justify-center gap-2">
               {[
                 {
+                  id: "target" as const,
                   label: "Target",
                   display: item.targetDisplay,
                   numeric: item.targetNumeric,
-                  color: targetColor,
                 },
                 {
+                  id: "accomplishment" as const,
                   label: "Accomplishment",
                   display: item.accomplishmentDisplay,
                   numeric: item.accomplishmentNumeric,
-                  color: accomplishmentColor(item.status),
                 },
               ].map((series) => (
                 <div
-                  key={series.label}
+                  key={series.id}
                   className="flex h-full w-9 min-w-0 shrink flex-col justify-end"
                 >
                   <span className="mb-2 truncate text-center text-[0.65rem] font-semibold tabular-nums text-foreground">
                     {chartValueLabel(series.display, series.numeric)}
                   </span>
                   {series.numeric !== null ? (
-                    <span
-                      className="mx-auto block w-full max-w-9 rounded-t"
+                    <SeriesBar
+                      datum={item}
+                      series={series.id}
+                      seriesLabel={series.label}
+                      appearance={appearance}
+                      onSelectBar={onSelectBar}
+                      selectedBarKey={selectedBarKey}
+                      className="mx-auto block w-full max-w-9"
                       style={{
-                        backgroundColor: series.color,
                         height: `${Math.max(3, (series.numeric / maximum) * 100)}%`,
                       }}
                     />
@@ -182,8 +271,15 @@ function ColumnChart({
   );
 }
 
-function LineChart({ title, data }: { title: string; data: ComparisonDatum[] }) {
+function LineChart({
+  title,
+  data,
+  appearance,
+  onSelectBar,
+  selectedBarKey,
+}: { title: string; data: ComparisonDatum[] } & ChartInteraction) {
   const maximum = getComparisonScaleMax(data);
+  const interactive = Boolean(onSelectBar);
   const left = 56;
   const right = 604;
   const top = 40;
@@ -208,11 +304,12 @@ function LineChart({ title, data }: { title: string; data: ComparisonDatum[] }) 
         : bottom - (item.accomplishmentNumeric / maximum) * (bottom - top),
     item,
   }));
+  const targetColor = resolveBarColor(appearance, data[0], "target");
 
   return (
     <svg
       viewBox="0 0 640 240"
-      role="img"
+      role={interactive ? "group" : "img"}
       aria-label={chartDescription(title, data)}
       data-chart-type="line"
       className="h-auto w-full"
@@ -252,68 +349,97 @@ function LineChart({ title, data }: { title: string; data: ComparisonDatum[] }) 
             y1={point.y}
             x2={next.x}
             y2={next.y}
-            stroke={accomplishmentColor(next.item.status)}
+            stroke={resolveBarColor(appearance, next.item, "accomplishment")}
             strokeWidth="4"
             strokeLinecap="round"
           />
         ) : null;
       })}
-      {targetPoints.map((point) => (
-        <g key={`target-${point.item.id}`}>
-          {point.y !== null ? (
-            <>
-              <circle
-                cx={point.x - 6}
-                cy={point.y}
-                r="6"
-                fill={targetColor}
-                stroke="white"
-                strokeWidth="3"
-              />
-              <text
-                x={point.x - 10}
-                y={Math.max(18, point.y - 13)}
-                textAnchor="end"
-                className="fill-foreground text-[0.63rem] font-semibold"
-              >
-                {point.item.targetDisplay}
-              </text>
-            </>
-          ) : null}
-        </g>
-      ))}
-      {accomplishmentPoints.map((point) => (
-        <g key={`accomplishment-${point.item.id}`}>
-          {point.y !== null ? (
-            <>
-              <circle
-                cx={point.x + 6}
-                cy={point.y}
-                r="6"
-                fill={accomplishmentColor(point.item.status)}
-                stroke="white"
-                strokeWidth="3"
-              />
-              <text
-                x={point.x + 10}
-                y={Math.max(18, point.y - 13)}
-                textAnchor="start"
-                className="fill-foreground text-[0.63rem] font-semibold"
-              >
-                {point.item.accomplishmentDisplay}
-              </text>
-            </>
-          ) : null}
-          <text
-            x={point.x}
-            y="222"
-            textAnchor="middle"
-            className="fill-muted-foreground text-[0.68rem] font-semibold"
-          >
-            {point.item.label}
-          </text>
-        </g>
-      ))}
+      {targetPoints.map((point) => {
+        const color = resolveBarColor(appearance, point.item, "target");
+        const selected =
+          reportBarColorKey(point.item.colorKey, "target") === selectedBarKey;
+        return (
+          <g key={`target-${point.item.id}`}>
+            {point.y !== null ? (
+              <>
+                <circle
+                  cx={point.x - 6}
+                  cy={point.y}
+                  r="6"
+                  fill={color}
+                  stroke={selected ? "var(--foreground)" : "white"}
+                  strokeWidth={selected ? "4" : "3"}
+                  {...pointInteraction(
+                    point.item,
+                    "target",
+                    "Target",
+                    color,
+                    onSelectBar,
+                  )}
+                />
+                <text
+                  x={point.x - 10}
+                  y={Math.max(18, point.y - 13)}
+                  textAnchor="end"
+                  className="fill-foreground text-[0.63rem] font-semibold"
+                >
+                  {point.item.targetDisplay}
+                </text>
+              </>
+            ) : null}
+          </g>
+        );
+      })}
+      {accomplishmentPoints.map((point) => {
+        const color = resolveBarColor(
+          appearance,
+          point.item,
+          "accomplishment",
+        );
+        const selected =
+          reportBarColorKey(point.item.colorKey, "accomplishment") ===
+          selectedBarKey;
+        return (
+          <g key={`accomplishment-${point.item.id}`}>
+            {point.y !== null ? (
+              <>
+                <circle
+                  cx={point.x + 6}
+                  cy={point.y}
+                  r="6"
+                  fill={color}
+                  stroke={selected ? "var(--foreground)" : "white"}
+                  strokeWidth={selected ? "4" : "3"}
+                  {...pointInteraction(
+                    point.item,
+                    "accomplishment",
+                    "Accomplishment",
+                    color,
+                    onSelectBar,
+                  )}
+                />
+                <text
+                  x={point.x + 10}
+                  y={Math.max(18, point.y - 13)}
+                  textAnchor="start"
+                  className="fill-foreground text-[0.63rem] font-semibold"
+                >
+                  {point.item.accomplishmentDisplay}
+                </text>
+              </>
+            ) : null}
+            <text
+              x={point.x}
+              y="222"
+              textAnchor="middle"
+              className="fill-muted-foreground text-[0.68rem] font-semibold"
+            >
+              {point.item.label}
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -323,17 +449,27 @@ function ComparisonChartVisual({
   title,
   data,
   preserveCategoryWidth = false,
+  appearance,
+  onSelectBar,
+  selectedBarKey,
 }: {
   type: ChartType;
   title: string;
   data: ComparisonDatum[];
   preserveCategoryWidth?: boolean;
-}) {
+} & ChartInteraction) {
+  const interaction = { appearance, onSelectBar, selectedBarKey };
   const chart = (
     <>
-      {type === "bar" ? <BarChart title={title} data={data} /> : null}
-      {type === "column" ? <ColumnChart title={title} data={data} /> : null}
-      {type === "line" ? <LineChart title={title} data={data} /> : null}
+      {type === "bar" ? (
+        <BarChart title={title} data={data} {...interaction} />
+      ) : null}
+      {type === "column" ? (
+        <ColumnChart title={title} data={data} {...interaction} />
+      ) : null}
+      {type === "line" ? (
+        <LineChart title={title} data={data} {...interaction} />
+      ) : null}
     </>
   );
 
@@ -355,6 +491,10 @@ export function AccomplishmentComparisonChart({
   target,
   accomplishment,
   fields,
+  colorKeyPrefix,
+  appearance,
+  onSelectBar,
+  selectedBarKey,
 }: {
   type: ChartType;
   title: string;
@@ -362,8 +502,14 @@ export function AccomplishmentComparisonChart({
   target?: ComparisonValues;
   accomplishment?: ComparisonValues;
   fields: ReadonlyArray<{ id: ComparisonField; label: string }>;
-}) {
-  const data = createComparisonChartData(target, accomplishment, fields);
+  colorKeyPrefix?: string;
+} & ChartInteraction) {
+  const data = createComparisonChartData(
+    target,
+    accomplishment,
+    fields,
+    colorKeyPrefix,
+  );
 
   return (
     <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
@@ -373,7 +519,14 @@ export function AccomplishmentComparisonChart({
           {description}
         </p>
       </figcaption>
-      <ComparisonChartVisual type={type} title={title} data={data} />
+      <ComparisonChartVisual
+        type={type}
+        title={title}
+        data={data}
+        appearance={appearance}
+        onSelectBar={onSelectBar}
+        selectedBarKey={selectedBarKey}
+      />
     </figure>
   );
 }
@@ -383,12 +536,15 @@ export function AccomplishmentDataChart({
   title,
   description,
   data,
+  appearance,
+  onSelectBar,
+  selectedBarKey,
 }: {
   type: ChartType;
   title: string;
   description: string;
   data: ComparisonDatum[];
-}) {
+} & ChartInteraction) {
   return (
     <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
       <figcaption className="mb-5">
@@ -397,7 +553,14 @@ export function AccomplishmentDataChart({
           {description}
         </p>
       </figcaption>
-      <ComparisonChartVisual type={type} title={title} data={data} />
+      <ComparisonChartVisual
+        type={type}
+        title={title}
+        data={data}
+        appearance={appearance}
+        onSelectBar={onSelectBar}
+        selectedBarKey={selectedBarKey}
+      />
     </figure>
   );
 }
@@ -409,6 +572,9 @@ export function AccomplishmentIndicatorSeriesChart({
   data,
   hideCaption = false,
   preserveCategoryWidth = true,
+  appearance,
+  onSelectBar,
+  selectedBarKey,
 }: {
   type: ChartType;
   title: string;
@@ -416,7 +582,7 @@ export function AccomplishmentIndicatorSeriesChart({
   data: ComparisonDatum[];
   hideCaption?: boolean;
   preserveCategoryWidth?: boolean;
-}) {
+} & ChartInteraction) {
   return (
     <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
       {!hideCaption ? (
@@ -432,6 +598,9 @@ export function AccomplishmentIndicatorSeriesChart({
         title={title}
         data={data}
         preserveCategoryWidth={preserveCategoryWidth}
+        appearance={appearance}
+        onSelectBar={onSelectBar}
+        selectedBarKey={selectedBarKey}
       />
     </figure>
   );

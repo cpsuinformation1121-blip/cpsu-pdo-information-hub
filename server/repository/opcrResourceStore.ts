@@ -10,26 +10,7 @@ import { isR2NotFound } from "./r2Errors.ts";
 const key = "_system/opcr-resource.json";
 const defaults: OpcrResourceData = {
   version: 1,
-  nodes: [
-    {
-      id: "physical-performance",
-      parentId: null,
-      type: "section",
-      title: "Physical Performance",
-    },
-    {
-      id: "higher-education",
-      parentId: "physical-performance",
-      type: "group",
-      title: "Higher Education",
-    },
-    {
-      id: "higher-education-performance",
-      parentId: "higher-education",
-      type: "indicator",
-      title: "Performance based on...",
-    },
-  ],
+  nodes: [],
   entries: {},
   chartType: "column",
 };

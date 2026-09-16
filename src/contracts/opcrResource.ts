@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { reportAppearanceSchema } from "./reportAppearance";
 
 const nodeIdSchema = z
   .string()
@@ -37,6 +38,7 @@ export const opcrResourceDataSchema = z
       z.record(nodeIdSchema, indicatorEntrySchema),
     ),
     chartType: z.enum(["column", "line", "bar"]),
+    appearance: reportAppearanceSchema.optional(),
   })
   .superRefine((data, context) => {
     const nodesById = new Map(data.nodes.map((node) => [node.id, node]));

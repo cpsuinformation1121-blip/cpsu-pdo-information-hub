@@ -9,6 +9,7 @@ import {
   ChartColorLegend,
 } from "../features/accomplishments/AccomplishmentChart";
 import { formatPercentageValue } from "../features/accomplishments/chartData";
+import type { ReportAppearance } from "../features/accomplishments/reportAppearance";
 import {
   createOpcrAnnualIndicatorChartData,
   createOpcrAnnualIndicatorSeriesChartData,
@@ -34,7 +35,7 @@ const periods = [
 function displayValue(value: string | undefined, isPercentage: boolean) {
   const percentageValue = formatPercentageValue(value);
   if (isPercentage && percentageValue) return percentageValue;
-  return value?.trim() || "â€”";
+  return value?.trim() || "—";
 }
 
 function IndicatorDataTable({
@@ -67,10 +68,10 @@ function IndicatorDataTable({
                 <th rowSpan={2} scope="col" className="px-3 py-3 text-left">
                   Data type
                 </th>
-                <th colSpan={5} scope="colgroup" className="border-l border-strong-border px-3 py-2 text-center">
+                <th colSpan={periods.length} scope="colgroup" className="border-l border-strong-border px-3 py-2 text-center">
                   Target
                 </th>
-                <th colSpan={5} scope="colgroup" className="border-l-2 border-primary/30 bg-primary-soft px-3 py-2 text-center text-primary">
+                <th colSpan={periods.length} scope="colgroup" className="border-l-2 border-primary/30 bg-primary-soft px-3 py-2 text-center text-primary">
                   Accomplishment
                 </th>
               </tr>
@@ -123,10 +124,12 @@ function IndicatorResults({
   title,
   entry,
   chartType,
+  appearance,
 }: {
   title: string;
   entry?: IndicatorEntry;
   chartType: OpcrResourceData["chartType"];
+  appearance?: ReportAppearance;
 }) {
   const percentage = entry?.results;
 
@@ -135,7 +138,7 @@ function IndicatorResults({
       <div className="px-4 py-4 sm:px-5">
         <h4 className="text-sm font-semibold sm:text-base">{title}</h4>
         <div className="mt-3">
-          <ChartColorLegend compact />
+          <ChartColorLegend compact legend={appearance?.legend} />
         </div>
       </div>
 
@@ -149,6 +152,7 @@ function IndicatorResults({
             percentage?.accomplishment,
             ["total"],
           )}
+          appearance={appearance}
         />
         <AccomplishmentDataChart
           type={chartType}
@@ -159,6 +163,7 @@ function IndicatorResults({
             percentage?.accomplishment,
             ["h1", "h2"],
           )}
+          appearance={appearance}
         />
       </div>
 
@@ -245,7 +250,8 @@ export function OpcrPublicPage() {
                 Office Performance Commitment and Review (OPCR)
               </h1>
               <p className="mt-3 text-base leading-7 text-muted-foreground">
-                View annual targets and half-year results.
+                View annual targets and half-year results by MFO, PAP, and
+                performance indicator.
               </p>
             </div>
 
@@ -301,9 +307,9 @@ export function OpcrPublicPage() {
 
         {data && indicatorCount === 0 ? (
           <div className="rounded-2xl border border-border bg-surface px-5 py-10 text-center">
-            <h2 className="font-semibold">No OPCR data available</h2>
+            <h2 className="font-semibold">No MFO/PAP data available</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              No OPCR performance areas are available for {selectedYear}.
+              No MFO/PAP performance data is available for {selectedYear}.
             </p>
           </div>
         ) : null}
@@ -323,7 +329,7 @@ export function OpcrPublicPage() {
                     Annual OPCR Performance
                   </h2>
                   <div className="mt-3 flex justify-center">
-                    <ChartColorLegend compact />
+                    <ChartColorLegend compact legend={data.appearance?.legend} />
                   </div>
                 </div>
                 <div className="bg-surface-secondary/45 p-4 sm:p-5">
@@ -334,6 +340,7 @@ export function OpcrPublicPage() {
                     data={annualOverviewData}
                     hideCaption
                     preserveCategoryWidth
+                    appearance={data.appearance}
                   />
                 </div>
                 <details className="group border-t border-border bg-surface">
@@ -372,6 +379,7 @@ export function OpcrPublicPage() {
                         data={annualIndicatorData}
                         hideCaption
                         preserveCategoryWidth
+                        appearance={data.appearance}
                       />
                     </div>
                   </div>
@@ -412,6 +420,7 @@ export function OpcrPublicPage() {
                         title={indicator.title}
                         entry={entries[indicator.id]}
                         chartType={data.chartType}
+                        appearance={data.appearance}
                       />
                     ))}
                   </section>

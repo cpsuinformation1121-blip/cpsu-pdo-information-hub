@@ -42,6 +42,38 @@ describe("accomplishment resource contract", () => {
     expect(accomplishmentResourceDataSchema.parse(data)).toEqual(data);
   });
 
+  it("accepts chart appearance settings and rejects invalid colors", () => {
+    const base = {
+      version: 2 as const,
+      nodes,
+      entries: {},
+      chartType: "column" as const,
+    };
+
+    const parsed = accomplishmentResourceDataSchema.parse({
+      ...base,
+      appearance: {
+        legend: [
+          { id: "met", label: "Met target", color: "#14532d" },
+          { id: "custom-exceeded", label: "Exceeded", color: "#2563eb" },
+        ],
+        barColors: {
+          "completion-rate:total:accomplishment": "custom-exceeded",
+        },
+      },
+    });
+    expect(
+      parsed.appearance?.barColors?.["completion-rate:total:accomplishment"],
+    ).toBe("custom-exceeded");
+
+    expect(
+      accomplishmentResourceDataSchema.safeParse({
+        ...base,
+        appearance: { legend: [{ id: "met", label: "Met", color: "green" }] },
+      }).success,
+    ).toBe(false);
+  });
+
   it("migrates a legacy annual target into Target Total", () => {
     const migrated = accomplishmentResourceDataSchema.parse({
       version: 1,

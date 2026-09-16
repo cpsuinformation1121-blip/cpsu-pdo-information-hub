@@ -22,6 +22,7 @@ export function createOpcrComparisonChartData(
   target: OpcrPeriodValues | undefined,
   accomplishment: OpcrPeriodValues | undefined,
   selectedPeriods: ReadonlyArray<"h1" | "h2" | "total"> = ["h1", "h2", "total"],
+  colorKeyPrefix?: string,
 ): ComparisonDatum[] {
   const periodLabels = {
     h1: "H1",
@@ -49,6 +50,7 @@ export function createOpcrComparisonChartData(
         formatPercentageValue(accomplishmentValue) || "Not reported",
       accomplishmentNumeric,
       status: getComparisonStatus(targetNumeric, accomplishmentNumeric),
+      colorKey: colorKeyPrefix ? `${colorKeyPrefix}:${id}` : undefined,
     };
   });
 }
@@ -77,6 +79,7 @@ export function createOpcrAnnualIndicatorChartData(
         formatPercentageValue(accomplishmentValue) || "Not reported",
       accomplishmentNumeric,
       status: getComparisonStatus(targetNumeric, accomplishmentNumeric),
+      colorKey: `${indicator.id}:total`,
     }];
   });
 }
@@ -104,6 +107,7 @@ export function createOpcrAnnualIndicatorSeriesChartData(
         formatPercentageValue(accomplishmentValue) || "Not reported",
       accomplishmentNumeric,
       status: getComparisonStatus(targetNumeric, accomplishmentNumeric),
+      colorKey: `${indicatorId}:${year}:total`,
     };
   });
 }

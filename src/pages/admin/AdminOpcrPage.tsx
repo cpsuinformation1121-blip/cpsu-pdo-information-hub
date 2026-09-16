@@ -15,9 +15,15 @@ import { Fragment, useEffect, useState } from "react";
 import { AppDialog } from "../../components/ui/AppDialog";
 import type { OpcrResourceData } from "../../contracts/opcrResource";
 import { ChartColorLegend } from "../../features/accomplishments/AccomplishmentChart";
+import { ReportGraphOverview } from "../../features/accomplishments/ReportGraphOverview";
 import {
-  getAccomplishmentReportYears,
-} from "../../features/accomplishments/reportCalculations";
+  resolveReportLegend,
+  restoreReportAppearance,
+  upsertCustomLegendItem,
+  type ReportLegendItem,
+} from "../../features/accomplishments/reportAppearance";
+import { getAccomplishmentReportYears } from "../../features/accomplishments/reportCalculations";
+import { buildOpcrOverviewGroups } from "../../features/opcr/reportOverview";
 import {
   calculateHalfYearTotal,
   isHalfYearInputValid,
@@ -204,6 +210,12 @@ function OpcrResourceEditor({
   const [entries, setEntries] = useState<EntriesByYear>(initialData.entries);
   const [openNodes, setOpenNodes] = useState<Record<string, boolean>>({});
   const [chartType, setChartType] = useState(initialData.chartType);
+  const [legend, setLegend] = useState<ReportLegendItem[]>(() =>
+    resolveReportLegend(initialData.appearance?.legend),
+  );
+  const [barColors, setBarColors] = useState<Record<string, string>>(
+    initialData.appearance?.barColors ?? {},
+  );
   const [saveStatus, setSaveStatus] = useState<"saved" | "unsaved">("saved");
   const [saveConfirmationVisible, setSaveConfirmationVisible] = useState(false);
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -232,6 +244,7 @@ function OpcrResourceEditor({
         nodes,
         entries,
         chartType,
+        appearance: { legend, barColors },
       });
     },
     onSuccess: (savedData) => {
@@ -353,6 +366,71 @@ function OpcrResourceEditor({
     markUnsaved();
   }
 
+  function updateLegendItem(
+    id: string,
+    patch: Partial<Pick<ReportLegendItem, "label" | "color">>,
+  ) {
+    setLegend((items) =>
+      items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+    markUnsaved();
+  }
+
+  function removeLegendItem(id: string) {
+    setLegend((items) => items.filter((item) => item.id !== id));
+    setBarColors((colors) =>
+      Object.fromEntries(
+        Object.entries(colors).filter(([, legendId]) => legendId !== id),
+      ),
+    );
+    markUnsaved();
+  }
+
+  function updateBarColor(colorKey: string, legendId: string | undefined) {
+    setBarColors((colors) => {
+      const next = { ...colors };
+      if (legendId === undefined) delete next[colorKey];
+      else next[colorKey] = legendId;
+      return next;
+    });
+    markUnsaved();
+  }
+
+  function applyCustomBarColor(
+    colorKey: string,
+    color: string,
+    label: string,
+  ) {
+    const result = upsertCustomLegendItem(legend, color, label);
+    setLegend(result.legend);
+    setBarColors((colors) => ({ ...colors, [colorKey]: result.id }));
+    markUnsaved();
+  }
+
+  function restoreDefaults(options: {
+    legend: boolean;
+    indicatorIds: string[];
+  }) {
+    const next = restoreReportAppearance({ legend, barColors }, options);
+    setLegend(next.legend);
+    setBarColors(next.barColors);
+    markUnsaved();
+  }
+
+  const overviewGroups = buildOpcrOverviewGroups(
+    nodes,
+    entries[selectedYear] ?? {},
+  );
+  const overriddenIndicatorIds = new Set(
+    Object.keys(barColors).map((key) => key.split(":")[0]),
+  );
+  const restorableIndicators = nodes
+    .filter(
+      (node) =>
+        node.type === "indicator" && overriddenIndicatorIds.has(node.id),
+    )
+    .map((node) => ({ id: node.id, title: node.title }));
+
   const renderActions = (node: TreeNode) => (
     <NodeActions
       node={node}
@@ -379,7 +457,8 @@ function OpcrResourceEditor({
             Office Performance Commitment and Review (OPCR)
           </h1>
           <p className="mt-3 text-muted-foreground">
-            Set targets and half-year results.
+            Set targets and half-year results by MFO, its PAPs, and their
+            performance indicators.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -471,7 +550,7 @@ function OpcrResourceEditor({
                   rowSpan={2}
                   className="bg-surface-secondary px-5 py-4 lg:sticky lg:left-0 lg:z-30 lg:shadow-[1px_0_0_var(--strong-border)]"
                 >
-                  Performance area
+                  MFO/PAPs
                 </th>
                 <th
                   scope="col"
@@ -697,7 +776,7 @@ function OpcrResourceEditor({
           <div>
             <p className="text-sm font-semibold">Public chart colors</p>
             <div className="mt-2">
-              <ChartColorLegend compact />
+              <ChartColorLegend compact legend={legend} />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               Accomplishment colors compare each value with its matching target.
@@ -722,6 +801,19 @@ function OpcrResourceEditor({
           </label>
         </div>
       </div>
+
+      <ReportGraphOverview
+        chartType={chartType}
+        groups={overviewGroups}
+        legend={legend}
+        barColors={barColors}
+        onLegendItemChange={updateLegendItem}
+        onRemoveLegendItem={removeLegendItem}
+        onBarColorChange={updateBarColor}
+        onCustomBarColor={applyCustomBarColor}
+        restorableIndicators={restorableIndicators}
+        onRestore={restoreDefaults}
+      />
 
       {editor ? (
         <AppDialog
