@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { reportAppearanceSchema } from "./reportAppearance";
+import { reportAppearanceSchema } from "./reportAppearance.ts";
 
 const nodeIdSchema = z
   .string()
