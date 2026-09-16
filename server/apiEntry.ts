@@ -1,20 +1,20 @@
-import { handleAdminResourceAccessRequest } from "../server/http/adminResourceAccessHandler.ts";
-import { handleAdminResourceMutationRequest } from "../server/http/adminResourceMutationHandler.ts";
-import { handleAdminResourcesRequest } from "../server/http/adminResourcesHandler.ts";
-import { handleAdminSessionRequest } from "../server/http/adminSessionHandler.ts";
-import { handleAdminUsersRequest } from "../server/http/adminUsersHandler.ts";
-import { handleAccomplishmentResourceRequest } from "../server/http/accomplishmentResourceHandler.ts";
-import { handleOpcrResourceRequest } from "../server/http/opcrResourceHandler.ts";
-import { handlePublicAccomplishmentResourceRequest } from "../server/http/publicAccomplishmentResourceHandler.ts";
-import { handlePublicOpcrResourceRequest } from "../server/http/publicOpcrResourceHandler.ts";
-import { handlePublicResourcePreviewRequest } from "../server/http/publicResourcePreviewHandler.ts";
+import { handleAdminResourceAccessRequest } from "./http/adminResourceAccessHandler.ts";
+import { handleAdminResourceMutationRequest } from "./http/adminResourceMutationHandler.ts";
+import { handleAdminResourcesRequest } from "./http/adminResourcesHandler.ts";
+import { handleAdminSessionRequest } from "./http/adminSessionHandler.ts";
+import { handleAdminUsersRequest } from "./http/adminUsersHandler.ts";
+import { handleAccomplishmentResourceRequest } from "./http/accomplishmentResourceHandler.ts";
+import { handleOpcrResourceRequest } from "./http/opcrResourceHandler.ts";
+import { handlePublicAccomplishmentResourceRequest } from "./http/publicAccomplishmentResourceHandler.ts";
+import { handlePublicOpcrResourceRequest } from "./http/publicOpcrResourceHandler.ts";
+import { handlePublicResourcePreviewRequest } from "./http/publicResourcePreviewHandler.ts";
 import {
   handleAdminRepositoryStructureRequest,
   handleRepositoryStructureRequest,
-} from "../server/http/repositoryStructureHandler.ts";
-import { handleResourcesRequest } from "../server/http/resourcesHandler.ts";
-import { handleUploadAuthorizeRequest } from "../server/http/uploadAuthorizeHandler.ts";
-import { handleUploadCompleteRequest } from "../server/http/uploadCompleteHandler.ts";
+} from "./http/repositoryStructureHandler.ts";
+import { handleResourcesRequest } from "./http/resourcesHandler.ts";
+import { handleUploadAuthorizeRequest } from "./http/uploadAuthorizeHandler.ts";
+import { handleUploadCompleteRequest } from "./http/uploadCompleteHandler.ts";
 
 type ApiHandler = (request: Request) => Response | Promise<Response>;
 
