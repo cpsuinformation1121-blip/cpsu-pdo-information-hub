@@ -25,6 +25,13 @@ const nodes = [
 describe("accomplishment resource contract", () => {
   it("accepts quarterly target and accomplishment values", () => {
     const period = { q1: "1", q2: "2", q3: "3", q4: "4", total: "10" };
+    const rawPeriod = {
+      q1: "1,250 (estimated)",
+      q2: "N/A — pending",
+      q3: "50% / 75%",
+      q4: "José & Ana",
+      total: "Manual total: 1,300+",
+    };
     const data = {
       version: 2 as const,
       nodes,
@@ -32,7 +39,7 @@ describe("accomplishment resource contract", () => {
         "2026": {
           "completion-rate": {
             results: { target: period, accomplishment: period },
-            rawData: { target: period, accomplishment: period },
+            rawData: { target: rawPeriod, accomplishment: rawPeriod },
           },
         },
       },

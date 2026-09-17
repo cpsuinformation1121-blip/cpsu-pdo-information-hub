@@ -1,11 +1,26 @@
 {
-  "generated_at": "2026-09-07T02:52:24.278793+00:00",
+  "generated_at": "2026-09-17T03:54:20.300837+00:00",
   "nodes": {
     "agents_cloudflare_r2_repository": {
       "code_fingerprint": "7db74da8f6d68a0ac14bc3888821a530a45315f86be39727c32c0769dc3e95b9",
       "label": "Cloudflare R2 File Repository",
-      "last": "2026-08-17T02:52:30.441887+00:00",
+      "last": "2026-09-17T03:02:51.678041+00:00",
       "provenance": [
+        {
+          "date": "2026-09-17T03:02:51.678041+00:00",
+          "outcome": "useful",
+          "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
+        },
+        {
+          "date": "2026-09-17T02:35:34.587819+00:00",
+          "outcome": "useful",
+          "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
+        },
+        {
+          "date": "2026-09-07T02:58:23.339075+00:00",
+          "outcome": "useful",
+          "q": "analyze the whole codebase of this app please."
+        },
         {
           "date": "2026-08-17T02:52:30.441887+00:00",
           "outcome": "useful",
@@ -15,23 +30,23 @@
           "date": "2026-08-17T02:45:31.877397+00:00",
           "outcome": "useful",
           "q": "this project not been deployed to vercel yet please let us fix the problem guide me"
-        },
-        {
-          "date": "2026-08-17T02:38:57.187136+00:00",
-          "outcome": "useful",
-          "q": "please Identify the possible fix in this error since I am possitive my internet connection is fine though"
         }
       ],
-      "score": 1.846516906,
+      "score": 4.255025547,
       "source_file": "AGENTS.md",
       "status": "preferred",
-      "uses": 3
+      "uses": 6
     },
     "agents_protected_admin_flow": {
       "code_fingerprint": "7db74da8f6d68a0ac14bc3888821a530a45315f86be39727c32c0769dc3e95b9",
       "label": "Protected Administrator Authorization Flow",
-      "last": "2026-08-17T05:28:40.501140+00:00",
+      "last": "2026-09-07T02:58:23.339075+00:00",
       "provenance": [
+        {
+          "date": "2026-09-07T02:58:23.339075+00:00",
+          "outcome": "useful",
+          "q": "analyze the whole codebase of this app please."
+        },
         {
           "date": "2026-08-17T05:28:40.501140+00:00",
           "outcome": "useful",
@@ -51,17 +66,12 @@
           "date": "2026-08-17T02:45:31.877397+00:00",
           "outcome": "useful",
           "q": "this project not been deployed to vercel yet please let us fix the problem guide me"
-        },
-        {
-          "date": "2026-08-17T02:38:57.187136+00:00",
-          "outcome": "useful",
-          "q": "please Identify the possible fix in this error since I am possitive my internet connection is fine though"
         }
       ],
-      "score": 3.080636341,
+      "score": 3.235662449,
       "source_file": "AGENTS.md",
       "status": "preferred",
-      "uses": 5
+      "uses": 6
     },
     "agents_react_application": {
       "code_fingerprint": "7db74da8f6d68a0ac14bc3888821a530a45315f86be39727c32c0769dc3e95b9",
@@ -74,7 +84,7 @@
           "q": "check the whole codebase if everything is working, if there's a problem please list it and what is the possible fix in this system"
         }
       ],
-      "score": 0.617001825,
+      "score": 0.48922827,
       "source_file": "AGENTS.md",
       "status": "tentative",
       "uses": 1
@@ -82,8 +92,23 @@
     "agents_vercel_server_apis": {
       "code_fingerprint": "7db74da8f6d68a0ac14bc3888821a530a45315f86be39727c32c0769dc3e95b9",
       "label": "Vercel Server APIs",
-      "last": "2026-08-17T05:16:58.823403+00:00",
+      "last": "2026-09-17T03:02:51.678041+00:00",
       "provenance": [
+        {
+          "date": "2026-09-17T03:02:51.678041+00:00",
+          "outcome": "useful",
+          "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
+        },
+        {
+          "date": "2026-09-17T02:49:33.448226+00:00",
+          "outcome": "useful",
+          "q": "guide me to fix the recommended Vercel repair order"
+        },
+        {
+          "date": "2026-09-17T02:35:34.587819+00:00",
+          "outcome": "useful",
+          "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
+        },
         {
           "date": "2026-08-17T05:16:58.823403+00:00",
           "outcome": "useful",
@@ -95,10 +120,10 @@
           "q": "please Identify the possible fix in this error since I am possitive my internet connection is fine though"
         }
       ],
-      "score": 1.232441186,
+      "score": 3.974090216,
       "source_file": "AGENTS.md",
       "status": "preferred",
-      "uses": 2
+      "uses": 5
     },
     "design_aesthetics_accessible_long_term_interface": {
       "code_fingerprint": "3f8bdca1c23819f2e5966138edb354888f1f4e372b0abd4748c083a615530744",
@@ -111,13 +136,61 @@
           "q": "look at the choose file button it's not consistent to others"
         }
       ],
-      "score": 0.615861232,
+      "score": 0.48832388,
       "source_file": "DESIGN_AESTHETICS.md",
       "status": "tentative",
       "uses": 1
     },
+    "index_html_application_shell": {
+      "code_fingerprint": "c88e1a6fe66efc63e8da00d33f1089f3fce2feba20d6d9fbe1412bd2592d7dfe",
+      "label": "CPSU Information Hub HTML Application Shell",
+      "last": "2026-09-17T03:13:50.454461+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:13:50.454461+00:00",
+          "outcome": "useful",
+          "q": "Change the browser tab Vite logo to the official CPSU logo"
+        }
+      ],
+      "score": 0.999350427,
+      "source_file": "index.html",
+      "status": "tentative",
+      "uses": 1
+    },
+    "package_scripts_test": {
+      "code_fingerprint": "c2bc60364512c28e458507656273683e25983ddafebe34f545eecba03a3933a7",
+      "label": "test",
+      "last": "2026-09-07T02:58:23.339075+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T02:58:23.339075+00:00",
+          "outcome": "useful",
+          "q": "analyze the whole codebase of this app please."
+        }
+      ],
+      "score": 0.792988332,
+      "source_file": "package.json",
+      "status": "tentative",
+      "uses": 1
+    },
+    "public_favicon_favicon": {
+      "code_fingerprint": "61bc9a161de58248288e6905425d7180f0624c2865007b97d763fdac12043a66",
+      "label": "Application favicon",
+      "last": "2026-09-17T03:13:50.454461+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:13:50.454461+00:00",
+          "outcome": "useful",
+          "q": "Change the browser tab Vite logo to the official CPSU logo"
+        }
+      ],
+      "score": 0.999350427,
+      "source_file": "public/favicon.svg",
+      "status": "tentative",
+      "uses": 1
+    },
     "react": {
-      "code_fingerprint": "eeb41e80fd27de1cf9d2d4f6a4fe83c9ec567bd9901159c4565bcbc936ab44d9",
+      "code_fingerprint": "c2bc60364512c28e458507656273683e25983ddafebe34f545eecba03a3933a7",
       "label": "react",
       "last": "2026-08-17T03:21:39.630455+00:00",
       "provenance": [
@@ -127,8 +200,24 @@
           "q": "look at the choose file button it's not consistent to others"
         }
       ],
-      "score": 0.615861232,
+      "score": 0.48832388,
       "source_file": "package.json",
+      "status": "tentative",
+      "uses": 1
+    },
+    "readme_repository_architecture_boundary": {
+      "code_fingerprint": "13f34f12759a77054ea874b3a9ad2e5d6df01969eaaaac81deb83a5cd07c7b0d",
+      "label": "React to Vercel API to Cloudflare R2 Boundary",
+      "last": "2026-09-07T02:58:23.339075+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-07T02:58:23.339075+00:00",
+          "outcome": "useful",
+          "q": "analyze the whole codebase of this app please."
+        }
+      ],
+      "score": 0.792988332,
+      "source_file": "README.md",
       "status": "tentative",
       "uses": 1
     },
@@ -143,16 +232,63 @@
           "q": "Remove Excel files from upload so only images and PDF files can be uploaded."
         }
       ],
-      "score": 0.615192895,
+      "score": 0.487793948,
       "source_file": "tsconfig.node.json",
+      "status": "tentative",
+      "uses": 1
+    },
+    "server_auth_verifyfirebaseidtoken_verifyfirebaseidtoken": {
+      "code_fingerprint": "3bd3e9daba9688deb2304479877320eb176585a8ca42ed60a0999fdf7c1ecce7",
+      "label": "verifyFirebaseIdToken()",
+      "last": "2026-09-17T02:35:34.587819+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T02:35:34.587819+00:00",
+          "outcome": "useful",
+          "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
+        }
+      ],
+      "score": 0.998737058,
+      "source_file": "server/auth/verifyFirebaseIdToken.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "server_config_r2_getr2config": {
+      "code_fingerprint": "3f97435dad5660631e0cbe9055e48ab247724cab0f0cacd161280b06cbda4a86",
+      "label": "getR2Config()",
+      "last": "2026-09-17T03:02:51.678041+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:02:51.678041+00:00",
+          "outcome": "useful",
+          "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
+        }
+      ],
+      "score": 0.999174388,
+      "source_file": "server/config/r2.ts",
       "status": "tentative",
       "uses": 1
     },
     "server_config_r2_r2config": {
       "code_fingerprint": "3f97435dad5660631e0cbe9055e48ab247724cab0f0cacd161280b06cbda4a86",
       "label": "R2Config",
-      "last": "2026-08-17T02:52:30.441887+00:00",
+      "last": "2026-09-17T03:02:51.678041+00:00",
       "provenance": [
+        {
+          "date": "2026-09-17T03:02:51.678041+00:00",
+          "outcome": "useful",
+          "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
+        },
+        {
+          "date": "2026-09-17T02:49:33.448226+00:00",
+          "outcome": "useful",
+          "q": "guide me to fix the recommended Vercel repair order"
+        },
+        {
+          "date": "2026-09-17T02:35:34.587819+00:00",
+          "outcome": "useful",
+          "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
+        },
         {
           "date": "2026-08-17T02:52:30.441887+00:00",
           "outcome": "useful",
@@ -164,26 +300,79 @@
           "q": "this project not been deployed to vercel yet please let us fix the problem guide me"
         }
       ],
-      "score": 1.231077544,
+      "score": 3.973008967,
       "source_file": "server/config/r2.ts",
       "status": "preferred",
-      "uses": 2
+      "uses": 5
+    },
+    "server_http_adminsessionhandler_handleadminsessionrequest": {
+      "code_fingerprint": "a323c04a7aad5a1984dc34798b509b18ee602672e7eb0809f754524895baab37",
+      "label": "handleAdminSessionRequest()",
+      "last": "2026-09-17T02:49:33.448226+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T02:49:33.448226+00:00",
+          "outcome": "useful",
+          "q": "guide me to fix the recommended Vercel repair order"
+        }
+      ],
+      "score": 0.998961126,
+      "source_file": "server/http/adminSessionHandler.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "server_http_resourceshandler": {
+      "code_fingerprint": "99a5ff1e6a1a69e7d741d1fd0dffa1cb37f5fb0fbf8c2a9e7f4490a313200a4c",
+      "label": "resourcesHandler.ts",
+      "last": "2026-09-17T03:02:51.678041+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:02:51.678041+00:00",
+          "outcome": "useful",
+          "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
+        }
+      ],
+      "score": 0.999174388,
+      "source_file": "server/http/resourcesHandler.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "server_http_resourceshandler_handleresourcesrequest": {
+      "code_fingerprint": "99a5ff1e6a1a69e7d741d1fd0dffa1cb37f5fb0fbf8c2a9e7f4490a313200a4c",
+      "label": "handleResourcesRequest()",
+      "last": "2026-09-17T02:49:33.448226+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T02:49:33.448226+00:00",
+          "outcome": "useful",
+          "q": "guide me to fix the recommended Vercel repair order"
+        }
+      ],
+      "score": 0.998961126,
+      "source_file": "server/http/resourcesHandler.ts",
+      "status": "tentative",
+      "uses": 1
     },
     "server_repository_listresources_listresources": {
       "code_fingerprint": "569e8ff739b9282e531cde3507a713fbd72cc8a9565935b69d4206c0234684fe",
       "label": "listResources()",
-      "last": "2026-08-17T02:24:51.746746+00:00",
+      "last": "2026-09-17T03:02:51.678041+00:00",
       "provenance": [
+        {
+          "date": "2026-09-17T03:02:51.678041+00:00",
+          "outcome": "useful",
+          "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
+        },
         {
           "date": "2026-08-17T02:24:51.746746+00:00",
           "outcome": "useful",
           "q": "remove the excess excel visualizations in the whole codebase please analyze it"
         }
       ],
-      "score": 0.615300235,
+      "score": 1.487053447,
       "source_file": "server/repository/listResources.ts",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "src_app_app": {
       "code_fingerprint": "23a7c366bc6da83163bb98bc5e222b542558bd28be3e47fcea926695781320cb",
@@ -196,8 +385,24 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.615037215,
+      "score": 0.487670507,
       "source_file": "src/App.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_assets_cpsu_logo_transparent_official_seal": {
+      "code_fingerprint": "8027acc970afda6e768954728657453de0bbd333945d9fde84d23ceabe90b000",
+      "label": "Central Philippines State University Seal",
+      "last": "2026-09-17T03:13:50.454461+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:13:50.454461+00:00",
+          "outcome": "useful",
+          "q": "Change the browser tab Vite logo to the official CPSU logo"
+        }
+      ],
+      "score": 0.999350427,
+      "source_file": "src/assets/CPSU_Logo-transparent.png",
       "status": "tentative",
       "uses": 1
     },
@@ -212,7 +417,7 @@
           "q": "Change the header by moving the contents of the menu dropdown to the header, with no hamburger menu unless it is mobile view."
         }
       ],
-      "score": 0.615115892,
+      "score": 0.487732891,
       "source_file": "src/components/layout/PublicHeader.tsx",
       "status": "tentative",
       "uses": 1
@@ -233,13 +438,29 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 1.230153108,
+      "score": 0.975403398,
       "source_file": "src/components/layout/PublicHeader.tsx",
       "status": "preferred",
       "uses": 2
     },
+    "src_components_ui_appdialog_appdialog": {
+      "code_fingerprint": "ec92de182d5b0a49ed7c9ab029198fc1db048a63cda674e69dc01e75f0c449e1",
+      "label": "AppDialog()",
+      "last": "2026-09-17T03:48:55.572569+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:48:55.572569+00:00",
+          "outcome": "useful",
+          "q": "I have modifications in the image view section, it's not resizable. please optimized that."
+        }
+      ],
+      "score": 0.999913166,
+      "source_file": "src/components/ui/AppDialog.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
     "src_config_navigation": {
-      "code_fingerprint": "efdc0c8c04227867fe0da87888767da73c52c8b3780915d31f13f94e4017b242",
+      "code_fingerprint": "23e10d19101ee825cea5ffc783dc9182275f627737d0d113b1c785137690d057",
       "label": "navigation.ts",
       "last": "2026-08-17T02:06:11.241536+00:00",
       "provenance": [
@@ -249,13 +470,13 @@
           "q": "Change the header by moving the contents of the menu dropdown to the header, with no hamburger menu unless it is mobile view."
         }
       ],
-      "score": 0.615115892,
+      "score": 0.487732891,
       "source_file": "src/config/navigation.ts",
       "status": "tentative",
       "uses": 1
     },
     "src_config_navigation_publicnavigation": {
-      "code_fingerprint": "efdc0c8c04227867fe0da87888767da73c52c8b3780915d31f13f94e4017b242",
+      "code_fingerprint": "23e10d19101ee825cea5ffc783dc9182275f627737d0d113b1c785137690d057",
       "label": "publicNavigation",
       "last": "2026-08-17T02:06:11.241536+00:00",
       "provenance": [
@@ -265,7 +486,7 @@
           "q": "Change the header by moving the contents of the menu dropdown to the header, with no hamburger menu unless it is mobile view."
         }
       ],
-      "score": 0.615115892,
+      "score": 0.487732891,
       "source_file": "src/config/navigation.ts",
       "status": "tentative",
       "uses": 1
@@ -273,8 +494,18 @@
     "src_config_repository": {
       "code_fingerprint": "19c2df2bd5f4d61c1222dc12cfaf3281d0af5dee1f253f2e14dc281049213894",
       "label": "repository.ts",
-      "last": "2026-08-17T05:16:58.823403+00:00",
+      "last": "2026-09-17T02:35:34.587819+00:00",
       "provenance": [
+        {
+          "date": "2026-09-17T02:35:34.587819+00:00",
+          "outcome": "useful",
+          "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
+        },
+        {
+          "date": "2026-09-07T02:58:23.339075+00:00",
+          "outcome": "useful",
+          "q": "analyze the whole codebase of this app please."
+        },
         {
           "date": "2026-08-17T05:16:58.823403+00:00",
           "outcome": "useful",
@@ -286,10 +517,10 @@
           "q": "I have problem in this the name section files just make it under statistical profile or whatever and make sure to hierarchy in the categories please the no category first and so on whatever the arrangement of the categories please make it like that"
         }
       ],
-      "score": 1.232801005,
+      "score": 2.769228338,
       "source_file": "src/config/repository.ts",
       "status": "preferred",
-      "uses": 2
+      "uses": 4
     },
     "src_config_repository_repositorysections": {
       "code_fingerprint": "19c2df2bd5f4d61c1222dc12cfaf3281d0af5dee1f253f2e14dc281049213894",
@@ -302,62 +533,10 @@
           "q": "I have problem in this the name section files just make it under statistical profile or whatever and make sure to hierarchy in the categories please the no category first and so on whatever the arrangement of the categories please make it like that"
         }
       ],
-      "score": 0.61579918,
+      "score": 0.488274678,
       "source_file": "src/config/repository.ts",
       "status": "tentative",
       "uses": 1
-    },
-    "src_contracts_resource": {
-      "code_fingerprint": "64c38af08f220e3f96f0c690458a8b41f96cfa31c0f924d7c5a57a43dfcaad74",
-      "label": "resource.ts",
-      "last": "2026-08-17T02:13:59.335128+00:00",
-      "provenance": [
-        {
-          "date": "2026-08-17T02:13:59.335128+00:00",
-          "outcome": "useful",
-          "q": "Remove Excel files from upload so only images and PDF files can be uploaded."
-        }
-      ],
-      "score": 0.615192895,
-      "source_file": "src/contracts/resource.ts",
-      "status": "tentative",
-      "uses": 1
-    },
-    "src_contracts_resource_resource": {
-      "code_fingerprint": "64c38af08f220e3f96f0c690458a8b41f96cfa31c0f924d7c5a57a43dfcaad74",
-      "label": "Resource",
-      "last": "2026-08-17T05:28:40.501140+00:00",
-      "provenance": [
-        {
-          "date": "2026-08-17T05:28:40.501140+00:00",
-          "outcome": "useful",
-          "q": "in the admin/resources please fix this names it should be one line."
-        },
-        {
-          "date": "2026-08-17T05:16:58.823403+00:00",
-          "outcome": "useful",
-          "q": "check the whole codebase if everything is working, if there's a problem please list it and what is the possible fix in this system"
-        },
-        {
-          "date": "2026-08-17T03:21:39.630455+00:00",
-          "outcome": "useful",
-          "q": "look at the choose file button it's not consistent to others"
-        },
-        {
-          "date": "2026-08-17T03:15:22.838625+00:00",
-          "outcome": "useful",
-          "q": "I have problem in this the name section files just make it under statistical profile or whatever and make sure to hierarchy in the categories please the no category first and so on whatever the arrangement of the categories please make it like that"
-        },
-        {
-          "date": "2026-08-17T02:24:51.746746+00:00",
-          "outcome": "useful",
-          "q": "remove the excess excel visualizations in the whole codebase please analyze it"
-        }
-      ],
-      "score": 3.696272977,
-      "source_file": "src/contracts/resource.ts",
-      "status": "preferred",
-      "uses": 6
     },
     "src_contracts_resource_resourcefiledefinitions": {
       "code_fingerprint": "64c38af08f220e3f96f0c690458a8b41f96cfa31c0f924d7c5a57a43dfcaad74",
@@ -370,7 +549,7 @@
           "q": "remove the excess excel visualizations in the whole codebase please analyze it"
         }
       ],
-      "score": 0.615300235,
+      "score": 0.487879059,
       "source_file": "src/contracts/resource.ts",
       "status": "tentative",
       "uses": 1
@@ -386,7 +565,7 @@
           "q": "look at the choose file button it's not consistent to others"
         }
       ],
-      "score": 0.615861232,
+      "score": 0.48832388,
       "source_file": "src/contracts/resource.ts",
       "status": "tentative",
       "uses": 1
@@ -402,13 +581,45 @@
           "q": "in the admin/resources please fix this names it should be one line."
         }
       ],
-      "score": 0.61711761,
+      "score": 0.489320078,
       "source_file": "src/contracts/resource.ts",
       "status": "tentative",
       "uses": 1
     },
+    "src_features_auth_adminroutes": {
+      "code_fingerprint": "df170ce534b0420cc7ed29008f77b03345cf351df893af9c88a2677509f6bbf5",
+      "label": "AdminRoutes.tsx",
+      "last": "2026-09-17T02:49:33.448226+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T02:49:33.448226+00:00",
+          "outcome": "useful",
+          "q": "guide me to fix the recommended Vercel repair order"
+        }
+      ],
+      "score": 0.998961126,
+      "source_file": "src/features/auth/AdminRoutes.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_repository_publicresourcepreviewdialog_publicresourcepreviewdialog": {
+      "code_fingerprint": "e1fa5a85f3c2d6ade834e33c8ec9e08136ef47754d45018906724609d56f0b14",
+      "label": "PublicResourcePreviewDialog()",
+      "last": "2026-09-17T03:48:55.572569+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:48:55.572569+00:00",
+          "outcome": "useful",
+          "q": "I have modifications in the image view section, it's not resizable. please optimized that."
+        }
+      ],
+      "score": 0.999913166,
+      "source_file": "src/features/repository/PublicResourcePreviewDialog.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
     "src_layouts_publiclayout_publiclayout": {
-      "code_fingerprint": "a2763d93771fa933c6bddd2b1a9343616135f8aaaf7f0b6769401617f5de7307",
+      "code_fingerprint": "d580e91f4f275e493690e3a0879d5f6c5e0f1240dacc81ec9b2311e00e59c3dc",
       "label": "PublicLayout()",
       "last": "2026-08-17T02:06:11.241536+00:00",
       "provenance": [
@@ -423,13 +634,13 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 1.230153108,
+      "score": 0.975403398,
       "source_file": "src/layouts/PublicLayout.tsx",
       "status": "preferred",
       "uses": 2
     },
     "src_pages_homepage_homepage": {
-      "code_fingerprint": "78f48fb34475fa4c37ed78d028a1e86418732abb0ee2124ef3345077b266383c",
+      "code_fingerprint": "9d44b43796fb72cc1edac164d5836dd8c3a290272528462a923ba1a7de91f781",
       "label": "HomePage()",
       "last": "2026-08-17T01:58:12.910676+00:00",
       "provenance": [
@@ -439,13 +650,13 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.615037215,
+      "score": 0.487670507,
       "source_file": "src/pages/HomePage.tsx",
       "status": "tentative",
       "uses": 1
     },
     "src_pages_repositorypage_repositorypage": {
-      "code_fingerprint": "d559d14322be4812a3530a8d6417d6b15cd35e8013d010857cd7dac3fe7ce3ab",
+      "code_fingerprint": "01cd6685e02d99d16a1075c00057cd9c385fcafe7c7a64e900b4dc6ca8ab98cb",
       "label": "RepositoryPage()",
       "last": "2026-08-17T01:58:12.910676+00:00",
       "provenance": [
@@ -455,13 +666,13 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.615037215,
+      "score": 0.487670507,
       "source_file": "src/pages/RepositoryPage.tsx",
       "status": "tentative",
       "uses": 1
     },
     "src_routes_approuter_approuter": {
-      "code_fingerprint": "daca7e25aafd59ab9d0851a52119176413ec051cc562fc3e2100e51d70547e22",
+      "code_fingerprint": "548ad20f80e19f41a51767344e0efcddc8900e4f81eef7023d2857a8ddf12c27",
       "label": "AppRouter()",
       "last": "2026-08-17T01:58:12.910676+00:00",
       "provenance": [
@@ -471,10 +682,31 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.615037215,
+      "score": 0.487670507,
       "source_file": "src/routes/AppRouter.tsx",
       "status": "tentative",
       "uses": 1
+    },
+    "vercel": {
+      "code_fingerprint": "31605665c56cf09b3b65a639704ad75aacc436e56a4a10c5e5ddc3d6bc3333f4",
+      "label": "vercel.json",
+      "last": "2026-09-17T02:49:33.448226+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T02:49:33.448226+00:00",
+          "outcome": "useful",
+          "q": "guide me to fix the recommended Vercel repair order"
+        },
+        {
+          "date": "2026-09-17T02:35:34.587819+00:00",
+          "outcome": "useful",
+          "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
+        }
+      ],
+      "score": 1.997698184,
+      "source_file": "vercel.json",
+      "status": "preferred",
+      "uses": 2
     }
   },
   "version": 1

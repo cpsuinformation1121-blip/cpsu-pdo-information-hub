@@ -703,7 +703,12 @@ function OpcrResourceEditor({
                                                   <div className="relative">
                                                     <input
                                                       aria-label={`${dataRow.label} ${field.label} ${group.label.toLowerCase()} for ${indicator.title}`}
-                                                      inputMode="decimal"
+                                                      inputMode={
+                                                        dataRow.id === "results"
+                                                          ? "decimal"
+                                                          : "text"
+                                                      }
+                                                      maxLength={2_000}
                                                       title={
                                                         field.id === "total"
                                                           ? "Automatically calculated from Q1 to Q4. You can edit this total."
@@ -720,6 +725,8 @@ function OpcrResourceEditor({
                                                       }
                                                       onChange={(event) => {
                                                         if (
+                                                          dataRow.id ===
+                                                            "results" &&
                                                           field.id !== "total" &&
                                                           !isHalfYearInputValid(
                                                             event.target.value,
