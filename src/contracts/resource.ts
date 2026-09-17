@@ -7,6 +7,7 @@ export const repositorySectionIds = [
   "financial-performance",
   "planning-documents",
   "other-resources",
+  "forms",
 ] as const;
 
 export const resourceFileTypes = ["pdf", "xlsx", "image"] as const;

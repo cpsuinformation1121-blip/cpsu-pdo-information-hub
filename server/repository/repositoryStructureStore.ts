@@ -12,6 +12,27 @@ const defaults = repositorySections.map(({ id, title, categories }) => ({
   categories: categories.map(({ id: categoryId, title: categoryTitle }) => ({ id: categoryId, title: categoryTitle })),
 }))
 
+const requiredSectionIds = ['forms'] as const
+
+/**
+ * Applies additive structure migrations to repositories created by an older
+ * deployment. Existing administrator-managed sections and categories are
+ * preserved exactly as stored.
+ */
+export function applyRequiredStructureMigrations(
+  structure: ManagedSection[],
+): ManagedSection[] {
+  const migrated = structuredClone(structure)
+
+  for (const id of requiredSectionIds) {
+    if (migrated.some((section) => section.id === id)) continue
+    const requiredSection = defaults.find((section) => section.id === id)
+    if (requiredSection) migrated.push(structuredClone(requiredSection))
+  }
+
+  return migrated
+}
+
 type RepositoryStructureSnapshot = {
   data: ManagedSection[]
   etag: string | null
@@ -48,7 +69,9 @@ async function readRepositoryStructureSnapshot(
     const object = await client.send(new GetObjectCommand({ Bucket: config.bucketName, Key: key }))
     if (!object.ETag) throw new Error('Repository structure revision is unavailable.')
     return {
-      data: repositoryStructureSchema.parse(JSON.parse(await bodyText(object.Body))).data,
+      data: applyRequiredStructureMigrations(
+        repositoryStructureSchema.parse(JSON.parse(await bodyText(object.Body))).data,
+      ),
       etag: object.ETag,
     }
   } catch (error) {

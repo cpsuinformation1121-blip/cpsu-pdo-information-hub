@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { ManagedSection } from '../../src/contracts/repositoryStructure.ts'
-import { createRepositoryStructureWriteCommand } from './repositoryStructureStore.ts'
+import {
+  applyRequiredStructureMigrations,
+  createRepositoryStructureWriteCommand,
+} from './repositoryStructureStore.ts'
 
 const data: ManagedSection[] = [{ id: 'reports', title: 'Reports', categories: [] }]
 
@@ -15,5 +18,30 @@ describe('repository structure conditional writes', () => {
     const command = createRepositoryStructureWriteCommand('bucket', data, null)
     expect(command.input.IfNoneMatch).toBe('*')
     expect(command.input.IfMatch).toBeUndefined()
+  })
+})
+
+describe('required repository structure migrations', () => {
+  it('adds Forms to repository structures saved by older deployments', () => {
+    const migrated = applyRequiredStructureMigrations([
+      { id: 'other-resources', title: 'Other Resources', categories: [] },
+    ])
+
+    expect(migrated).toEqual([
+      { id: 'other-resources', title: 'Other Resources', categories: [] },
+      { id: 'forms', title: 'Forms', categories: [] },
+    ])
+  })
+
+  it('preserves an existing administrator-managed Forms section', () => {
+    const existing = [
+      {
+        id: 'forms',
+        title: 'Office Forms',
+        categories: [{ id: 'requests', title: 'Request Forms' }],
+      },
+    ]
+
+    expect(applyRequiredStructureMigrations(existing)).toEqual(existing)
   })
 })

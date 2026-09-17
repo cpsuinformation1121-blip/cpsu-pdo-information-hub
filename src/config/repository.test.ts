@@ -20,4 +20,11 @@ describe("repository configuration", () => {
     expect(repositoryCategoryIds.size).toBe(categoryIds.length);
     expect(repositoryCategoryById.size).toBe(categoryIds.length);
   });
+
+  it("exposes the Forms section at its public repository filter", () => {
+    expect(repositorySections.find((section) => section.id === "forms")).toMatchObject({
+      title: "Forms",
+      path: "/repository?section=forms",
+    });
+  });
 });

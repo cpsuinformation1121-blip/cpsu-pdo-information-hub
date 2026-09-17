@@ -87,6 +87,14 @@ export const repositorySections: readonly RepositorySection[] = [
     path: "/repository?section=other-resources",
     categories: [{ id: "other-resources", title: "Other Resources" }],
   },
+  {
+    id: "forms",
+    code: "G",
+    title: "Forms",
+    description: "Official downloadable forms maintained by the office.",
+    path: "/repository?section=forms",
+    categories: [],
+  },
 ];
 
 export const repositorySectionById = new Map(

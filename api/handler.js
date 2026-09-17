@@ -344,6 +344,14 @@ var repositorySections = [
     description: "Other published resources maintained by the office.",
     path: "/repository?section=other-resources",
     categories: [{ id: "other-resources", title: "Other Resources" }]
+  },
+  {
+    id: "forms",
+    code: "G",
+    title: "Forms",
+    description: "Official downloadable forms maintained by the office.",
+    path: "/repository?section=forms",
+    categories: []
   }
 ];
 var repositorySectionById = new Map(
@@ -495,6 +503,16 @@ var defaults = repositorySections.map(({ id, title, categories }) => ({
   title,
   categories: categories.map(({ id: categoryId, title: categoryTitle }) => ({ id: categoryId, title: categoryTitle }))
 }));
+var requiredSectionIds = ["forms"];
+function applyRequiredStructureMigrations(structure) {
+  const migrated = structuredClone(structure);
+  for (const id of requiredSectionIds) {
+    if (migrated.some((section) => section.id === id)) continue;
+    const requiredSection = defaults.find((section) => section.id === id);
+    if (requiredSection) migrated.push(structuredClone(requiredSection));
+  }
+  return migrated;
+}
 var RepositoryStructureConflictError = class extends Error {
   constructor() {
     super("The repository organization changed while you were editing it. Refresh the page and try again.");
@@ -515,7 +533,9 @@ async function readRepositoryStructureSnapshot(environment = process.env) {
     const object = await client.send(new GetObjectCommand({ Bucket: config.bucketName, Key: key }));
     if (!object.ETag) throw new Error("Repository structure revision is unavailable.");
     return {
-      data: repositoryStructureSchema.parse(JSON.parse(await bodyText(object.Body))).data,
+      data: applyRequiredStructureMigrations(
+        repositoryStructureSchema.parse(JSON.parse(await bodyText(object.Body))).data
+      ),
       etag: object.ETag
     };
   } catch (error) {
