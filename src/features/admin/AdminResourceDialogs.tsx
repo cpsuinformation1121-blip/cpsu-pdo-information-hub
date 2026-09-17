@@ -1,5 +1,6 @@
 import type { AdminResource } from "../../contracts/resource";
 import { AppDialog } from "../../components/ui/AppDialog";
+import { LazyPdfPreview } from "../repository/LazyPdfPreview";
 
 export type RenameTarget = {
   key: string;
@@ -46,12 +47,12 @@ export function AdminResourcePreviewDialog({
             className="max-h-[65dvh] w-full object-contain"
           />
         ) : (
-          <iframe
-            src={target.url}
-            title={`Preview of ${target.resource.displayName}`}
-            referrerPolicy="no-referrer"
-            className="h-[65dvh] w-full border border-border bg-surface-secondary"
-          />
+          <div className="flex h-[65dvh] min-h-0">
+            <LazyPdfPreview
+              url={target.url}
+              title={target.resource.displayName}
+            />
+          </div>
         )}
         <div className="mt-4 flex justify-end">
           <button

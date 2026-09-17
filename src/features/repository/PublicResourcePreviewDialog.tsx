@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import type { PublicResource } from "../../contracts/resource";
 import { AppDialog } from "../../components/ui/AppDialog";
+import { LazyPdfPreview } from "./LazyPdfPreview";
 
 const MIN_ZOOM = 50;
 const MAX_ZOOM = 250;
@@ -130,14 +131,7 @@ export function PublicResourcePreviewDialog({
             </div>
           </>
         ) : (
-          <div className="min-h-0 flex-1 p-3 sm:p-5">
-            <iframe
-              src={url}
-              title={`Preview of ${resource.displayName}`}
-              referrerPolicy="no-referrer"
-              className="h-full min-h-80 w-full rounded-xl border border-border bg-white"
-            />
-          </div>
+          <LazyPdfPreview url={url} title={resource.displayName} />
         )}
       </div>
     </AppDialog>
