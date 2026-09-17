@@ -102,6 +102,14 @@ export async function handleAdminResourceAccessRequest(
     const structure = dependencies.structure ??
       await readRepositoryStructure(dependencies.environment)
     const resource = parseResourceObjectKey(result.data.key, structure)
+    if (resource.fileType === 'link') {
+      return json({
+        error: {
+          code: 'RESOURCE_NOT_FILE',
+          message: 'Links must be opened with the link action.',
+        },
+      }, 400)
+    }
     if (result.data.mode === 'preview' && resource.fileType === 'xlsx') {
       return json({
         error: {

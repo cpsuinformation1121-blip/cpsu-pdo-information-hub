@@ -5,6 +5,10 @@ import {
   type Administrator,
 } from "../contracts/adminOperations";
 import { parseApiError, readJsonResponse } from "./apiResponse";
+import {
+  resourceLinkCreateResponseSchema,
+  type ResourceLinkCreate,
+} from "../contracts/resourceLink";
 
 async function request(
   user: User,
@@ -49,6 +53,14 @@ export async function updateAdministrator(
 }
 export async function deleteAdministrator(user: User, uid: string) {
   return request(user, "/api/admin/users", "DELETE", { uid });
+}
+export async function createResourceLink(
+  user: User,
+  input: ResourceLinkCreate,
+) {
+  return resourceLinkCreateResponseSchema.parse(
+    await request(user, "/api/admin/resource", "POST", input),
+  ).data.key;
 }
 export async function renameResource(
   user: User,

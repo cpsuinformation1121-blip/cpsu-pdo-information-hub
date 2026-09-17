@@ -230,4 +230,22 @@ describe("accomplishment chart data", () => {
       },
     ]);
   });
+
+  it("orders the annual indicator series from earliest to latest year", () => {
+    const entry = {
+      employability: {
+        results: { target, accomplishment },
+      },
+    };
+    const input = [
+      { year: 2026, entries: entry },
+      { year: 2024, entries: entry },
+      { year: 2025, entries: entry },
+    ];
+
+    const data = createAnnualIndicatorSeriesChartData("employability", input);
+
+    expect(data.map((item) => item.label)).toEqual(["2024", "2025", "2026"]);
+    expect(input.map((item) => item.year)).toEqual([2026, 2024, 2025]);
+  });
 });

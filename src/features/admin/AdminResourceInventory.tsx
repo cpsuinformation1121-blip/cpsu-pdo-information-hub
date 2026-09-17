@@ -44,6 +44,7 @@ const fileTypeOptions: readonly {
   { value: "", label: "All file types" },
   { value: "pdf", label: "PDF documents" },
   { value: "image", label: "Images" },
+  { value: "link", label: "Links" },
 ];
 
 const sortOptions: readonly { value: ResourceSort; label: string }[] = [
@@ -154,10 +155,13 @@ export function AdminResourceInventory() {
   }
 
   function openRename(resource: AdminResource) {
+    const editableName =
+      resource.fileType === "link" ? resource.displayName : resource.filename;
     setRenameTarget({
       key: resource.key,
-      original: resource.filename,
-      value: resource.filename,
+      original: editableName,
+      value: editableName,
+      isLink: resource.fileType === "link",
     });
   }
 
@@ -183,7 +187,7 @@ export function AdminResourceInventory() {
               resetPage();
             }}
             type="search"
-            placeholder="File, category, or year"
+            placeholder="Resource, category, or year"
             className="mt-2 min-h-11 w-full border border-strong-border bg-surface pl-10 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </label>
@@ -308,7 +312,9 @@ export function AdminResourceInventory() {
             {resourcesQuery.data.data.map((resource) => (
               <li key={resource.key} className="p-4">
                 <p className="break-words text-sm font-semibold leading-6 [overflow-wrap:anywhere]">
-                  {resource.filename}
+                  {resource.fileType === "link"
+                    ? resource.displayName
+                    : resource.filename}
                 </p>
                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div className="col-span-2">
@@ -409,7 +415,9 @@ export function AdminResourceInventory() {
                   >
                     <td className="px-5 py-5">
                       <p className="break-all font-semibold">
-                        {resource.filename}
+                        {resource.fileType === "link"
+                    ? resource.displayName
+                    : resource.filename}
                       </p>
                     </td>
                     <td className="px-5 py-5 text-sm">
@@ -524,7 +532,9 @@ export function AdminResourceInventory() {
           onSubmit={() =>
             renameMutation.mutate({
               key: renameTarget.key,
-              filename: renameTarget.value,
+              filename: renameTarget.isLink
+                ? `${renameTarget.value}.link`
+                : renameTarget.value,
             })
           }
         />

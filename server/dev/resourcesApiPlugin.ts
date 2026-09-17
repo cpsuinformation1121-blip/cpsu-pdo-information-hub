@@ -1,5 +1,6 @@
 import type { Plugin } from "vite";
 import { handlePublicResourcePreviewRequest } from "../http/publicResourcePreviewHandler.ts";
+import { handlePublicResourceLinkRequest } from "../http/publicResourceLinkHandler.ts";
 import { handleResourcesRequest } from "../http/resourcesHandler.ts";
 import { createDevRequest, writeDevResponse } from "./httpAdapter.ts";
 
@@ -14,7 +15,11 @@ export function resourcesApiPlugin(environment: NodeJS.ProcessEnv): Plugin {
         }
 
         const path = new URL(request.url, "http://localhost").pathname;
-        if (path !== "/api/resources" && path !== "/api/resource-preview") {
+        if (
+          path !== "/api/resources" &&
+          path !== "/api/resource-preview" &&
+          path !== "/api/resource-link"
+        ) {
           next();
           return;
         }
@@ -25,7 +30,11 @@ export function resourcesApiPlugin(environment: NodeJS.ProcessEnv): Plugin {
             ? await handlePublicResourcePreviewRequest(apiRequest, {
                 environment,
               })
-            : await handleResourcesRequest(apiRequest, { environment });
+            : path === "/api/resource-link"
+              ? await handlePublicResourceLinkRequest(apiRequest, {
+                  environment,
+                })
+              : await handleResourcesRequest(apiRequest, { environment });
 
         await writeDevResponse(response, apiResponse);
       });

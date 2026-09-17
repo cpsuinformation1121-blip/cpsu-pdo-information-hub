@@ -155,7 +155,8 @@ export function createAnnualIndicatorSeriesChartData(
   indicatorId: string,
   yearData: AnnualIndicatorYearData[],
 ): ComparisonDatum[] {
-  return yearData.flatMap(({ year, entries }) => {
+  const orderedYearData = [...yearData].sort((a, b) => a.year - b.year);
+  return orderedYearData.flatMap(({ year, entries }) => {
     const selected = selectPreferredChartData(entries[indicatorId], ["total"]);
     if (!selected) return [];
     const targetValue = selected.row.target.total?.trim() ?? "";

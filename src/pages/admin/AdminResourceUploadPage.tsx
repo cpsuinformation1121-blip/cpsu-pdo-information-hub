@@ -7,10 +7,10 @@ export function AdminResourceUploadPage() {
         id="upload-title"
         className="font-serif text-3xl tracking-tight sm:text-4xl"
       >
-        Upload a file
+        Add a resource
       </h1>
       <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">
-        Choose its section, year, and optional category.
+        Upload a file or publish a secure link in the selected repository location.
       </p>
       <ResourceUploadForm />
     </section>

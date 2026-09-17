@@ -10,7 +10,7 @@ export const repositorySectionIds = [
   "forms",
 ] as const;
 
-export const resourceFileTypes = ["pdf", "xlsx", "image"] as const;
+export const resourceFileTypes = ["pdf", "xlsx", "image", "link"] as const;
 
 export const resourceFileDefinitions = {
   pdf: { fileType: "pdf", mimeType: "application/pdf" },
@@ -23,6 +23,10 @@ export const resourceFileDefinitions = {
   jpeg: { fileType: "image", mimeType: "image/jpeg" },
   png: { fileType: "image", mimeType: "image/png" },
   webp: { fileType: "image", mimeType: "image/webp" },
+  link: {
+    fileType: "link",
+    mimeType: "application/vnd.cpsu.repository-link+json",
+  },
 } as const;
 
 export const resourceSortOptions = [

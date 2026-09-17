@@ -24,6 +24,7 @@ const fileTypeOptions: readonly {
   { value: "", label: "All file types" },
   { value: "pdf", label: "PDF documents" },
   { value: "image", label: "Images" },
+  { value: "link", label: "Links" },
 ];
 
 const sortOptions: readonly { value: ResourceSort; label: string }[] = [

@@ -131,4 +131,28 @@ describe('listResources', () => {
       }),
     ).rejects.toBeInstanceOf(InvalidResourceCursorError)
   })
+  it('lists link metadata publicly without exposing the R2 key or destination URL', async () => {
+    const result = await listResources(resourceQuerySchema.parse({}), {
+      config: testConfig,
+      listObjects: async () => ({
+        Contents: [{
+          Key: 'forms/excel/2027-2028/MIS DPCR Evaluation Form.link',
+          Size: 58,
+          LastModified: new Date('2026-09-17T08:00:00.000Z'),
+        }],
+        IsTruncated: false,
+      }),
+    })
+
+    expect(result.data).toEqual([
+      expect.objectContaining({
+        displayName: 'MIS DPCR Evaluation Form',
+        filename: 'MIS DPCR Evaluation Form.link',
+        fileType: 'link',
+        mimeType: 'application/vnd.cpsu.repository-link+json',
+      }),
+    ])
+    expect(result.data[0]).not.toHaveProperty('key')
+    expect(JSON.stringify(result)).not.toContain('forms.example.edu')
+  })
 })

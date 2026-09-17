@@ -57,4 +57,24 @@ describe("OPCR chart data", () => {
       accomplishmentNumeric: 95,
     });
   });
+
+  it("orders the annual indicator series from earliest to latest year", () => {
+    const entry = {
+      services: {
+        results: {
+          target: { ...blank, total: "90" },
+          accomplishment: { ...blank, total: "95" },
+        },
+        rawData: { target: blank, accomplishment: blank },
+      },
+    };
+
+    const data = createOpcrAnnualIndicatorSeriesChartData("services", [
+      { year: 2026, entries: entry },
+      { year: 2024, entries: entry },
+      { year: 2025, entries: entry },
+    ]);
+
+    expect(data.map((item) => item.label)).toEqual(["2024", "2025", "2026"]);
+  });
 });

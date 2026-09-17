@@ -6,6 +6,7 @@ export type RenameTarget = {
   key: string;
   original: string;
   value: string;
+  isLink: boolean;
 };
 
 export type DeleteTarget = {
@@ -83,7 +84,11 @@ export function AdminResourceRenameDialog({
   return (
     <AppDialog
       title="Rename"
-      description="Keep the file extension unchanged."
+      description={
+        target.isLink
+          ? "Change the public name of this link."
+          : "Keep the file extension unchanged."
+      }
       onClose={onClose}
     >
       <form
@@ -94,7 +99,7 @@ export function AdminResourceRenameDialog({
         className="p-5 sm:p-6"
       >
         <label className="text-sm font-semibold">
-          Filename
+          {target.isLink ? "Link name" : "Filename"}
           <input
             autoFocus
             required

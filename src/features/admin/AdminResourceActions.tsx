@@ -1,4 +1,4 @@
-import { Download, Eye, Pencil, Trash2 } from "lucide-react";
+import { Download, ExternalLink, Eye, Pencil, Trash2 } from "lucide-react";
 import type { AdminResource } from "../../contracts/resource";
 import type { AdminResourceAccessMode } from "../../contracts/adminResourceAccess";
 
@@ -26,32 +26,48 @@ export function AdminResourceActions({
 }: AdminResourceActionsProps) {
   const canPreview =
     resource.fileType === "pdf" || resource.fileType === "image";
+  const isLink = resource.fileType === "link";
 
   return (
     <div>
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-x-4 sm:gap-y-2">
-        {canPreview ? (
-          <button
-            type="button"
-            disabled={accessDisabled}
-            onClick={() => onAccess(resource, "preview")}
-            aria-label={`Preview ${resource.filename}`}
+        {isLink ? (
+          <a
+            href={`/api/resource-link?id=${encodeURIComponent(resource.id)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            referrerPolicy="no-referrer"
             className={actionClassName}
           >
-            <Eye className="mr-1.5 size-4" aria-hidden="true" />
-            {accessPendingMode === "preview" ? "Opening..." : "Preview"}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          disabled={accessDisabled}
-          onClick={() => onAccess(resource, "download")}
-          aria-label={`Download ${resource.filename}`}
-          className={actionClassName}
-        >
-          <Download className="mr-1.5 size-4" aria-hidden="true" />
-          {accessPendingMode === "download" ? "Preparing..." : "Download"}
-        </button>
+            <ExternalLink className="mr-1.5 size-4" aria-hidden="true" />
+            Open link
+          </a>
+        ) : (
+          <>
+            {canPreview ? (
+              <button
+                type="button"
+                disabled={accessDisabled}
+                onClick={() => onAccess(resource, "preview")}
+                aria-label={`Preview ${resource.filename}`}
+                className={actionClassName}
+              >
+                <Eye className="mr-1.5 size-4" aria-hidden="true" />
+                {accessPendingMode === "preview" ? "Opening..." : "Preview"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              disabled={accessDisabled}
+              onClick={() => onAccess(resource, "download")}
+              aria-label={`Download ${resource.filename}`}
+              className={actionClassName}
+            >
+              <Download className="mr-1.5 size-4" aria-hidden="true" />
+              {accessPendingMode === "download" ? "Preparing..." : "Download"}
+            </button>
+          </>
+        )}
         <button
           type="button"
           onClick={() => onRename(resource)}

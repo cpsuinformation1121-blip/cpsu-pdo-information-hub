@@ -4,6 +4,7 @@ const resourceFileTypeLabels: Record<ResourceFileType, string> = {
   pdf: "PDF",
   image: "Image",
   xlsx: "File",
+  link: "Link",
 };
 
 export function formatResourceFileType(fileType: ResourceFileType) {

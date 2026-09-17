@@ -1,5 +1,7 @@
-import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3'
+import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { resourceDeleteSchema, resourceRenameSchema } from '../../src/contracts/adminOperations.ts'
+import { resourceLinkCreateSchema } from '../../src/contracts/resourceLink.ts'
+import { resourceFileDefinitions } from '../../src/contracts/resource.ts'
 import {
   AdminAuthenticationError,
   AdminAuthorizationError,
@@ -25,7 +27,7 @@ type ResourceMutationDependencies = AdminAuthenticationDependencies & {
     title: string
     categories: readonly { id: string; title: string }[]
   }[]
-  send?: (command: HeadObjectCommand | CopyObjectCommand | DeleteObjectCommand) => Promise<unknown>
+  send?: (command: HeadObjectCommand | CopyObjectCommand | DeleteObjectCommand | PutObjectCommand) => Promise<unknown>
 }
 
 function addDestinationMustNotExist(command: CopyObjectCommand) {
@@ -65,13 +67,50 @@ export async function handleAdminResourceMutationRequest(
   const send = dependencies.send ?? ((command) => {
     if (command instanceof HeadObjectCommand) return client.send(command)
     if (command instanceof CopyObjectCommand) return client.send(command)
+    if (command instanceof PutObjectCommand) return client.send(command)
     return client.send(command)
   })
   const audit = dependencies.audit ?? recordAuditEvent
 
   try {
     const structure = dependencies.structure ?? await readRepositoryStructure(dependencies.environment)
-    if (request.method === 'DELETE') {
+    if (request.method === 'POST') {
+      const result = resourceLinkCreateSchema.safeParse(payload)
+      if (!result.success) return json({ error: { code: 'INVALID_REQUEST', message: 'The link details are invalid.', details: result.error.issues.map((issue) => ({ field: issue.path.join('.') || 'link', message: issue.message })) } }, 400)
+      const section = structure.find((item) => item.id === result.data.sectionId)
+      if (!section) return json({ error: { code: 'INVALID_SECTION', message: 'The selected repository section is unavailable.' } }, 400)
+      if (result.data.categoryId && !section.categories.some((category) => category.id === result.data.categoryId)) {
+        return json({ error: { code: 'INVALID_CATEGORY', message: 'The selected category does not belong to the repository section.' } }, 400)
+      }
+
+      const filename = `${result.data.name}.link`
+      const targetKey = result.data.categoryId
+        ? `${result.data.sectionId}/${result.data.categoryId}/${result.data.year}/${filename}`
+        : `${result.data.sectionId}/${result.data.year}/${filename}`
+      await audit({
+        action: 'resource.uploaded',
+        actor: identity,
+        target: targetKey,
+        outcome: 'attempted',
+        details: { resourceType: 'link' },
+      }, dependencies.environment)
+      try {
+        await send(new PutObjectCommand({
+          Bucket: config.bucketName,
+          Key: targetKey,
+          Body: JSON.stringify({ url: result.data.url }),
+          ContentType: resourceFileDefinitions.link.mimeType,
+          CacheControl: 'private, no-store',
+          IfNoneMatch: '*',
+        }))
+      } catch (error) {
+        if (isR2PreconditionFailed(error)) {
+          return json({ error: { code: 'DUPLICATE_RESOURCE', message: 'A link with that name already exists in this location.' } }, 409)
+        }
+        throw error
+      }
+      return json({ data: { key: targetKey } }, 201)
+    }    if (request.method === 'DELETE') {
       const result = resourceDeleteSchema.safeParse(payload)
       if (!result.success) return json({ error: { code: 'INVALID_REQUEST', message: 'The deletion request is invalid.' } }, 400)
       const parsed = parseResourceObjectKey(result.data.key, structure)
@@ -123,7 +162,7 @@ export async function handleAdminResourceMutationRequest(
       return json({ data: { key: targetKey } })
     }
 
-    return json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Only PATCH and DELETE are supported.' } }, 405)
+    return json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Only POST, PATCH, and DELETE are supported.' } }, 405)
   } catch {
     return json({ error: { code: 'RESOURCE_OPERATION_FAILED', message: 'The repository operation could not be completed.' } }, 500)
   }

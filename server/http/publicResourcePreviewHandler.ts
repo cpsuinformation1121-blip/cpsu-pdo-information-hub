@@ -96,12 +96,12 @@ export async function handlePublicResourcePreviewRequest(
       );
     }
 
-    if (resource.fileType === "xlsx") {
+    if (resource.fileType === "xlsx" || resource.fileType === "link") {
       return json(
         {
           error: {
             code: "RESOURCE_NOT_PREVIEWABLE",
-            message: "Online preview is not available for spreadsheet files.",
+            message: "Online file preview is not available for this resource.",
           },
         },
         400,

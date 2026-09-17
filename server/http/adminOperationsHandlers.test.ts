@@ -1,4 +1,4 @@
-import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3'
+import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import type { Auth, DecodedIdToken, UserRecord } from 'firebase-admin/auth'
 import { describe, expect, it, vi } from 'vitest'
 import { repositorySections } from '../../src/config/repository.ts'
@@ -160,5 +160,82 @@ describe('administrator operation authorization', () => {
 
     expect(response.status).toBe(409)
     expect(commands.some((command) => command instanceof DeleteObjectCommand)).toBe(false)
+  })
+  it('creates a private link object with a server-validated name and destination', async () => {
+    const send = vi.fn(async (command: unknown) => {
+      expect(command).toBeInstanceOf(PutObjectCommand)
+      return {}
+    })
+    const audit = vi.fn(async () => '_system/audit/test.json')
+    const response = await handleAdminResourceMutationRequest(
+      new Request('http://localhost/api/admin/resource', {
+        method: 'POST',
+        headers: { authorization: 'Bearer valid', 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: 'MIS DPCR Evaluation Form',
+          url: 'https://forms.example.edu/dpcr',
+          sectionId: 'forms',
+          categoryId: 'excel',
+          year: '2027-2028',
+        }),
+      }),
+      {
+        verifyIdToken: async () => administrator,
+        config,
+        structure: repositorySections,
+        send,
+        audit,
+      },
+    )
+
+    expect(response.status).toBe(201)
+    await expect(response.json()).resolves.toEqual({
+      data: { key: 'forms/excel/2027-2028/MIS DPCR Evaluation Form.link' },
+    })
+    const command = send.mock.calls[0]?.[0]
+    expect(command).toBeInstanceOf(PutObjectCommand)
+    expect((command as PutObjectCommand).input).toMatchObject({
+      Bucket: 'repository',
+      Key: 'forms/excel/2027-2028/MIS DPCR Evaluation Form.link',
+      ContentType: 'application/vnd.cpsu.repository-link+json',
+      CacheControl: 'private, no-store',
+      IfNoneMatch: '*',
+    })
+    expect((command as PutObjectCommand).input.Body).toBe(
+      JSON.stringify({ url: 'https://forms.example.edu/dpcr' }),
+    )
+    expect(audit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'resource.uploaded',
+        details: { resourceType: 'link' },
+      }),
+      undefined,
+    )
+  })
+
+  it('rejects insecure link destinations before writing to R2', async () => {
+    const send = vi.fn()
+    const response = await handleAdminResourceMutationRequest(
+      new Request('http://localhost/api/admin/resource', {
+        method: 'POST',
+        headers: { authorization: 'Bearer valid', 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Unsafe link',
+          url: 'http://example.test/form',
+          sectionId: 'forms',
+          categoryId: 'excel',
+          year: '2027-2028',
+        }),
+      }),
+      {
+        verifyIdToken: async () => administrator,
+        config,
+        structure: repositorySections,
+        send,
+      },
+    )
+
+    expect(response.status).toBe(400)
+    expect(send).not.toHaveBeenCalled()
   })
 })

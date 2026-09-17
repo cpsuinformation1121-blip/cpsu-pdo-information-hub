@@ -97,7 +97,8 @@ export function createOpcrAnnualIndicatorSeriesChartData(
   indicatorId: string,
   yearData: Array<{ year: number; entries: Record<string, OpcrEntry> }>,
 ): ComparisonDatum[] {
-  return yearData.flatMap(({ year, entries }) => {
+  const orderedYearData = [...yearData].sort((a, b) => a.year - b.year);
+  return orderedYearData.flatMap(({ year, entries }) => {
     const selected = selectPreferredChartData(entries[indicatorId], ["total"]);
     if (!selected) return [];
     const targetValue = selected.row.target.total?.trim() ?? "";

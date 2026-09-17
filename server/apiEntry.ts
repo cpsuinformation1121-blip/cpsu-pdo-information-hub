@@ -8,6 +8,7 @@ import { handleOpcrResourceRequest } from "./http/opcrResourceHandler.ts";
 import { handlePublicAccomplishmentResourceRequest } from "./http/publicAccomplishmentResourceHandler.ts";
 import { handlePublicOpcrResourceRequest } from "./http/publicOpcrResourceHandler.ts";
 import { handlePublicResourcePreviewRequest } from "./http/publicResourcePreviewHandler.ts";
+import { handlePublicResourceLinkRequest } from "./http/publicResourceLinkHandler.ts";
 import {
   handleAdminRepositoryStructureRequest,
   handleRepositoryStructureRequest,
@@ -23,6 +24,7 @@ const rewrittenApiPathParameter = "__apiPath";
 const routes: Record<string, ApiHandler> = {
   "/api/resources": handleResourcesRequest,
   "/api/resource-preview": handlePublicResourcePreviewRequest,
+  "/api/resource-link": handlePublicResourceLinkRequest,
   "/api/repository-structure": handleRepositoryStructureRequest,
   "/api/accomplishments": handlePublicAccomplishmentResourceRequest,
   "/api/opcr": handlePublicOpcrResourceRequest,
