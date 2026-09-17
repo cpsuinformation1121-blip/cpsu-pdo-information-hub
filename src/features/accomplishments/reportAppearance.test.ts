@@ -18,6 +18,7 @@ function datum(overrides: Partial<ComparisonDatum> = {}): ComparisonDatum {
     accomplishmentDisplay: "70%",
     accomplishmentNumeric: 70,
     status: "below",
+    dataSource: "percentage",
     colorKey: "indicator-a:total",
     ...overrides,
   };

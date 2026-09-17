@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   annualComparisonFields,
+  chartDataSourceLabel,
   createAnnualIndicatorChartData,
   createAnnualIndicatorSeriesChartData,
   createComparisonChartData,
   getComparisonScaleMax,
   parseAccomplishmentNumber,
   quarterlyComparisonFields,
+  selectPreferredChartData,
 } from "./chartData";
 
 const target = { q1: "80", q2: "80", q3: "", q4: "90", total: "85" };
@@ -22,6 +24,10 @@ describe("accomplishment chart data", () => {
   it("parses numbers, percentages, decimals, and grouped values", () => {
     expect(parseAccomplishmentNumber("90%")).toBe(90);
     expect(parseAccomplishmentNumber("1,234.5")).toBe(1234.5);
+    expect(parseAccomplishmentNumber("(27)")).toBe(27);
+    expect(parseAccomplishmentNumber("₱1,250 (estimated)")).toBe(1250);
+    expect(parseAccomplishmentNumber("63*")).toBe(63);
+    expect(parseAccomplishmentNumber("50% / 75%")).toBeNull();
     expect(parseAccomplishmentNumber("not reported")).toBeNull();
     expect(parseAccomplishmentNumber("-2")).toBeNull();
   });
@@ -61,6 +67,76 @@ describe("accomplishment chart data", () => {
       accomplishmentNumeric: 88,
       status: "met",
     });
+  });
+
+  it("prioritizes Percentage data and falls back to Raw Data only when needed", () => {
+    const blank = { q1: "", q2: "", q3: "", q4: "", total: "" };
+    const raw = {
+      target: { ...target, total: "1,200" },
+      accomplishment: { ...accomplishment, total: "1,350" },
+    };
+
+    expect(
+      selectPreferredChartData(
+        {
+          results: { target: blank, accomplishment: blank },
+          rawData: raw,
+        },
+        ["total"],
+      ),
+    ).toMatchObject({ source: "rawData", row: raw });
+
+    expect(
+      selectPreferredChartData(
+        {
+          results: { target, accomplishment },
+          rawData: raw,
+        },
+        ["total"],
+      )?.source,
+    ).toBe("percentage");
+  });
+
+  it("labels raw fallback values without percentage signs", () => {
+    const blank = { q1: "", q2: "", q3: "", q4: "", total: "" };
+    const data = createAnnualIndicatorChartData(
+      [{ id: "graduates", title: "Graduates" }],
+      {
+        graduates: {
+          results: { target: blank, accomplishment: blank },
+          rawData: {
+            target: { ...blank, total: "1,200" },
+            accomplishment: { ...blank, total: "1,350" },
+          },
+        },
+      },
+    );
+
+    expect(data[0]).toMatchObject({
+      dataSource: "rawData",
+      targetDisplay: "1,200",
+      accomplishmentDisplay: "1,350",
+      targetNumeric: 1200,
+      accomplishmentNumeric: 1350,
+    });
+    expect(chartDataSourceLabel(data)).toBe("Raw Data");
+  });
+
+  it("identifies an annual summary containing both data sources", () => {
+    const percentageDatum = createComparisonChartData(
+      target,
+      accomplishment,
+      annualComparisonFields,
+    )[0];
+    const rawDatum = {
+      ...percentageDatum,
+      id: "raw",
+      dataSource: "rawData" as const,
+    };
+
+    expect(chartDataSourceLabel([percentageDatum, rawDatum])).toBe(
+      "Percentage + Raw Data",
+    );
   });
 
   it("creates one annual comparison category per reported indicator", () => {

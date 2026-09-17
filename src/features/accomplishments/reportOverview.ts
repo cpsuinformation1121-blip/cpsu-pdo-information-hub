@@ -4,6 +4,7 @@ import {
   createAnnualIndicatorChartData,
   createComparisonChartData,
   quarterlyComparisonFields,
+  selectPreferredChartData,
 } from "./chartData";
 import type { ReportOverviewGroup } from "./ReportGraphOverview";
 
@@ -43,31 +44,40 @@ export function buildAccomplishmentOverviewGroups(
           (node) => node.type === "indicator" && node.parentId === group.id,
         )
         .flatMap((indicator) => {
-          const results = entries[indicator.id]?.results;
+          const entry = entries[indicator.id];
+          const annual = selectPreferredChartData(entry, ["total"]);
+          const quarterly = selectPreferredChartData(entry, [
+            "q1",
+            "q2",
+            "q3",
+            "q4",
+          ]);
           return [
-            {
+            ...(annual ? [{
               id: `${indicator.id}-annual`,
               title: `${indicator.title} — Annual total`,
               description: "Cumulative target and accomplishment.",
               data: createComparisonChartData(
-                results?.target,
-                results?.accomplishment,
+                annual.row.target,
+                annual.row.accomplishment,
                 annualComparisonFields,
                 indicator.id,
+                annual.source,
               ),
-            },
-            {
+            }] : []),
+            ...(quarterly ? [{
               id: `${indicator.id}-quarterly`,
               title: `${indicator.title} — Quarterly performance`,
               description:
                 "Target compared with accomplishment for each quarter.",
               data: createComparisonChartData(
-                results?.target,
-                results?.accomplishment,
+                quarterly.row.target,
+                quarterly.row.accomplishment,
                 quarterlyComparisonFields,
                 indicator.id,
+                quarterly.source,
               ),
-            },
+            }] : []),
           ];
         });
 

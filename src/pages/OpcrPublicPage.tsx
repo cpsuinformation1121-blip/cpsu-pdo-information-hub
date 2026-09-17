@@ -8,7 +8,10 @@ import {
   AccomplishmentIndicatorSeriesChart,
   ChartColorLegend,
 } from "../features/accomplishments/AccomplishmentChart";
-import { formatPercentageValue } from "../features/accomplishments/chartData";
+import {
+  formatPercentageValue,
+  selectPreferredChartData,
+} from "../features/accomplishments/chartData";
 import type { ReportAppearance } from "../features/accomplishments/reportAppearance";
 import {
   createOpcrAnnualIndicatorChartData,
@@ -131,7 +134,8 @@ function IndicatorResults({
   chartType: OpcrResourceData["chartType"];
   appearance?: ReportAppearance;
 }) {
-  const percentage = entry?.results;
+  const annual = selectPreferredChartData(entry, ["total"]);
+  const halfYear = selectPreferredChartData(entry, ["h1", "h2"]);
 
   return (
     <article className="border-t border-border first:border-t-0">
@@ -142,29 +146,33 @@ function IndicatorResults({
         </div>
       </div>
 
-      <div className="grid gap-4 border-t border-border bg-surface-secondary/45 p-4 sm:p-5 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.2fr)]">
-        <AccomplishmentDataChart
+      <div className={`grid gap-4 border-t border-border bg-surface-secondary/45 p-4 sm:p-5 ${annual && halfYear ? "lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.2fr)]" : ""}`}>
+        {annual ? <AccomplishmentDataChart
           type={chartType}
           title="Annual total"
           description="Cumulative target and accomplishment."
           data={createOpcrComparisonChartData(
-            percentage?.target,
-            percentage?.accomplishment,
+            annual.row.target,
+            annual.row.accomplishment,
             ["total"],
+            undefined,
+            annual.source,
           )}
           appearance={appearance}
-        />
-        <AccomplishmentDataChart
+        /> : null}
+        {halfYear ? <AccomplishmentDataChart
           type={chartType}
           title="Half-year performance"
           description="Target compared with accomplishment for each half-year period."
           data={createOpcrComparisonChartData(
-            percentage?.target,
-            percentage?.accomplishment,
+            halfYear.row.target,
+            halfYear.row.accomplishment,
             ["h1", "h2"],
+            undefined,
+            halfYear.source,
           )}
           appearance={appearance}
-        />
+        /> : null}
       </div>
 
       <IndicatorDataTable title={title} entry={entry} />

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-17T03:54:20.300837+00:00",
+  "generated_at": "2026-09-17T05:41:07.313103+00:00",
   "nodes": {
     "agents_cloudflare_r2_repository": {
       "code_fingerprint": "7db74da8f6d68a0ac14bc3888821a530a45315f86be39727c32c0769dc3e95b9",
@@ -32,7 +32,7 @@
           "q": "this project not been deployed to vercel yet please let us fix the problem guide me"
         }
       ],
-      "score": 4.255025547,
+      "score": 4.247741442,
       "source_file": "AGENTS.md",
       "status": "preferred",
       "uses": 6
@@ -68,7 +68,7 @@
           "q": "this project not been deployed to vercel yet please let us fix the problem guide me"
         }
       ],
-      "score": 3.235662449,
+      "score": 3.230123374,
       "source_file": "AGENTS.md",
       "status": "preferred",
       "uses": 6
@@ -84,7 +84,7 @@
           "q": "check the whole codebase if everything is working, if there's a problem please list it and what is the possible fix in this system"
         }
       ],
-      "score": 0.48922827,
+      "score": 0.488390768,
       "source_file": "AGENTS.md",
       "status": "tentative",
       "uses": 1
@@ -120,7 +120,7 @@
           "q": "please Identify the possible fix in this error since I am possitive my internet connection is fine though"
         }
       ],
-      "score": 3.974090216,
+      "score": 3.967287039,
       "source_file": "AGENTS.md",
       "status": "preferred",
       "uses": 5
@@ -136,7 +136,7 @@
           "q": "look at the choose file button it's not consistent to others"
         }
       ],
-      "score": 0.48832388,
+      "score": 0.487487927,
       "source_file": "DESIGN_AESTHETICS.md",
       "status": "tentative",
       "uses": 1
@@ -152,7 +152,7 @@
           "q": "Change the browser tab Vite logo to the official CPSU logo"
         }
       ],
-      "score": 0.999350427,
+      "score": 0.997639656,
       "source_file": "index.html",
       "status": "tentative",
       "uses": 1
@@ -168,7 +168,7 @@
           "q": "analyze the whole codebase of this app please."
         }
       ],
-      "score": 0.792988332,
+      "score": 0.791630828,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -184,7 +184,7 @@
           "q": "Change the browser tab Vite logo to the official CPSU logo"
         }
       ],
-      "score": 0.999350427,
+      "score": 0.997639656,
       "source_file": "public/favicon.svg",
       "status": "tentative",
       "uses": 1
@@ -200,7 +200,7 @@
           "q": "look at the choose file button it's not consistent to others"
         }
       ],
-      "score": 0.48832388,
+      "score": 0.487487927,
       "source_file": "package.json",
       "status": "tentative",
       "uses": 1
@@ -216,7 +216,7 @@
           "q": "analyze the whole codebase of this app please."
         }
       ],
-      "score": 0.792988332,
+      "score": 0.791630828,
       "source_file": "README.md",
       "status": "tentative",
       "uses": 1
@@ -232,7 +232,7 @@
           "q": "Remove Excel files from upload so only images and PDF files can be uploaded."
         }
       ],
-      "score": 0.487793948,
+      "score": 0.486958902,
       "source_file": "tsconfig.node.json",
       "status": "tentative",
       "uses": 1
@@ -248,7 +248,7 @@
           "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
         }
       ],
-      "score": 0.998737058,
+      "score": 0.997027337,
       "source_file": "server/auth/verifyFirebaseIdToken.ts",
       "status": "tentative",
       "uses": 1
@@ -264,7 +264,7 @@
           "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
         }
       ],
-      "score": 0.999174388,
+      "score": 0.997463919,
       "source_file": "server/config/r2.ts",
       "status": "tentative",
       "uses": 1
@@ -300,7 +300,7 @@
           "q": "this project not been deployed to vercel yet please let us fix the problem guide me"
         }
       ],
-      "score": 3.973008967,
+      "score": 3.966207642,
       "source_file": "server/config/r2.ts",
       "status": "preferred",
       "uses": 5
@@ -316,7 +316,7 @@
           "q": "guide me to fix the recommended Vercel repair order"
         }
       ],
-      "score": 0.998961126,
+      "score": 0.997251022,
       "source_file": "server/http/adminSessionHandler.ts",
       "status": "tentative",
       "uses": 1
@@ -332,7 +332,7 @@
           "q": "Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment"
         }
       ],
-      "score": 0.999174388,
+      "score": 0.997463919,
       "source_file": "server/http/resourcesHandler.ts",
       "status": "tentative",
       "uses": 1
@@ -348,7 +348,7 @@
           "q": "guide me to fix the recommended Vercel repair order"
         }
       ],
-      "score": 0.998961126,
+      "score": 0.997251022,
       "source_file": "server/http/resourcesHandler.ts",
       "status": "tentative",
       "uses": 1
@@ -369,7 +369,7 @@
           "q": "remove the excess excel visualizations in the whole codebase please analyze it"
         }
       ],
-      "score": 1.487053447,
+      "score": 1.484507786,
       "source_file": "server/repository/listResources.ts",
       "status": "preferred",
       "uses": 2
@@ -385,7 +385,7 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.487670507,
+      "score": 0.486835672,
       "source_file": "src/App.tsx",
       "status": "tentative",
       "uses": 1
@@ -401,7 +401,7 @@
           "q": "Change the browser tab Vite logo to the official CPSU logo"
         }
       ],
-      "score": 0.999350427,
+      "score": 0.997639656,
       "source_file": "src/assets/CPSU_Logo-transparent.png",
       "status": "tentative",
       "uses": 1
@@ -417,7 +417,7 @@
           "q": "Change the header by moving the contents of the menu dropdown to the header, with no hamburger menu unless it is mobile view."
         }
       ],
-      "score": 0.487732891,
+      "score": 0.48689795,
       "source_file": "src/components/layout/PublicHeader.tsx",
       "status": "tentative",
       "uses": 1
@@ -438,7 +438,7 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.975403398,
+      "score": 0.973733622,
       "source_file": "src/components/layout/PublicHeader.tsx",
       "status": "preferred",
       "uses": 2
@@ -454,7 +454,7 @@
           "q": "I have modifications in the image view section, it's not resizable. please optimized that."
         }
       ],
-      "score": 0.999913166,
+      "score": 0.998201431,
       "source_file": "src/components/ui/AppDialog.tsx",
       "status": "tentative",
       "uses": 1
@@ -470,7 +470,7 @@
           "q": "Change the header by moving the contents of the menu dropdown to the header, with no hamburger menu unless it is mobile view."
         }
       ],
-      "score": 0.487732891,
+      "score": 0.48689795,
       "source_file": "src/config/navigation.ts",
       "status": "tentative",
       "uses": 1
@@ -486,7 +486,7 @@
           "q": "Change the header by moving the contents of the menu dropdown to the header, with no hamburger menu unless it is mobile view."
         }
       ],
-      "score": 0.487732891,
+      "score": 0.48689795,
       "source_file": "src/config/navigation.ts",
       "status": "tentative",
       "uses": 1
@@ -517,7 +517,7 @@
           "q": "I have problem in this the name section files just make it under statistical profile or whatever and make sure to hierarchy in the categories please the no category first and so on whatever the arrangement of the categories please make it like that"
         }
       ],
-      "score": 2.769228338,
+      "score": 2.764487743,
       "source_file": "src/config/repository.ts",
       "status": "preferred",
       "uses": 4
@@ -533,8 +533,40 @@
           "q": "I have problem in this the name section files just make it under statistical profile or whatever and make sure to hierarchy in the categories please the no category first and so on whatever the arrangement of the categories please make it like that"
         }
       ],
-      "score": 0.488274678,
+      "score": 0.487438809,
       "source_file": "src/config/repository.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_contracts_accomplishmentresource_accomplishmentresourcedataschema": {
+      "code_fingerprint": "97c60e36f5384988eda5cb2bb7de89ace8e8e6ffdd1b4a21efb2401e7ce9b56e",
+      "label": "accomplishmentResourceDataSchema",
+      "last": "2026-09-17T03:58:54.642825+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:58:54.642825+00:00",
+          "outcome": "useful",
+          "q": "in the raw data please accept special characters input please implement that"
+        }
+      ],
+      "score": 0.998361358,
+      "source_file": "src/contracts/accomplishmentResource.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_contracts_opcrresource_opcrresourcedataschema": {
+      "code_fingerprint": "e393f43637413bbc4afe6eea4305cb63f74cafb9e3e1061b0e4256f71440d8f8",
+      "label": "opcrResourceDataSchema",
+      "last": "2026-09-17T03:58:54.642825+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:58:54.642825+00:00",
+          "outcome": "useful",
+          "q": "in the raw data please accept special characters input please implement that"
+        }
+      ],
+      "score": 0.998361358,
+      "source_file": "src/contracts/opcrResource.ts",
       "status": "tentative",
       "uses": 1
     },
@@ -549,7 +581,7 @@
           "q": "remove the excess excel visualizations in the whole codebase please analyze it"
         }
       ],
-      "score": 0.487879059,
+      "score": 0.487043867,
       "source_file": "src/contracts/resource.ts",
       "status": "tentative",
       "uses": 1
@@ -565,7 +597,7 @@
           "q": "look at the choose file button it's not consistent to others"
         }
       ],
-      "score": 0.48832388,
+      "score": 0.487487927,
       "source_file": "src/contracts/resource.ts",
       "status": "tentative",
       "uses": 1
@@ -581,8 +613,104 @@
           "q": "in the admin/resources please fix this names it should be one line."
         }
       ],
-      "score": 0.489320078,
+      "score": 0.488482419,
       "source_file": "src/contracts/resource.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_accomplishments_accomplishmentchart_accomplishmentdatachart": {
+      "code_fingerprint": "49d35853f7e472a423158e127bca7f2d365baddd116551b94e806c63aa88ea1b",
+      "label": "AccomplishmentDataChart()",
+      "last": "2026-09-17T05:30:37.847888+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:30:37.847888+00:00",
+          "outcome": "useful",
+          "q": "I have some adjustments in the data graph presentation, some data's inputted only raw data but the graph visualization is only prioritizing the percentage, make an instances that if it's only the raw data inputted the graph will also show but it indicates as raw data just indicate all the graphs shown what is it, whether it is accomplishment or raw graph, then if the data was inputted in percentage and raw the graph shown will be prioritizing the percentage not the raw, raw graph only shows when the inputted data is only in raw."
+        }
+      ],
+      "score": 0.999831684,
+      "source_file": "src/features/accomplishments/AccomplishmentChart.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_accomplishments_accomplishmentchart_accomplishmentindicatorserieschart": {
+      "code_fingerprint": "49d35853f7e472a423158e127bca7f2d365baddd116551b94e806c63aa88ea1b",
+      "label": "AccomplishmentIndicatorSeriesChart()",
+      "last": "2026-09-17T05:39:10.579966+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:39:10.579966+00:00",
+          "outcome": "useful",
+          "q": "this annual summarization is only resizing not side scroller please fix that not just in the opcr but also in the accomplishment report. and also in the due to the effect of the special characters the data is not showing please fix that as well making sure it still showing the graph even with special characters."
+        }
+      ],
+      "score": 0.999968784,
+      "source_file": "src/features/accomplishments/AccomplishmentChart.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_accomplishments_accomplishmentchart_comparisonchartvisual": {
+      "code_fingerprint": "49d35853f7e472a423158e127bca7f2d365baddd116551b94e806c63aa88ea1b",
+      "label": "ComparisonChartVisual()",
+      "last": "2026-09-17T05:39:10.579966+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:39:10.579966+00:00",
+          "outcome": "useful",
+          "q": "this annual summarization is only resizing not side scroller please fix that not just in the opcr but also in the accomplishment report. and also in the due to the effect of the special characters the data is not showing please fix that as well making sure it still showing the graph even with special characters."
+        }
+      ],
+      "score": 0.999968784,
+      "source_file": "src/features/accomplishments/AccomplishmentChart.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_accomplishments_chartdata": {
+      "code_fingerprint": "b54498b36a6d558d7cfab1ab5726d4ece51a8024a3308624284f5a2de9a96de7",
+      "label": "chartData.ts",
+      "last": "2026-09-17T05:30:37.847888+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:30:37.847888+00:00",
+          "outcome": "useful",
+          "q": "I have some adjustments in the data graph presentation, some data's inputted only raw data but the graph visualization is only prioritizing the percentage, make an instances that if it's only the raw data inputted the graph will also show but it indicates as raw data just indicate all the graphs shown what is it, whether it is accomplishment or raw graph, then if the data was inputted in percentage and raw the graph shown will be prioritizing the percentage not the raw, raw graph only shows when the inputted data is only in raw."
+        }
+      ],
+      "score": 0.999831684,
+      "source_file": "src/features/accomplishments/chartData.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_accomplishments_chartdata_parseaccomplishmentnumber": {
+      "code_fingerprint": "b54498b36a6d558d7cfab1ab5726d4ece51a8024a3308624284f5a2de9a96de7",
+      "label": "parseAccomplishmentNumber()",
+      "last": "2026-09-17T05:39:10.579966+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:39:10.579966+00:00",
+          "outcome": "useful",
+          "q": "this annual summarization is only resizing not side scroller please fix that not just in the opcr but also in the accomplishment report. and also in the due to the effect of the special characters the data is not showing please fix that as well making sure it still showing the graph even with special characters."
+        }
+      ],
+      "score": 0.999968784,
+      "source_file": "src/features/accomplishments/chartData.ts",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_accomplishments_reportoverview_buildaccomplishmentoverviewgroups": {
+      "code_fingerprint": "84d3d3f8d780d7d494b9472347e357002b81ba5827b5903cf4b7bf9116548421",
+      "label": "buildAccomplishmentOverviewGroups()",
+      "last": "2026-09-17T05:30:37.847888+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:30:37.847888+00:00",
+          "outcome": "useful",
+          "q": "I have some adjustments in the data graph presentation, some data's inputted only raw data but the graph visualization is only prioritizing the percentage, make an instances that if it's only the raw data inputted the graph will also show but it indicates as raw data just indicate all the graphs shown what is it, whether it is accomplishment or raw graph, then if the data was inputted in percentage and raw the graph shown will be prioritizing the percentage not the raw, raw graph only shows when the inputted data is only in raw."
+        }
+      ],
+      "score": 0.999831684,
+      "source_file": "src/features/accomplishments/reportOverview.ts",
       "status": "tentative",
       "uses": 1
     },
@@ -597,8 +725,24 @@
           "q": "guide me to fix the recommended Vercel repair order"
         }
       ],
-      "score": 0.998961126,
+      "score": 0.997251022,
       "source_file": "src/features/auth/AdminRoutes.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_features_opcr_opcrchartdata": {
+      "code_fingerprint": "8ae4f6687b3dc01eefb7ffbf88613da26acdf3b28d35534f83e626846e053d5f",
+      "label": "opcrChartData.ts",
+      "last": "2026-09-17T05:30:37.847888+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:30:37.847888+00:00",
+          "outcome": "useful",
+          "q": "I have some adjustments in the data graph presentation, some data's inputted only raw data but the graph visualization is only prioritizing the percentage, make an instances that if it's only the raw data inputted the graph will also show but it indicates as raw data just indicate all the graphs shown what is it, whether it is accomplishment or raw graph, then if the data was inputted in percentage and raw the graph shown will be prioritizing the percentage not the raw, raw graph only shows when the inputted data is only in raw."
+        }
+      ],
+      "score": 0.999831684,
+      "source_file": "src/features/opcr/opcrChartData.ts",
       "status": "tentative",
       "uses": 1
     },
@@ -613,7 +757,7 @@
           "q": "I have modifications in the image view section, it's not resizable. please optimized that."
         }
       ],
-      "score": 0.999913166,
+      "score": 0.998201431,
       "source_file": "src/features/repository/PublicResourcePreviewDialog.tsx",
       "status": "tentative",
       "uses": 1
@@ -634,10 +778,63 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.975403398,
+      "score": 0.973733622,
       "source_file": "src/layouts/PublicLayout.tsx",
       "status": "preferred",
       "uses": 2
+    },
+    "src_pages_accomplishmentspage": {
+      "code_fingerprint": "363ed6b5853be0a38fb6c1688859395dc78a061f50c4662bcf46c0d374f18847",
+      "label": "AccomplishmentsPage.tsx",
+      "last": "2026-09-17T05:39:10.579966+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:39:10.579966+00:00",
+          "outcome": "useful",
+          "q": "this annual summarization is only resizing not side scroller please fix that not just in the opcr but also in the accomplishment report. and also in the due to the effect of the special characters the data is not showing please fix that as well making sure it still showing the graph even with special characters."
+        },
+        {
+          "date": "2026-09-17T05:30:37.847888+00:00",
+          "outcome": "useful",
+          "q": "I have some adjustments in the data graph presentation, some data's inputted only raw data but the graph visualization is only prioritizing the percentage, make an instances that if it's only the raw data inputted the graph will also show but it indicates as raw data just indicate all the graphs shown what is it, whether it is accomplishment or raw graph, then if the data was inputted in percentage and raw the graph shown will be prioritizing the percentage not the raw, raw graph only shows when the inputted data is only in raw."
+        }
+      ],
+      "score": 1.999800468,
+      "source_file": "src/pages/AccomplishmentsPage.tsx",
+      "status": "preferred",
+      "uses": 2
+    },
+    "src_pages_admin_adminaccomplishresourcepage": {
+      "code_fingerprint": "a5c998a3fbaeb03cfef8d406c2b0ce2939312b32f6a9c3e6c3f9b80c5b4c1033",
+      "label": "AdminAccomplishResourcePage.tsx",
+      "last": "2026-09-17T03:58:54.642825+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:58:54.642825+00:00",
+          "outcome": "useful",
+          "q": "in the raw data please accept special characters input please implement that"
+        }
+      ],
+      "score": 0.998361358,
+      "source_file": "src/pages/admin/AdminAccomplishResourcePage.tsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_pages_admin_adminopcrpage": {
+      "code_fingerprint": "62a55d0821b2bb8cb4b0d949ff5666c20ac3ac31b8f9e023e0f95789be0a53fe",
+      "label": "AdminOpcrPage.tsx",
+      "last": "2026-09-17T03:58:54.642825+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T03:58:54.642825+00:00",
+          "outcome": "useful",
+          "q": "in the raw data please accept special characters input please implement that"
+        }
+      ],
+      "score": 0.998361358,
+      "source_file": "src/pages/admin/AdminOpcrPage.tsx",
+      "status": "tentative",
+      "uses": 1
     },
     "src_pages_homepage_homepage": {
       "code_fingerprint": "9d44b43796fb72cc1edac164d5836dd8c3a290272528462a923ba1a7de91f781",
@@ -650,10 +847,31 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.487670507,
+      "score": 0.486835672,
       "source_file": "src/pages/HomePage.tsx",
       "status": "tentative",
       "uses": 1
+    },
+    "src_pages_opcrpublicpage": {
+      "code_fingerprint": "ba3c515f4258466de164c8852fcba8aef3d20c98513ee28347ec69b4dc26486c",
+      "label": "OpcrPublicPage.tsx",
+      "last": "2026-09-17T05:39:10.579966+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-17T05:39:10.579966+00:00",
+          "outcome": "useful",
+          "q": "this annual summarization is only resizing not side scroller please fix that not just in the opcr but also in the accomplishment report. and also in the due to the effect of the special characters the data is not showing please fix that as well making sure it still showing the graph even with special characters."
+        },
+        {
+          "date": "2026-09-17T05:30:37.847888+00:00",
+          "outcome": "useful",
+          "q": "I have some adjustments in the data graph presentation, some data's inputted only raw data but the graph visualization is only prioritizing the percentage, make an instances that if it's only the raw data inputted the graph will also show but it indicates as raw data just indicate all the graphs shown what is it, whether it is accomplishment or raw graph, then if the data was inputted in percentage and raw the graph shown will be prioritizing the percentage not the raw, raw graph only shows when the inputted data is only in raw."
+        }
+      ],
+      "score": 1.999800468,
+      "source_file": "src/pages/OpcrPublicPage.tsx",
+      "status": "preferred",
+      "uses": 2
     },
     "src_pages_repositorypage_repositorypage": {
       "code_fingerprint": "01cd6685e02d99d16a1075c00057cd9c385fcafe7c7a64e900b4dc6ca8ab98cb",
@@ -666,7 +884,7 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.487670507,
+      "score": 0.486835672,
       "source_file": "src/pages/RepositoryPage.tsx",
       "status": "tentative",
       "uses": 1
@@ -682,7 +900,7 @@
           "q": "Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
         }
       ],
-      "score": 0.487670507,
+      "score": 0.486835672,
       "source_file": "src/routes/AppRouter.tsx",
       "status": "tentative",
       "uses": 1
@@ -703,7 +921,7 @@
           "q": "check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
         }
       ],
-      "score": 1.997698184,
+      "score": 1.994278359,
       "source_file": "vercel.json",
       "status": "preferred",
       "uses": 2

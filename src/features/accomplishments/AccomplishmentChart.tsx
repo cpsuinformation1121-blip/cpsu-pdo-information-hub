@@ -1,8 +1,10 @@
 import type { CSSProperties, KeyboardEvent } from "react";
 import type { AccomplishmentResourceData } from "../../contracts/accomplishmentResource";
 import {
+  chartDataSourceLabel,
   createComparisonChartData,
   getComparisonScaleMax,
+  type ChartDataSource,
   type ComparisonDatum,
   type ComparisonField,
   type ComparisonValues,
@@ -29,12 +31,20 @@ function chartValueLabel(display: string, numeric: number | null) {
 }
 
 function chartDescription(title: string, data: ComparisonDatum[]) {
-  return `${title}: ${data
+  return `${title} (${chartDataSourceLabel(data)}): ${data
     .map(
       (item) =>
         `${item.label}, target ${item.targetDisplay}, accomplishment ${item.accomplishmentDisplay}`,
     )
     .join("; ")}`;
+}
+
+function ChartSourceBadge({ data }: { data: ComparisonDatum[] }) {
+  return (
+    <span className="inline-flex shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-primary">
+      Showing: {chartDataSourceLabel(data)}
+    </span>
+  );
 }
 
 export function ChartColorLegend({
@@ -476,8 +486,16 @@ function ComparisonChartVisual({
   if (!preserveCategoryWidth || type === "bar") return chart;
 
   return (
-    <div className="overflow-x-auto pb-2">
-      <div style={{ minWidth: `${Math.max(40, data.length * 10)}rem` }}>
+    <div
+      role="region"
+      aria-label={`${title} horizontal chart scroller`}
+      tabIndex={0}
+      className="max-w-full overflow-x-scroll overflow-y-hidden pb-3 [scrollbar-gutter:stable]"
+    >
+      <div
+        className="max-w-none"
+        style={{ width: `${Math.max(48, data.length * 18)}rem` }}
+      >
         {chart}
       </div>
     </div>
@@ -492,6 +510,7 @@ export function AccomplishmentComparisonChart({
   accomplishment,
   fields,
   colorKeyPrefix,
+  dataSource = "percentage",
   appearance,
   onSelectBar,
   selectedBarKey,
@@ -503,18 +522,23 @@ export function AccomplishmentComparisonChart({
   accomplishment?: ComparisonValues;
   fields: ReadonlyArray<{ id: ComparisonField; label: string }>;
   colorKeyPrefix?: string;
+  dataSource?: ChartDataSource;
 } & ChartInteraction) {
   const data = createComparisonChartData(
     target,
     accomplishment,
     fields,
     colorKeyPrefix,
+    dataSource,
   );
 
   return (
     <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
       <figcaption className="mb-5">
-        <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+          <ChartSourceBadge data={data} />
+        </div>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
           {description}
         </p>
@@ -548,7 +572,10 @@ export function AccomplishmentDataChart({
   return (
     <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
       <figcaption className="mb-5">
-        <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+          <ChartSourceBadge data={data} />
+        </div>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
           {description}
         </p>
@@ -587,12 +614,19 @@ export function AccomplishmentIndicatorSeriesChart({
     <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
       {!hideCaption ? (
         <figcaption className="mb-5">
-          <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h5 className="text-sm font-semibold text-foreground">{title}</h5>
+            <ChartSourceBadge data={data} />
+          </div>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
             {description}
           </p>
         </figcaption>
-      ) : null}
+      ) : (
+        <div className="mb-3 flex justify-end">
+          <ChartSourceBadge data={data} />
+        </div>
+      )}
       <ComparisonChartVisual
         type={type}
         title={title}

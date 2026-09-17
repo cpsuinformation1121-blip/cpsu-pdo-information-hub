@@ -1,5 +1,6 @@
 import type { OpcrResourceData } from "../../contracts/opcrResource";
 import type { ReportOverviewGroup } from "../accomplishments/ReportGraphOverview";
+import { selectPreferredChartData } from "../accomplishments/chartData";
 import {
   createOpcrAnnualIndicatorChartData,
   createOpcrComparisonChartData,
@@ -41,31 +42,35 @@ export function buildOpcrOverviewGroups(
           (node) => node.type === "indicator" && node.parentId === group.id,
         )
         .flatMap((indicator) => {
-          const results = entries[indicator.id]?.results;
+          const entry = entries[indicator.id];
+          const annual = selectPreferredChartData(entry, ["total"]);
+          const halfYear = selectPreferredChartData(entry, ["h1", "h2"]);
           return [
-            {
+            ...(annual ? [{
               id: `${indicator.id}-annual`,
               title: `${indicator.title} — Annual total`,
               description: "Cumulative target and accomplishment.",
               data: createOpcrComparisonChartData(
-                results?.target,
-                results?.accomplishment,
+                annual.row.target,
+                annual.row.accomplishment,
                 ["total"],
                 indicator.id,
+                annual.source,
               ),
-            },
-            {
+            }] : []),
+            ...(halfYear ? [{
               id: `${indicator.id}-half`,
               title: `${indicator.title} — Half-year performance`,
               description:
                 "Target compared with accomplishment for each half-year period.",
               data: createOpcrComparisonChartData(
-                results?.target,
-                results?.accomplishment,
+                halfYear.row.target,
+                halfYear.row.accomplishment,
                 ["h1", "h2"],
                 indicator.id,
+                halfYear.source,
               ),
-            },
+            }] : []),
           ];
         });
 

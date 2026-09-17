@@ -36,6 +36,7 @@ describe("accomplishment overview groups", () => {
 
     expect(groups[0].title).toBe("Annual performance by indicator");
     expect(groups[0].charts[0].data[0].colorKey).toBe("completion:total");
+    expect(groups[0].charts[0].data[0].dataSource).toBe("percentage");
 
     const indicatorGroup = groups.find((group) => group.id === "education");
     expect(indicatorGroup?.charts).toHaveLength(2);

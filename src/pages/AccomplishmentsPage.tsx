@@ -14,6 +14,7 @@ import {
   createAnnualIndicatorSeriesChartData,
   formatPercentageValue,
   quarterlyComparisonFields,
+  selectPreferredChartData,
 } from "../features/accomplishments/chartData";
 import type { ReportAppearance } from "../features/accomplishments/reportAppearance";
 import { getAccomplishmentReportYears } from "../features/accomplishments/reportCalculations";
@@ -134,7 +135,13 @@ function IndicatorResults({
   chartType: AccomplishmentResourceData["chartType"];
   appearance?: ReportAppearance;
 }) {
-  const percentage = entry?.results;
+  const annual = selectPreferredChartData(entry, ["total"]);
+  const quarterly = selectPreferredChartData(entry, [
+    "q1",
+    "q2",
+    "q3",
+    "q4",
+  ]);
 
   return (
     <article className="border-t border-border first:border-t-0">
@@ -145,25 +152,27 @@ function IndicatorResults({
         </div>
       </div>
 
-      <div className="grid gap-4 border-t border-border bg-surface-secondary/45 p-4 sm:p-5 lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.2fr)]">
-        <AccomplishmentComparisonChart
+      <div className={`grid gap-4 border-t border-border bg-surface-secondary/45 p-4 sm:p-5 ${annual && quarterly ? "lg:grid-cols-[minmax(15rem,0.8fr)_minmax(0,2.2fr)]" : ""}`}>
+        {annual ? <AccomplishmentComparisonChart
           type={chartType}
           title="Annual total"
           description="Cumulative target and accomplishment."
-          target={percentage?.target}
-          accomplishment={percentage?.accomplishment}
+          target={annual.row.target}
+          accomplishment={annual.row.accomplishment}
           fields={annualComparisonFields}
+          dataSource={annual.source}
           appearance={appearance}
-        />
-        <AccomplishmentComparisonChart
+        /> : null}
+        {quarterly ? <AccomplishmentComparisonChart
           type={chartType}
           title="Quarterly performance"
           description="Target compared with accomplishment for each quarter."
-          target={percentage?.target}
-          accomplishment={percentage?.accomplishment}
+          target={quarterly.row.target}
+          accomplishment={quarterly.row.accomplishment}
           fields={quarterlyComparisonFields}
+          dataSource={quarterly.source}
           appearance={appearance}
-        />
+        /> : null}
       </div>
 
       <IndicatorDataTable title={title} entry={entry} />
