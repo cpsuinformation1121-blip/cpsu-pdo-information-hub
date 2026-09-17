@@ -18,6 +18,8 @@ import { handleUploadCompleteRequest } from "./http/uploadCompleteHandler.ts";
 
 type ApiHandler = (request: Request) => Response | Promise<Response>;
 
+const rewrittenApiPathParameter = "__apiPath";
+
 const routes: Record<string, ApiHandler> = {
   "/api/resources": handleResourcesRequest,
   "/api/resource-preview": handlePublicResourcePreviewRequest,
@@ -54,9 +56,19 @@ function notFound() {
   );
 }
 
+export function resolveApiPath(request: Request) {
+  const url = new URL(request.url);
+  const rewrittenPath = url.searchParams.get(rewrittenApiPathParameter);
+
+  if (rewrittenPath === null) return url.pathname;
+
+  const normalizedPath = rewrittenPath.replace(/^\/+|\/+$/gu, "");
+  return normalizedPath ? `/api/${normalizedPath}` : "/api";
+}
+
 export default {
   fetch(request: Request) {
-    const handler = routes[new URL(request.url).pathname];
+    const handler = routes[resolveApiPath(request)];
     return handler ? handler(request) : notFound();
   },
 };

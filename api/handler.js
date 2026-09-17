@@ -2204,6 +2204,7 @@ async function handleUploadCompleteRequest(request, dependencies = {}) {
 }
 
 // server/apiEntry.ts
+var rewrittenApiPathParameter = "__apiPath";
 var routes = {
   "/api/resources": handleResourcesRequest,
   "/api/resource-preview": handlePublicResourcePreviewRequest,
@@ -2238,12 +2239,20 @@ function notFound() {
     }
   );
 }
+function resolveApiPath(request) {
+  const url = new URL(request.url);
+  const rewrittenPath = url.searchParams.get(rewrittenApiPathParameter);
+  if (rewrittenPath === null) return url.pathname;
+  const normalizedPath = rewrittenPath.replace(/^\/+|\/+$/gu, "");
+  return normalizedPath ? `/api/${normalizedPath}` : "/api";
+}
 var apiEntry_default = {
   fetch(request) {
-    const handler = routes[new URL(request.url).pathname];
+    const handler = routes[resolveApiPath(request)];
     return handler ? handler(request) : notFound();
   }
 };
 export {
-  apiEntry_default as default
+  apiEntry_default as default,
+  resolveApiPath
 };

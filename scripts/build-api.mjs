@@ -2,7 +2,7 @@ import { build } from "esbuild";
 
 await build({
   entryPoints: ["server/apiEntry.ts"],
-  outfile: "api/[...path].js",
+  outfile: "api/handler.js",
   bundle: true,
   platform: "node",
   format: "esm",

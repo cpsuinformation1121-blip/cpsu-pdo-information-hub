@@ -180,7 +180,7 @@ Security:
 | --- | --- | --- |
 | Admin login fails | Vercel domain not authorized in Firebase | Phase 5.1 |
 | Upload fails immediately | CSP or R2 CORS | Confirm `https://*.r2.cloudflarestorage.com` in CSP and the origin in CORS |
-| OPCR returns 404 | API function not deployed | Confirm `api/opcr.ts` and `api/admin/opcr-resource.ts` are pushed |
+| API route returns a platform 404 | API rewrite or bundled function not deployed | Confirm `vercel.json` routes `/api/:path*` to `/api/handler` and `api/handler.js` is present after `npm run build` |
 | `FIREBASE_ADMIN_*` error | Private key formatting | Re-paste on one line with literal `\n` |
 | 500 on protected APIs | Missing or invalid env vars | Recheck Phase 4.2 and redeploy |
 | Stale interface | Cached lazy chunk | Hard refresh (Ctrl+Shift+R) |
