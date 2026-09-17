@@ -243,7 +243,7 @@ export function AccomplishmentsPage() {
             <span className="mx-2" aria-hidden="true">
               /
             </span>
-            <span aria-current="page">Accomplishment Report</span>
+            <span aria-current="page">Physical Performance</span>
           </nav>
 
           <div className="mt-6 grid gap-6 sm:grid-cols-3 sm:items-end lg:grid-cols-4">
@@ -255,7 +255,7 @@ export function AccomplishmentsPage() {
                 id="accomplishments-title"
                 className="mt-2 font-serif text-3xl tracking-tight sm:text-[2.5rem]"
               >
-                Accomplishment Report
+                Physical Performance
               </h1>
               <p className="mt-3 text-base leading-7 text-muted-foreground">
                 View annual targets and quarterly results.

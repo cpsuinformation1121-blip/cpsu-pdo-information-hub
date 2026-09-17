@@ -354,6 +354,9 @@ var repositorySections = [
     categories: [{ id: "excel", title: "Excel" }]
   }
 ];
+var protectedRepositorySectionIds = /* @__PURE__ */ new Set([
+  "forms"
+]);
 var repositorySectionById = new Map(
   repositorySections.map((section) => [section.id, section])
 );
@@ -530,6 +533,11 @@ var RepositoryStructureConflictError = class extends Error {
     this.name = "RepositoryStructureConflictError";
   }
 };
+function assertRepositorySectionCanBeDeleted(id) {
+  if (protectedRepositorySectionIds.has(id)) {
+    throw new Error("This required repository section cannot be deleted.");
+  }
+}
 var slug = (value) => value.normalize("NFKD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 70);
 async function bodyText(body) {
   if (body && typeof body === "object" && "transformToString" in body && typeof body.transformToString === "function") {
@@ -611,6 +619,7 @@ async function mutateRepositoryStructure(payload, environment = process.env) {
     item.title = mutation.title;
   }
   if (mutation.action === "delete-section") {
+    assertRepositorySectionCanBeDeleted(mutation.id);
     const index = data.findIndex((section) => section.id === mutation.id);
     if (index < 0) throw new Error("Section not found.");
     if (data[index].categories.length || await prefixHasFiles(`${mutation.id}/`, environment)) {

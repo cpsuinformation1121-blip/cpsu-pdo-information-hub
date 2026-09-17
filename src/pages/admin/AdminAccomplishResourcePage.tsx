@@ -456,7 +456,7 @@ function AccomplishmentResourceEditor({
             id="accomplishment-title"
             className="font-serif text-3xl tracking-tight sm:text-4xl"
           >
-            Accomplishment Report
+            Physical Performance
           </h1>
           <p className="mt-3 text-muted-foreground">
             Set targets and quarterly results.
@@ -912,7 +912,7 @@ function AccomplishmentResourceEditor({
           <div className="min-w-0 flex-1">
             <p className="font-semibold">Changes saved</p>
             <p className="mt-1 text-sm text-primary-foreground/85">
-              The Accomplishment Report was updated successfully.
+              The Physical Performance was updated successfully.
             </p>
           </div>
           <button

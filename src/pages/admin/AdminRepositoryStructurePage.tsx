@@ -5,6 +5,7 @@ import { AppDialog } from "../../components/ui/AppDialog";
 import { useAuth } from "../../features/auth/useAuth";
 import { useRepositoryStructureQuery } from "../../features/repository/useRepositoryStructureQuery";
 import { mutateRepositoryStructure } from "../../services/repositoryStructure";
+import { protectedRepositorySectionIds } from "../../config/repository";
 
 type EditorState =
   | { kind: "add-category"; sectionId: string; value: string }
@@ -168,21 +169,23 @@ export function AdminRepositoryStructurePage() {
                   <Pencil className="mr-1 inline size-4" />
                   Edit
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPendingDelete({
-                      kind: "section",
-                      sectionId: section.id,
-                      id: section.id,
-                      title: section.title,
-                    })
-                  }
-                  className="inline-flex min-h-10 cursor-pointer items-center text-sm font-semibold text-danger"
-                >
-                  <Trash2 className="mr-1 inline size-4" />
-                  Delete
-                </button>
+                {!protectedRepositorySectionIds.has(section.id) ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPendingDelete({
+                        kind: "section",
+                        sectionId: section.id,
+                        id: section.id,
+                        title: section.title,
+                      })
+                    }
+                    className="inline-flex min-h-10 cursor-pointer items-center text-sm font-semibold text-danger"
+                  >
+                    <Trash2 className="mr-1 inline size-4" />
+                    Delete
+                  </button>
+                ) : null}
               </div>
             </header>
             {section.categories.length ? (

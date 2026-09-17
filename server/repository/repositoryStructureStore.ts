@@ -1,5 +1,8 @@
 import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3'
-import { repositorySections } from '../../src/config/repository.ts'
+import {
+  protectedRepositorySectionIds,
+  repositorySections,
+} from '../../src/config/repository.ts'
 import { repositoryStructureSchema, structureMutationSchema, type ManagedSection } from '../../src/contracts/repositoryStructure.ts'
 import { getR2Config } from '../config/r2.ts'
 import { createR2Client } from './r2Client.ts'
@@ -57,6 +60,12 @@ export class RepositoryStructureConflictError extends Error {
   constructor() {
     super('The repository organization changed while you were editing it. Refresh the page and try again.')
     this.name = 'RepositoryStructureConflictError'
+  }
+}
+
+export function assertRepositorySectionCanBeDeleted(id: string) {
+  if (protectedRepositorySectionIds.has(id)) {
+    throw new Error('This required repository section cannot be deleted.')
   }
 }
 
@@ -170,6 +179,7 @@ export async function mutateRepositoryStructure(
     item.title = mutation.title
   }
   if (mutation.action === 'delete-section') {
+    assertRepositorySectionCanBeDeleted(mutation.id)
     const index = data.findIndex((section) => section.id === mutation.id)
     if (index < 0) throw new Error('Section not found.')
     if (data[index].categories.length || await prefixHasFiles(`${mutation.id}/`, environment)) {

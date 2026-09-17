@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ManagedSection } from '../../src/contracts/repositoryStructure.ts'
 import {
   applyRequiredStructureMigrations,
+  assertRepositorySectionCanBeDeleted,
   createRepositoryStructureWriteCommand,
 } from './repositoryStructureStore.ts'
 
@@ -18,6 +19,18 @@ describe('repository structure conditional writes', () => {
     const command = createRepositoryStructureWriteCommand('bucket', data, null)
     expect(command.input.IfNoneMatch).toBe('*')
     expect(command.input.IfMatch).toBeUndefined()
+  })
+})
+
+describe('protected repository sections', () => {
+  it('rejects deletion of the Forms section', () => {
+    expect(() => assertRepositorySectionCanBeDeleted('forms')).toThrow(
+      'This required repository section cannot be deleted.',
+    )
+  })
+
+  it('allows deletion checks for administrator-managed sections', () => {
+    expect(() => assertRepositorySectionCanBeDeleted('temporary')).not.toThrow()
   })
 })
 

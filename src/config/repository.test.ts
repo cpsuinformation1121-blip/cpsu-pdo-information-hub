@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  protectedRepositorySectionIds,
   repositoryCategoryById,
   repositoryCategoryIds,
   repositorySections,
@@ -19,6 +20,10 @@ describe("repository configuration", () => {
     );
     expect(repositoryCategoryIds.size).toBe(categoryIds.length);
     expect(repositoryCategoryById.size).toBe(categoryIds.length);
+  });
+
+  it("marks Forms as a protected system section", () => {
+    expect(protectedRepositorySectionIds.has("forms")).toBe(true);
   });
 
   it("exposes the Forms section at its public repository filter", () => {

@@ -97,6 +97,10 @@ export const repositorySections: readonly RepositorySection[] = [
   },
 ];
 
+export const protectedRepositorySectionIds = new Set<RepositorySectionId>([
+  "forms",
+]);
+
 export const repositorySectionById = new Map(
   repositorySections.map((section) => [section.id, section]),
 );

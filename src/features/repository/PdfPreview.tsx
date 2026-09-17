@@ -56,9 +56,6 @@ function PdfPage({
         const cssScale = (width / baseViewport.width) * (zoom / 100);
         const viewport = loadedPage.getViewport({ scale: cssScale });
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-        const context = canvas.getContext("2d");
-        if (!context) throw new Error("Canvas rendering is unavailable.");
-
         canvas.width = Math.floor(viewport.width * pixelRatio);
         canvas.height = Math.floor(viewport.height * pixelRatio);
         canvas.style.width = String(Math.floor(viewport.width)) + "px";
@@ -66,7 +63,6 @@ function PdfPage({
 
         renderTask = loadedPage.render({
           canvas,
-          canvasContext: context,
           viewport,
           transform:
             pixelRatio === 1 ? undefined : [pixelRatio, 0, 0, pixelRatio, 0, 0],
@@ -129,7 +125,12 @@ export function PdfPreview({ url, title }: { url: string; title: string }) {
   }, []);
 
   useEffect(() => {
-    const loadingTask = getDocument({ url });
+    const loadingTask = getDocument({
+      url,
+      isImageDecoderSupported: false,
+      isOffscreenCanvasSupported: false,
+      useWasm: false,
+    });
 
     void loadingTask.promise
       .then(setDocument)

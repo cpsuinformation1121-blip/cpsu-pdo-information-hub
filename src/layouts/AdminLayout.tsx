@@ -58,7 +58,7 @@ export function AdminLayout() {
               ["/admin", "Overview"],
               ["/admin/resources", "Resources"],
               ["/admin/resources/upload", "Upload"],
-              ["/admin/accomplish-resource", "Accomplishment Report"],
+              ["/admin/accomplish-resource", "Physical Performance"],
               ["/admin/opcr", "OPCR"],
               ["/admin/structure", "Structure"],
               ["/admin/users", "Staff"],
