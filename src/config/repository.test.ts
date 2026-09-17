@@ -25,6 +25,7 @@ describe("repository configuration", () => {
     expect(repositorySections.find((section) => section.id === "forms")).toMatchObject({
       title: "Forms",
       path: "/repository?section=forms",
+      categories: [{ id: "excel", title: "Excel" }],
     });
   });
 });

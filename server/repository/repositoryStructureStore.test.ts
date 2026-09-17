@@ -29,11 +29,15 @@ describe('required repository structure migrations', () => {
 
     expect(migrated).toEqual([
       { id: 'other-resources', title: 'Other Resources', categories: [] },
-      { id: 'forms', title: 'Forms', categories: [] },
+      {
+        id: 'forms',
+        title: 'Forms',
+        categories: [{ id: 'excel', title: 'Excel' }],
+      },
     ])
   })
 
-  it('preserves an existing administrator-managed Forms section', () => {
+  it('preserves an existing Forms section and adds its required category', () => {
     const existing = [
       {
         id: 'forms',
@@ -42,6 +46,15 @@ describe('required repository structure migrations', () => {
       },
     ]
 
-    expect(applyRequiredStructureMigrations(existing)).toEqual(existing)
+    expect(applyRequiredStructureMigrations(existing)).toEqual([
+      {
+        id: 'forms',
+        title: 'Office Forms',
+        categories: [
+          { id: 'requests', title: 'Request Forms' },
+          { id: 'excel', title: 'Excel' },
+        ],
+      },
+    ])
   })
 })

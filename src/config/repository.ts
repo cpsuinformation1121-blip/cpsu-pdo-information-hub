@@ -93,7 +93,7 @@ export const repositorySections: readonly RepositorySection[] = [
     title: "Forms",
     description: "Official downloadable forms maintained by the office.",
     path: "/repository?section=forms",
-    categories: [],
+    categories: [{ id: "excel", title: "Excel" }],
   },
 ];
 

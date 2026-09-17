@@ -25,9 +25,24 @@ export function applyRequiredStructureMigrations(
   const migrated = structuredClone(structure)
 
   for (const id of requiredSectionIds) {
-    if (migrated.some((section) => section.id === id)) continue
     const requiredSection = defaults.find((section) => section.id === id)
-    if (requiredSection) migrated.push(structuredClone(requiredSection))
+    if (!requiredSection) continue
+
+    const existingSection = migrated.find((section) => section.id === id)
+    if (!existingSection) {
+      migrated.push(structuredClone(requiredSection))
+      continue
+    }
+
+    for (const requiredCategory of requiredSection.categories) {
+      if (
+        !existingSection.categories.some(
+          (category) => category.id === requiredCategory.id,
+        )
+      ) {
+        existingSection.categories.push(structuredClone(requiredCategory))
+      }
+    }
   }
 
   return migrated

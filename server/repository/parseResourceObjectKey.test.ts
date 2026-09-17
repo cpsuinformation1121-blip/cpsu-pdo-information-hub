@@ -39,6 +39,18 @@ describe('parseResourceObjectKey', () => {
     expect(parsed.year).toBe('2025-2026')
   })
 
+  it('treats excel as the Forms category while preserving the PDF file type', () => {
+    const parsed = parseResourceObjectKey(
+      'forms/excel/2027-2028/MIS DPCR Evaluation Summary.pdf',
+    )
+
+    expect(parsed.sectionId).toBe('forms')
+    expect(parsed.categoryId).toBe('excel')
+    expect(parsed.year).toBe('2027-2028')
+    expect(parsed.fileType).toBe('pdf')
+    expect(parsed.mimeType).toBe('application/pdf')
+  })
+
   it.each([
     'statistical-profile/student-population/2026/photo.jpg',
     'statistical-profile/student-population/2026/photo.jpeg',
