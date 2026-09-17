@@ -10,10 +10,12 @@ import {
   type PDFPageProxy,
   GlobalWorkerOptions,
   getDocument,
-} from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+} from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdfWorkerUrl from "./pdf.worker.compat.ts?worker&url";
+import { installPromiseWithResolversPolyfill } from "../../utils/promiseWithResolvers";
 import { useEffect, useRef, useState } from "react";
 
+installPromiseWithResolversPolyfill();
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const MIN_ZOOM = 50;
@@ -61,8 +63,14 @@ function PdfPage({
         canvas.style.width = String(Math.floor(viewport.width)) + "px";
         canvas.style.height = String(Math.floor(viewport.height)) + "px";
 
+        const canvasContext = canvas.getContext("2d", { alpha: false });
+        if (!canvasContext) {
+          throw new Error("The browser could not create a PDF canvas.");
+        }
+
         renderTask = loadedPage.render({
-          canvas,
+          canvas: null,
+          canvasContext,
           viewport,
           transform:
             pixelRatio === 1 ? undefined : [pixelRatio, 0, 0, pixelRatio, 0, 0],
@@ -125,6 +133,8 @@ export function PdfPreview({ url, title }: { url: string; title: string }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadingTask = getDocument({
       url,
       isImageDecoderSupported: false,
@@ -133,12 +143,17 @@ export function PdfPreview({ url, title }: { url: string; title: string }) {
     });
 
     void loadingTask.promise
-      .then(setDocument)
-      .catch(() =>
-        setError("The PDF preview could not be loaded. Please try again."),
-      );
+      .then((loadedDocument) => {
+        if (!cancelled) setDocument(loadedDocument);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("The PDF preview could not be loaded. Please try again.");
+        }
+      });
 
     return () => {
+      cancelled = true;
       void loadingTask.destroy();
     };
   }, [url]);
