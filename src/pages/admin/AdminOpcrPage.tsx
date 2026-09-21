@@ -16,6 +16,7 @@ import { AppDialog } from "../../components/ui/AppDialog";
 import type { OpcrResourceData } from "../../contracts/opcrResource";
 import { ChartColorLegend } from "../../features/accomplishments/AccomplishmentChart";
 import { ReportGraphOverview } from "../../features/accomplishments/ReportGraphOverview";
+import { FloatingSaveAction } from "../../features/admin/FloatingSaveAction";
 import {
   resolveReportLegend,
   restoreReportAppearance,
@@ -820,6 +821,12 @@ function OpcrResourceEditor({
         onCustomBarColor={applyCustomBarColor}
         restorableIndicators={restorableIndicators}
         onRestore={restoreDefaults}
+      />
+
+      <FloatingSaveAction
+        isVisible={saveStatus === "unsaved"}
+        isSaving={saveMutation.isPending}
+        onSave={() => saveMutation.mutate()}
       />
 
       {editor ? (

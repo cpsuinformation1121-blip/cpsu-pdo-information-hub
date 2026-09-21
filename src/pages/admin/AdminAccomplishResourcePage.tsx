@@ -28,6 +28,7 @@ import {
   isQuarterInputValid,
 } from "../../features/accomplishments/reportCalculations";
 import { buildAccomplishmentOverviewGroups } from "../../features/accomplishments/reportOverview";
+import { FloatingSaveAction } from "../../features/admin/FloatingSaveAction";
 import { useAuth } from "../../features/auth/useAuth";
 import {
   getAccomplishmentResource,
@@ -821,6 +822,12 @@ function AccomplishmentResourceEditor({
         onCustomBarColor={applyCustomBarColor}
         restorableIndicators={restorableIndicators}
         onRestore={restoreDefaults}
+      />
+
+      <FloatingSaveAction
+        isVisible={saveStatus === "unsaved"}
+        isSaving={saveMutation.isPending}
+        onSave={() => saveMutation.mutate()}
       />
 
       {editor ? (

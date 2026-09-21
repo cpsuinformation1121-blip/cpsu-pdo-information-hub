@@ -7,7 +7,7 @@ import { z as z2 } from "zod";
 
 // src/contracts/resource.ts
 import { z } from "zod";
-var resourceFileTypes = ["pdf", "xlsx", "image"];
+var resourceFileTypes = ["pdf", "xlsx", "image", "link"];
 var resourceFileDefinitions = {
   pdf: { fileType: "pdf", mimeType: "application/pdf" },
   xlsx: {
@@ -17,7 +17,11 @@ var resourceFileDefinitions = {
   jpg: { fileType: "image", mimeType: "image/jpeg" },
   jpeg: { fileType: "image", mimeType: "image/jpeg" },
   png: { fileType: "image", mimeType: "image/png" },
-  webp: { fileType: "image", mimeType: "image/webp" }
+  webp: { fileType: "image", mimeType: "image/webp" },
+  link: {
+    fileType: "link",
+    mimeType: "application/vnd.cpsu.repository-link+json"
+  }
 };
 var resourceSortOptions = [
   "newest",
@@ -759,6 +763,14 @@ async function handleAdminResourceAccessRequest(request, dependencies = {}) {
   try {
     const structure = dependencies.structure ?? await readRepositoryStructure(dependencies.environment);
     const resource = parseResourceObjectKey(result.data.key, structure);
+    if (resource.fileType === "link") {
+      return json({
+        error: {
+          code: "RESOURCE_NOT_FILE",
+          message: "Links must be opened with the link action."
+        }
+      }, 400);
+    }
     if (result.data.mode === "preview" && resource.fileType === "xlsx") {
       return json({
         error: {
@@ -808,7 +820,7 @@ async function handleAdminResourceAccessRequest(request, dependencies = {}) {
 }
 
 // server/http/adminResourceMutationHandler.ts
-import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, PutObjectCommand as PutObjectCommand3 } from "@aws-sdk/client-s3";
 
 // src/contracts/adminOperations.ts
 import { z as z7 } from "zod";
@@ -840,6 +852,32 @@ var administratorSchema = z7.object({
 });
 var administratorListSchema = z7.object({
   data: z7.array(administratorSchema)
+});
+
+// src/contracts/resourceLink.ts
+import { z as z8 } from "zod";
+var maximumResourceLinkPayloadSize = 4 * 1024;
+var resourceLinkNameSchema = z8.string().trim().min(1, "Enter a link name.").max(170, "The link name is too long.").refine((name) => !name.toLocaleLowerCase().endsWith(".link"), {
+  message: "Enter the link name without a file extension."
+}).refine((name) => resourceFilenameSchema.safeParse(`${name}.link`).success, {
+  message: "The link name contains unsupported characters."
+});
+var resourceLinkUrlSchema = z8.url("Enter a valid web address.").refine((value) => {
+  const url = new URL(value);
+  return url.protocol === "https:" && !url.username && !url.password;
+}, "Enter a secure HTTPS address without embedded credentials.");
+var resourceLinkCreateSchema = z8.object({
+  name: resourceLinkNameSchema,
+  url: resourceLinkUrlSchema,
+  sectionId: repositorySectionIdSchema,
+  categoryId: z8.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
+  year: resourceYearSchema
+});
+var resourceLinkPayloadSchema = z8.object({
+  url: resourceLinkUrlSchema
+});
+var resourceLinkCreateResponseSchema = z8.object({
+  data: z8.object({ key: resourceObjectKeySchema })
 });
 
 // server/http/adminResourceMutationHandler.ts
@@ -880,11 +918,46 @@ async function handleAdminResourceMutationRequest(request, dependencies = {}) {
   const send = dependencies.send ?? ((command) => {
     if (command instanceof HeadObjectCommand) return client.send(command);
     if (command instanceof CopyObjectCommand) return client.send(command);
+    if (command instanceof PutObjectCommand3) return client.send(command);
     return client.send(command);
   });
   const audit = dependencies.audit ?? recordAuditEvent;
   try {
     const structure = dependencies.structure ?? await readRepositoryStructure(dependencies.environment);
+    if (request.method === "POST") {
+      const result = resourceLinkCreateSchema.safeParse(payload);
+      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The link details are invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "link", message: issue.message })) } }, 400);
+      const section = structure.find((item) => item.id === result.data.sectionId);
+      if (!section) return json2({ error: { code: "INVALID_SECTION", message: "The selected repository section is unavailable." } }, 400);
+      if (result.data.categoryId && !section.categories.some((category) => category.id === result.data.categoryId)) {
+        return json2({ error: { code: "INVALID_CATEGORY", message: "The selected category does not belong to the repository section." } }, 400);
+      }
+      const filename = `${result.data.name}.link`;
+      const targetKey = result.data.categoryId ? `${result.data.sectionId}/${result.data.categoryId}/${result.data.year}/${filename}` : `${result.data.sectionId}/${result.data.year}/${filename}`;
+      await audit({
+        action: "resource.uploaded",
+        actor: identity,
+        target: targetKey,
+        outcome: "attempted",
+        details: { resourceType: "link" }
+      }, dependencies.environment);
+      try {
+        await send(new PutObjectCommand3({
+          Bucket: config.bucketName,
+          Key: targetKey,
+          Body: JSON.stringify({ url: result.data.url }),
+          ContentType: resourceFileDefinitions.link.mimeType,
+          CacheControl: "private, no-store",
+          IfNoneMatch: "*"
+        }));
+      } catch (error) {
+        if (isR2PreconditionFailed(error)) {
+          return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A link with that name already exists in this location." } }, 409);
+        }
+        throw error;
+      }
+      return json2({ data: { key: targetKey } }, 201);
+    }
     if (request.method === "DELETE") {
       const result = resourceDeleteSchema.safeParse(payload);
       if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The deletion request is invalid." } }, 400);
@@ -930,7 +1003,7 @@ async function handleAdminResourceMutationRequest(request, dependencies = {}) {
       await send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: parsed.key }));
       return json2({ data: { key: targetKey } });
     }
-    return json2({ error: { code: "METHOD_NOT_ALLOWED", message: "Only PATCH and DELETE are supported." } }, 405);
+    return json2({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST, PATCH, and DELETE are supported." } }, 405);
   } catch {
     return json2({ error: { code: "RESOURCE_OPERATION_FAILED", message: "The repository operation could not be completed." } }, 500);
   }
@@ -1370,56 +1443,56 @@ async function handleAdminUsersRequest(request, dependencies = {}) {
 }
 
 // src/contracts/accomplishmentResource.ts
-import { z as z9 } from "zod";
+import { z as z10 } from "zod";
 
 // src/contracts/reportAppearance.ts
-import { z as z8 } from "zod";
-var chartColorSchema = z8.string().regex(/^#[0-9a-fA-F]{6}$/u, "Select a valid chart color.");
-var legendIdSchema = z8.string().min(1).max(60).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var reportLegendItemSchema = z8.object({
+import { z as z9 } from "zod";
+var chartColorSchema = z9.string().regex(/^#[0-9a-fA-F]{6}$/u, "Select a valid chart color.");
+var legendIdSchema = z9.string().min(1).max(60).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var reportLegendItemSchema = z9.object({
   id: legendIdSchema,
-  label: z8.string().trim().min(1).max(40),
+  label: z9.string().trim().min(1).max(40),
   color: chartColorSchema
 });
-var barColorKeySchema = z8.string().min(1).max(160).regex(/^[A-Za-z0-9:_-]+$/u);
-var barColorValueSchema = z8.union([chartColorSchema, legendIdSchema]);
-var reportAppearanceSchema = z8.object({
-  legend: z8.array(reportLegendItemSchema).max(12).optional(),
-  barColors: z8.record(barColorKeySchema, barColorValueSchema).optional()
+var barColorKeySchema = z9.string().min(1).max(160).regex(/^[A-Za-z0-9:_-]+$/u);
+var barColorValueSchema = z9.union([chartColorSchema, legendIdSchema]);
+var reportAppearanceSchema = z9.object({
+  legend: z9.array(reportLegendItemSchema).max(12).optional(),
+  barColors: z9.record(barColorKeySchema, barColorValueSchema).optional()
 });
 
 // src/contracts/accomplishmentResource.ts
-var nodeIdSchema = z9.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var treeNodeSchema = z9.object({
+var nodeIdSchema = z10.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var treeNodeSchema = z10.object({
   id: nodeIdSchema,
   parentId: nodeIdSchema.nullable(),
-  type: z9.enum(["section", "group", "indicator"]),
-  title: z9.string().trim().min(2).max(120)
+  type: z10.enum(["section", "group", "indicator"]),
+  title: z10.string().trim().min(2).max(120)
 });
-var valueSchema = z9.string().max(2e3);
-var periodEntrySchema = z9.object({
+var valueSchema = z10.string().max(2e3);
+var periodEntrySchema = z10.object({
   q1: valueSchema,
   q2: valueSchema,
   q3: valueSchema,
   q4: valueSchema,
   total: valueSchema
 });
-var dataRowEntrySchema = z9.object({
+var dataRowEntrySchema = z10.object({
   target: periodEntrySchema,
   accomplishment: periodEntrySchema
 });
-var indicatorEntrySchema = z9.object({
+var indicatorEntrySchema = z10.object({
   results: dataRowEntrySchema,
   rawData: dataRowEntrySchema
 });
-var currentAccomplishmentResourceDataSchema = z9.object({
-  version: z9.literal(2),
-  nodes: z9.array(treeNodeSchema).max(250),
-  entries: z9.record(
-    z9.string().regex(/^\d{4}$/u),
-    z9.record(nodeIdSchema, indicatorEntrySchema)
+var currentAccomplishmentResourceDataSchema = z10.object({
+  version: z10.literal(2),
+  nodes: z10.array(treeNodeSchema).max(250),
+  entries: z10.record(
+    z10.string().regex(/^\d{4}$/u),
+    z10.record(nodeIdSchema, indicatorEntrySchema)
   ),
-  chartType: z9.enum(["column", "line", "bar"]),
+  chartType: z10.enum(["column", "line", "bar"]),
   appearance: reportAppearanceSchema.optional()
 }).superRefine((data, context) => {
   const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
@@ -1442,7 +1515,7 @@ var currentAccomplishmentResourceDataSchema = z9.object({
     }
   });
 });
-var legacyPeriodEntrySchema = z9.object({
+var legacyPeriodEntrySchema = z10.object({
   target: valueSchema,
   q1: valueSchema,
   q2: valueSchema,
@@ -1450,20 +1523,20 @@ var legacyPeriodEntrySchema = z9.object({
   q4: valueSchema,
   total: valueSchema
 });
-var legacyAccomplishmentResourceDataSchema = z9.object({
-  version: z9.literal(1),
-  nodes: z9.array(treeNodeSchema).max(250),
-  entries: z9.record(
-    z9.string().regex(/^\d{4}$/u),
-    z9.record(
+var legacyAccomplishmentResourceDataSchema = z10.object({
+  version: z10.literal(1),
+  nodes: z10.array(treeNodeSchema).max(250),
+  entries: z10.record(
+    z10.string().regex(/^\d{4}$/u),
+    z10.record(
       nodeIdSchema,
-      z9.object({
+      z10.object({
         results: legacyPeriodEntrySchema,
         rawData: legacyPeriodEntrySchema
       })
     )
   ),
-  chartType: z9.enum(["column", "line", "bar"])
+  chartType: z10.enum(["column", "line", "bar"])
 });
 function migrateLegacyData(value) {
   const legacy = legacyAccomplishmentResourceDataSchema.safeParse(value);
@@ -1501,16 +1574,16 @@ function migrateLegacyData(value) {
   );
   return { ...legacy.data, version: 2, entries };
 }
-var accomplishmentResourceDataSchema = z9.preprocess(
+var accomplishmentResourceDataSchema = z10.preprocess(
   migrateLegacyData,
   currentAccomplishmentResourceDataSchema
 );
-var accomplishmentResourceResponseSchema = z9.object({
+var accomplishmentResourceResponseSchema = z10.object({
   data: accomplishmentResourceDataSchema
 });
 
 // server/repository/accomplishmentResourceStore.ts
-import { GetObjectCommand as GetObjectCommand3, PutObjectCommand as PutObjectCommand3 } from "@aws-sdk/client-s3";
+import { GetObjectCommand as GetObjectCommand3, PutObjectCommand as PutObjectCommand4 } from "@aws-sdk/client-s3";
 var key2 = "_system/accomplishment-resource.json";
 var defaults2 = {
   version: 2,
@@ -1538,7 +1611,7 @@ async function readAccomplishmentResource(environment = process.env) {
   }
 }
 function createAccomplishmentResourceWriteCommand(bucketName, data) {
-  return new PutObjectCommand3({
+  return new PutObjectCommand4({
     Bucket: bucketName,
     Key: key2,
     Body: JSON.stringify(data),
@@ -1632,36 +1705,36 @@ async function handleAccomplishmentResourceRequest(request, environment = proces
 }
 
 // src/contracts/opcrResource.ts
-import { z as z10 } from "zod";
-var nodeIdSchema2 = z10.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var treeNodeSchema2 = z10.object({
+import { z as z11 } from "zod";
+var nodeIdSchema2 = z11.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var treeNodeSchema2 = z11.object({
   id: nodeIdSchema2,
   parentId: nodeIdSchema2.nullable(),
-  type: z10.enum(["section", "group", "indicator"]),
-  title: z10.string().trim().min(2).max(120)
+  type: z11.enum(["section", "group", "indicator"]),
+  title: z11.string().trim().min(2).max(120)
 });
-var valueSchema2 = z10.string().max(2e3);
-var periodEntrySchema2 = z10.object({
+var valueSchema2 = z11.string().max(2e3);
+var periodEntrySchema2 = z11.object({
   h1: valueSchema2,
   h2: valueSchema2,
   total: valueSchema2
 });
-var dataRowEntrySchema2 = z10.object({
+var dataRowEntrySchema2 = z11.object({
   target: periodEntrySchema2,
   accomplishment: periodEntrySchema2
 });
-var indicatorEntrySchema2 = z10.object({
+var indicatorEntrySchema2 = z11.object({
   results: dataRowEntrySchema2,
   rawData: dataRowEntrySchema2
 });
-var opcrResourceDataSchema = z10.object({
-  version: z10.literal(1),
-  nodes: z10.array(treeNodeSchema2).max(250),
-  entries: z10.record(
-    z10.string().regex(/^\d{4}$/u),
-    z10.record(nodeIdSchema2, indicatorEntrySchema2)
+var opcrResourceDataSchema = z11.object({
+  version: z11.literal(1),
+  nodes: z11.array(treeNodeSchema2).max(250),
+  entries: z11.record(
+    z11.string().regex(/^\d{4}$/u),
+    z11.record(nodeIdSchema2, indicatorEntrySchema2)
   ),
-  chartType: z10.enum(["column", "line", "bar"]),
+  chartType: z11.enum(["column", "line", "bar"]),
   appearance: reportAppearanceSchema.optional()
 }).superRefine((data, context) => {
   const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
@@ -1684,12 +1757,12 @@ var opcrResourceDataSchema = z10.object({
     }
   });
 });
-var opcrResourceResponseSchema = z10.object({
+var opcrResourceResponseSchema = z11.object({
   data: opcrResourceDataSchema
 });
 
 // server/repository/opcrResourceStore.ts
-import { GetObjectCommand as GetObjectCommand4, PutObjectCommand as PutObjectCommand4 } from "@aws-sdk/client-s3";
+import { GetObjectCommand as GetObjectCommand4, PutObjectCommand as PutObjectCommand5 } from "@aws-sdk/client-s3";
 var key3 = "_system/opcr-resource.json";
 var defaults3 = {
   version: 1,
@@ -1717,7 +1790,7 @@ async function readOpcrResource(environment = process.env) {
   }
 }
 function createOpcrResourceWriteCommand(bucketName, data) {
-  return new PutObjectCommand4({
+  return new PutObjectCommand5({
     Bucket: bucketName,
     Key: key3,
     Body: JSON.stringify(data),
@@ -1841,15 +1914,15 @@ import { GetObjectCommand as GetObjectCommand5 } from "@aws-sdk/client-s3";
 import { getSignedUrl as getSignedUrl2 } from "@aws-sdk/s3-request-presigner";
 
 // src/contracts/publicResourcePreview.ts
-import { z as z11 } from "zod";
-var publicResourceIdSchema = z11.string().regex(/^[A-Za-z0-9_-]{43}$/u);
-var publicResourcePreviewRequestSchema = z11.object({
+import { z as z12 } from "zod";
+var publicResourceIdSchema = z12.string().regex(/^[A-Za-z0-9_-]{43}$/u);
+var publicResourcePreviewRequestSchema = z12.object({
   id: publicResourceIdSchema
 });
-var publicResourcePreviewResponseSchema = z11.object({
-  data: z11.object({
-    url: z11.url(),
-    expiresAt: z11.iso.datetime({ offset: true })
+var publicResourcePreviewResponseSchema = z12.object({
+  data: z12.object({
+    url: z12.url(),
+    expiresAt: z12.iso.datetime({ offset: true })
   })
 });
 
@@ -1916,12 +1989,12 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
         404
       );
     }
-    if (resource.fileType === "xlsx") {
+    if (resource.fileType === "xlsx" || resource.fileType === "link") {
       return json8(
         {
           error: {
             code: "RESOURCE_NOT_PREVIEWABLE",
-            message: "Online preview is not available for spreadsheet files."
+            message: "Online file preview is not available for this resource."
           }
         },
         400
@@ -1960,15 +2033,87 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
   }
 }
 
+// server/http/publicResourceLinkHandler.ts
+import { GetObjectCommand as GetObjectCommand6 } from "@aws-sdk/client-s3";
+var responseHeaders = {
+  "cache-control": "private, no-store",
+  "referrer-policy": "no-referrer",
+  "x-robots-tag": "noindex, nofollow"
+};
+function json9(body, status) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...responseHeaders,
+      "content-type": "application/json; charset=utf-8"
+    }
+  });
+}
+async function handlePublicResourceLinkRequest(request, dependencies = {}) {
+  if (request.method !== "GET") {
+    return json9(
+      { error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } },
+      405
+    );
+  }
+  const idResult = publicResourceIdSchema.safeParse(
+    new URL(request.url).searchParams.get("id")
+  );
+  if (!idResult.success) {
+    return json9(
+      { error: { code: "INVALID_REQUEST", message: "The link request is invalid." } },
+      400
+    );
+  }
+  try {
+    const findResource = dependencies.findResource ?? findResourceByPublicId;
+    const resource = await findResource(idResult.data, dependencies);
+    if (!resource) {
+      return json9(
+        { error: { code: "RESOURCE_NOT_FOUND", message: "The requested link could not be found." } },
+        404
+      );
+    }
+    if (resource.fileType !== "link" || resource.fileSize > maximumResourceLinkPayloadSize) {
+      return json9(
+        { error: { code: "RESOURCE_NOT_LINK", message: "The requested resource is not a public link." } },
+        400
+      );
+    }
+    const config = dependencies.config ?? getR2Config(dependencies.environment);
+    const readLink = dependencies.readLink ?? (async (bucket, key4) => {
+      const result = await createR2Client(config).send(
+        new GetObjectCommand6({ Bucket: bucket, Key: key4 })
+      );
+      if (!result.Body) throw new Error("The link resource is empty.");
+      return result.Body.transformToString("utf-8");
+    });
+    const rawPayload = await readLink(config.bucketName, resource.key);
+    if (Buffer.byteLength(rawPayload, "utf8") > maximumResourceLinkPayloadSize) {
+      throw new Error("The link resource is too large.");
+    }
+    const payload = resourceLinkPayloadSchema.parse(JSON.parse(rawPayload));
+    return new Response(null, {
+      status: 302,
+      headers: { ...responseHeaders, location: payload.url }
+    });
+  } catch {
+    return json9(
+      { error: { code: "LINK_UNAVAILABLE", message: "The link could not be opened. Please try again." } },
+      503
+    );
+  }
+}
+
 // server/http/repositoryStructureHandler.ts
 var headers8 = { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" };
-var json9 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers8 });
+var json10 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers8 });
 async function handleRepositoryStructureRequest(request, environment = process.env) {
   try {
-    if (request.method !== "GET") return json9({ error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } }, 405);
-    return json9({ data: await readRepositoryStructure(environment) });
+    if (request.method !== "GET") return json10({ error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } }, 405);
+    return json10({ data: await readRepositoryStructure(environment) });
   } catch {
-    return json9({ error: { code: "STRUCTURE_UNAVAILABLE", message: "Repository structure is unavailable." } }, 503);
+    return json10({ error: { code: "STRUCTURE_UNAVAILABLE", message: "Repository structure is unavailable." } }, 503);
   }
 }
 async function handleAdminRepositoryStructureRequest(request, environment = process.env, dependencies = {}) {
@@ -1976,32 +2121,32 @@ async function handleAdminRepositoryStructureRequest(request, environment = proc
   try {
     identity = await authenticateAdminRequest(request, { environment });
   } catch (error) {
-    if (error instanceof AdminAuthorizationError) return json9({ error: { code: "FORBIDDEN", message: error.message } }, 403);
-    return json9({ error: { code: "UNAUTHORIZED", message: "Authentication is required." } }, 401);
+    if (error instanceof AdminAuthorizationError) return json10({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+    return json10({ error: { code: "UNAUTHORIZED", message: "Authentication is required." } }, 401);
   }
   try {
-    if (request.method === "GET") return json9({ data: await readRepositoryStructure(environment) });
-    if (request.method !== "POST") return json9({ error: { code: "METHOD_NOT_ALLOWED", message: "Unsupported method." } }, 405);
+    if (request.method === "GET") return json10({ data: await readRepositoryStructure(environment) });
+    if (request.method !== "POST") return json10({ error: { code: "METHOD_NOT_ALLOWED", message: "Unsupported method." } }, 405);
     const payload = await request.json();
     const mutation = structureMutationSchema.safeParse(payload);
-    if (!mutation.success) return json9({ error: { code: "INVALID_REQUEST", message: "The repository organization change is invalid." } }, 400);
+    if (!mutation.success) return json10({ error: { code: "INVALID_REQUEST", message: "The repository organization change is invalid." } }, 400);
     await (dependencies.audit ?? recordAuditEvent)({
       action: "structure.changed",
       actor: identity,
       target: mutation.data.action,
       outcome: "attempted"
     }, environment);
-    return json9({ data: await mutateRepositoryStructure(mutation.data, environment) });
+    return json10({ data: await mutateRepositoryStructure(mutation.data, environment) });
   } catch (error) {
     if (error instanceof RepositoryStructureConflictError) {
-      return json9({ error: { code: "STRUCTURE_CONFLICT", message: error.message } }, 409);
+      return json10({ error: { code: "STRUCTURE_CONFLICT", message: error.message } }, 409);
     }
-    return json9({ error: { code: "STRUCTURE_OPERATION_FAILED", message: "The repository organization could not be changed." } }, 400);
+    return json10({ error: { code: "STRUCTURE_OPERATION_FAILED", message: "The repository organization could not be changed." } }, 400);
   }
 }
 
 // src/contracts/resourceUpload.ts
-import { z as z12 } from "zod";
+import { z as z13 } from "zod";
 var maximumResourceFileSize = 25 * 1024 * 1024;
 var resourceUploadFileDefinitions = {
   pdf: { mimeType: "application/pdf" },
@@ -2016,42 +2161,42 @@ var resourceUploadMimeTypes = [
   "image/png",
   "image/webp"
 ];
-var resourceUploadMimeTypeSchema = z12.enum(resourceUploadMimeTypes);
-var resourceUploadRequestSchema = z12.object({
+var resourceUploadMimeTypeSchema = z13.enum(resourceUploadMimeTypes);
+var resourceUploadRequestSchema = z13.object({
   filename: resourceFilenameSchema,
   sectionId: repositorySectionIdSchema,
-  categoryId: z12.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
+  categoryId: z13.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
   year: resourceYearSchema,
   mimeType: resourceUploadMimeTypeSchema,
-  fileSize: z12.number().int().positive().max(maximumResourceFileSize)
+  fileSize: z13.number().int().positive().max(maximumResourceFileSize)
 });
-var resourceUploadAuthorizationSchema = z12.object({
-  data: z12.object({
-    key: z12.string().min(1),
-    uploadUrl: z12.url(),
-    expiresInSeconds: z12.number().int().positive(),
-    headers: z12.object({
-      "content-type": z12.string().min(1),
-      "if-none-match": z12.literal("*")
+var resourceUploadAuthorizationSchema = z13.object({
+  data: z13.object({
+    key: z13.string().min(1),
+    uploadUrl: z13.url(),
+    expiresInSeconds: z13.number().int().positive(),
+    headers: z13.object({
+      "content-type": z13.string().min(1),
+      "if-none-match": z13.literal("*")
     })
   })
 });
-var resourceUploadCompletionRequestSchema = z12.object({
-  key: z12.string().min(1).max(1024),
+var resourceUploadCompletionRequestSchema = z13.object({
+  key: z13.string().min(1).max(1024),
   mimeType: resourceUploadMimeTypeSchema,
-  fileSize: z12.number().int().positive().max(maximumResourceFileSize)
+  fileSize: z13.number().int().positive().max(maximumResourceFileSize)
 });
-var resourceUploadCompletionResponseSchema = z12.object({
-  data: z12.object({
-    key: z12.string().min(1),
-    mimeType: z12.string().min(1),
-    fileSize: z12.number().int().positive(),
-    uploadedAt: z12.iso.datetime({ offset: true })
+var resourceUploadCompletionResponseSchema = z13.object({
+  data: z13.object({
+    key: z13.string().min(1),
+    mimeType: z13.string().min(1),
+    fileSize: z13.number().int().positive(),
+    uploadedAt: z13.iso.datetime({ offset: true })
   })
 });
 
 // server/repository/authorizeResourceUpload.ts
-import { HeadObjectCommand as HeadObjectCommand2, PutObjectCommand as PutObjectCommand5 } from "@aws-sdk/client-s3";
+import { HeadObjectCommand as HeadObjectCommand2, PutObjectCommand as PutObjectCommand6 } from "@aws-sdk/client-s3";
 import { getSignedUrl as getSignedUrl3 } from "@aws-sdk/s3-request-presigner";
 var uploadExpirationSeconds = 5 * 60;
 var InvalidResourceUploadError = class extends Error {
@@ -2108,7 +2253,7 @@ async function authorizeResourceUpload(input, dependencies = {}) {
     );
   const createUploadUrl = dependencies.createUploadUrl ?? (async (_config, bucket, objectKey, mimeType, fileSize) => getSignedUrl3(
     client,
-    new PutObjectCommand5({
+    new PutObjectCommand6({
       Bucket: bucket,
       Key: objectKey,
       ContentType: mimeType,
@@ -2133,29 +2278,29 @@ async function authorizeResourceUpload(input, dependencies = {}) {
 
 // server/http/uploadAuthorizeHandler.ts
 var headers9 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
-var json10 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers9 });
+var json11 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers9 });
 async function handleUploadAuthorizeRequest(request, dependencies = {}) {
-  if (request.method !== "POST") return json10({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
+  if (request.method !== "POST") return json11({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
   try {
     await authenticateAdminRequest(request, dependencies);
   } catch (error) {
-    if (error instanceof AdminAuthorizationError) return json10({ error: { code: "FORBIDDEN", message: error.message } }, 403);
-    return json10({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
+    if (error instanceof AdminAuthorizationError) return json11({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+    return json11({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
   }
   let payload;
   try {
     payload = await request.json();
   } catch {
-    return json10({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+    return json11({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
   }
   const result = resourceUploadRequestSchema.safeParse(payload);
-  if (!result.success) return json10({ error: { code: "INVALID_UPLOAD", message: "The upload information is invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "upload", message: issue.message })) } }, 400);
+  if (!result.success) return json11({ error: { code: "INVALID_UPLOAD", message: "The upload information is invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "upload", message: issue.message })) } }, 400);
   try {
-    return json10({ data: await authorizeResourceUpload(result.data, { environment: dependencies.environment, ...dependencies.upload }) });
+    return json11({ data: await authorizeResourceUpload(result.data, { environment: dependencies.environment, ...dependencies.upload }) });
   } catch (error) {
-    if (error instanceof DuplicateResourceError) return json10({ error: { code: "DUPLICATE_RESOURCE", message: error.message } }, 409);
-    if (error instanceof InvalidResourceUploadError) return json10({ error: { code: "INVALID_UPLOAD", message: error.message } }, 400);
-    return json10({ error: { code: "UPLOAD_AUTHORIZATION_FAILED", message: "Upload authorization is temporarily unavailable." } }, 503);
+    if (error instanceof DuplicateResourceError) return json11({ error: { code: "DUPLICATE_RESOURCE", message: error.message } }, 409);
+    if (error instanceof InvalidResourceUploadError) return json11({ error: { code: "INVALID_UPLOAD", message: error.message } }, 400);
+    return json11({ error: { code: "UPLOAD_AUTHORIZATION_FAILED", message: "Upload authorization is temporarily unavailable." } }, 503);
   }
 }
 
@@ -2210,24 +2355,24 @@ async function verifyResourceUpload(input, dependencies = {}) {
 
 // server/http/uploadCompleteHandler.ts
 var headers10 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
-var json11 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers10 });
+var json12 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers10 });
 async function handleUploadCompleteRequest(request, dependencies = {}) {
-  if (request.method !== "POST") return json11({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
+  if (request.method !== "POST") return json12({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
   let identity;
   try {
     identity = await authenticateAdminRequest(request, dependencies);
   } catch (error) {
-    if (error instanceof AdminAuthorizationError) return json11({ error: { code: "FORBIDDEN", message: error.message } }, 403);
-    return json11({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
+    if (error instanceof AdminAuthorizationError) return json12({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+    return json12({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
   }
   let payload;
   try {
     payload = await request.json();
   } catch {
-    return json11({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+    return json12({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
   }
   const result = resourceUploadCompletionRequestSchema.safeParse(payload);
-  if (!result.success) return json11({ error: { code: "INVALID_UPLOAD_COMPLETION", message: "The upload completion information is invalid." } }, 400);
+  if (!result.success) return json12({ error: { code: "INVALID_UPLOAD_COMPLETION", message: "The upload completion information is invalid." } }, 400);
   try {
     const resource = await verifyResourceUpload(result.data, { environment: dependencies.environment, ...dependencies.verification });
     await (dependencies.audit ?? recordAuditEvent)({
@@ -2237,9 +2382,9 @@ async function handleUploadCompleteRequest(request, dependencies = {}) {
       outcome: "succeeded",
       details: { fileSize: resource.fileSize, mimeType: resource.mimeType }
     }, dependencies.environment);
-    return json11({ data: resource });
+    return json12({ data: resource });
   } catch (error) {
-    return json11({ error: { code: "UPLOAD_VERIFICATION_FAILED", message: error instanceof ResourceUploadVerificationError ? error.message : "The upload could not be completed. Please try again." } }, 422);
+    return json12({ error: { code: "UPLOAD_VERIFICATION_FAILED", message: error instanceof ResourceUploadVerificationError ? error.message : "The upload could not be completed. Please try again." } }, 422);
   }
 }
 
@@ -2248,6 +2393,7 @@ var rewrittenApiPathParameter = "__apiPath";
 var routes = {
   "/api/resources": handleResourcesRequest,
   "/api/resource-preview": handlePublicResourcePreviewRequest,
+  "/api/resource-link": handlePublicResourceLinkRequest,
   "/api/repository-structure": handleRepositoryStructureRequest,
   "/api/accomplishments": handlePublicAccomplishmentResourceRequest,
   "/api/opcr": handlePublicOpcrResourceRequest,
