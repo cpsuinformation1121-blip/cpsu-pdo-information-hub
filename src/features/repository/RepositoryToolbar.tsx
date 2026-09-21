@@ -4,6 +4,10 @@ import type {
   ResourceFileType,
   ResourceSort,
 } from "../../contracts/resource";
+import {
+  resourceFileTypeOptions,
+  resourceSortOptions,
+} from "./resourceFilterOptions";
 import { useRepositoryStructureQuery } from "./useRepositoryStructureQuery";
 
 export type RepositoryFilters = {
@@ -17,24 +21,6 @@ type RepositoryToolbarProps = RepositoryFilters & {
   onChange: (filters: RepositoryFilters) => void;
 };
 
-const fileTypeOptions: readonly {
-  value: ResourceFileType | "";
-  label: string;
-}[] = [
-  { value: "", label: "All file types" },
-  { value: "pdf", label: "PDF documents" },
-  { value: "image", label: "Images" },
-  { value: "link", label: "Links" },
-];
-
-const sortOptions: readonly { value: ResourceSort; label: string }[] = [
-  { value: "newest", label: "Newest first" },
-  { value: "oldest", label: "Oldest first" },
-  { value: "name-asc", label: "Name A–Z" },
-  { value: "name-desc", label: "Name Z–A" },
-  { value: "file-size", label: "Largest first" },
-  { value: "file-type", label: "File type" },
-];
 
 const emptyFilters: RepositoryFilters = {
   fileType: "",
@@ -114,7 +100,7 @@ export function RepositoryToolbar({
             }
             className={controlClass}
           >
-            {fileTypeOptions.map((option) => (
+            {resourceFileTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -136,7 +122,7 @@ export function RepositoryToolbar({
             }
             className={controlClass}
           >
-            {sortOptions.map((option) => (
+            {resourceSortOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

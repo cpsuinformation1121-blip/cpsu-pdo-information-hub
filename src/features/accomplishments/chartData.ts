@@ -41,9 +41,11 @@ export type ComparisonDatum = {
   colorKey?: string;
 };
 
-type AnnualPerformanceEntry = {
-  results: ChartDataRow<ComparisonValues>;
-  rawData?: ChartDataRow<ComparisonValues>;
+type AnnualPerformanceEntry<
+  Values extends Record<"total", string> = ComparisonValues,
+> = {
+  results: ChartDataRow<Values>;
+  rawData?: ChartDataRow<Values>;
 };
 
 type AnnualPerformanceIndicator = {
@@ -51,9 +53,11 @@ type AnnualPerformanceIndicator = {
   title: string;
 };
 
-export type AnnualIndicatorYearData = {
+export type AnnualIndicatorYearData<
+  Values extends Record<"total", string> = ComparisonValues,
+> = {
   year: number;
-  entries: Record<string, AnnualPerformanceEntry>;
+  entries: Record<string, AnnualPerformanceEntry<Values>>;
 };
 
 function hasValues<TValues>(
@@ -116,9 +120,11 @@ function formatChartValue(value: string, source: ChartDataSource) {
   return source === "percentage" ? formatPercentageValue(value) : value;
 }
 
-export function createAnnualIndicatorChartData(
+export function createAnnualIndicatorChartData<
+  Values extends Record<"total", string>,
+>(
   indicators: AnnualPerformanceIndicator[],
-  entries: Record<string, AnnualPerformanceEntry>,
+  entries: Record<string, AnnualPerformanceEntry<Values>>,
 ): ComparisonDatum[] {
   return indicators.flatMap((indicator) => {
     const selected = selectPreferredChartData(entries[indicator.id], ["total"]);
@@ -151,9 +157,11 @@ export function createAnnualIndicatorChartData(
   });
 }
 
-export function createAnnualIndicatorSeriesChartData(
+export function createAnnualIndicatorSeriesChartData<
+  Values extends Record<"total", string>,
+>(
   indicatorId: string,
-  yearData: AnnualIndicatorYearData[],
+  yearData: AnnualIndicatorYearData<Values>[],
 ): ComparisonDatum[] {
   const orderedYearData = [...yearData].sort((a, b) => a.year - b.year);
   return orderedYearData.flatMap(({ year, entries }) => {
@@ -192,10 +200,10 @@ export function getComparisonStatus(
   return accomplishment >= target ? "met" : "below";
 }
 
-export function createComparisonChartData(
-  target: ComparisonValues | undefined,
-  accomplishment: ComparisonValues | undefined,
-  fields: ReadonlyArray<{ id: ComparisonField; label: string }>,
+export function createComparisonChartData<Field extends string>(
+  target: Record<Field, string> | undefined,
+  accomplishment: Record<Field, string> | undefined,
+  fields: ReadonlyArray<{ id: Field; label: string }>,
   colorKeyPrefix?: string,
   dataSource: ChartDataSource = "percentage",
 ): ComparisonDatum[] {

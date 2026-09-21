@@ -1,26 +1,28 @@
 import type { User } from "firebase/auth";
+import { fetchAuthenticatedJson } from "./authenticatedApi";
 import {
   adminResourceAccessResponseSchema,
   type AdminResourceAccessMode,
 } from "../contracts/adminResourceAccess";
 import { apiErrorResponseSchema } from "../contracts/resource";
-import { readJsonResponse } from "./apiResponse";
 
 export async function authorizeAdminResourceAccess(
   user: User,
   key: string,
   mode: AdminResourceAccessMode,
 ) {
-  const response = await fetch("/api/admin/resource-access", {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      authorization: `Bearer ${await user.getIdToken()}`,
-      "content-type": "application/json",
+  const { response, payload } = await fetchAuthenticatedJson(
+    user,
+    "/api/admin/resource-access",
+    {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ key, mode }),
     },
-    body: JSON.stringify({ key, mode }),
-  });
-  const payload = await readJsonResponse(response);
+  );
 
   if (!response.ok) {
     const error = apiErrorResponseSchema.safeParse(payload);

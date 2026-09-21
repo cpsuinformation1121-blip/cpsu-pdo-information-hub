@@ -43,7 +43,7 @@ var repositorySectionIdSchema = z.string().min(1).max(80).regex(/^[a-z0-9]+(?:-[
 var resourceFileTypeSchema = z.enum(resourceFileTypes);
 var resourceSortSchema = z.enum(resourceSortOptions);
 var resourceObjectKeySchema = z.string().min(1).max(1024).refine(
-  (key4) => !key4.startsWith("/") && !key4.includes("..") && !key4.includes("\\"),
+  (key2) => !key2.startsWith("/") && !key2.includes("..") && !key2.includes("\\"),
   {
     message: "Resource keys must use safe R2-style prefixes."
   }
@@ -669,7 +669,7 @@ async function recordAuditEvent(event, environment = process.env) {
   const id = randomUUID();
   const date = occurredAt.toISOString().slice(0, 10).replaceAll("-", "/");
   const timestamp = occurredAt.toISOString().replaceAll(":", "-");
-  const key4 = `_system/audit/${date}/${timestamp}-${id}.json`;
+  const key2 = `_system/audit/${date}/${timestamp}-${id}.json`;
   const config = getR2Config(environment);
   const auditEnvironment = auditEnvironmentSchema.safeParse(environment);
   if (!auditEnvironment.success) {
@@ -677,7 +677,7 @@ async function recordAuditEvent(event, environment = process.env) {
   }
   await createR2Client(config).send(createAuditWriteCommand(
     auditEnvironment.data.R2_AUDIT_BUCKET_NAME,
-    key4,
+    key2,
     {
       id,
       occurredAt: occurredAt.toISOString(),
@@ -691,12 +691,12 @@ async function recordAuditEvent(event, environment = process.env) {
       details: event.details ?? {}
     }
   ));
-  return key4;
+  return key2;
 }
-function createAuditWriteCommand(bucketName, key4, event) {
+function createAuditWriteCommand(bucketName, key2, event) {
   return new PutObjectCommand2({
     Bucket: bucketName,
-    Key: key4,
+    Key: key2,
     Body: JSON.stringify(event),
     ContentType: "application/json",
     CacheControl: "private, no-store",
@@ -1054,8 +1054,8 @@ async function getAllObjectSummaries(bucketName, prefix, listObjects) {
   } while (continuationToken);
   return objects;
 }
-function createPublicResourceId(key4) {
-  return createHash("sha256").update(key4).digest("base64url");
+function createPublicResourceId(key2) {
+  return createHash("sha256").update(key2).digest("base64url");
 }
 function mapObjectToResource(object, structure) {
   if (!object.Key || object.Size === void 0 || !object.LastModified)
@@ -1201,8 +1201,8 @@ var jsonHeaders = {
   "cache-control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
   "content-type": "application/json; charset=utf-8"
 };
-function jsonResponse(body, status = 200, headers11 = jsonHeaders) {
-  return new Response(JSON.stringify(body), { status, headers: headers11 });
+function jsonResponse(body, status = 200, headers8 = jsonHeaders) {
+  return new Response(JSON.stringify(body), { status, headers: headers8 });
 }
 async function handleResourcesRequest(request, dependencies = {}, resourceLister = listResources) {
   if (request.method !== "GET") {
@@ -1319,12 +1319,12 @@ async function handleAdminResourcesRequest(request, dependencies = {}) {
     environment: dependencies.environment,
     ...dependencies.resources
   }, listAdminResources);
-  const headers11 = new Headers(resourceResponse.headers);
-  headers11.set("cache-control", "private, no-store");
+  const headers8 = new Headers(resourceResponse.headers);
+  headers8.set("cache-control", "private, no-store");
   return new Response(resourceResponse.body, {
     status: resourceResponse.status,
     statusText: resourceResponse.statusText,
-    headers: headers11
+    headers: headers8
   });
 }
 
@@ -1333,8 +1333,8 @@ var jsonHeaders2 = {
   "cache-control": "no-store",
   "content-type": "application/json; charset=utf-8"
 };
-function jsonResponse2(body, status = 200, headers11 = jsonHeaders2) {
-  return new Response(JSON.stringify(body), { status, headers: headers11 });
+function jsonResponse2(body, status = 200, headers8 = jsonHeaders2) {
+  return new Response(JSON.stringify(body), { status, headers: headers8 });
 }
 async function handleAdminSessionRequest(request, dependencies = {}) {
   if (request.method !== "GET") {
@@ -1443,7 +1443,7 @@ async function handleAdminUsersRequest(request, dependencies = {}) {
 }
 
 // src/contracts/accomplishmentResource.ts
-import { z as z10 } from "zod";
+import { z as z11 } from "zod";
 
 // src/contracts/reportAppearance.ts
 import { z as z9 } from "zod";
@@ -1461,82 +1461,95 @@ var reportAppearanceSchema = z9.object({
   barColors: z9.record(barColorKeySchema, barColorValueSchema).optional()
 });
 
-// src/contracts/accomplishmentResource.ts
-var nodeIdSchema = z10.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var treeNodeSchema = z10.object({
-  id: nodeIdSchema,
-  parentId: nodeIdSchema.nullable(),
+// src/contracts/reportResource.ts
+import { z as z10 } from "zod";
+var reportNodeIdSchema = z10.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var reportTreeNodeSchema = z10.object({
+  id: reportNodeIdSchema,
+  parentId: reportNodeIdSchema.nullable(),
   type: z10.enum(["section", "group", "indicator"]),
   title: z10.string().trim().min(2).max(120)
 });
-var valueSchema = z10.string().max(2e3);
-var periodEntrySchema = z10.object({
-  q1: valueSchema,
-  q2: valueSchema,
-  q3: valueSchema,
-  q4: valueSchema,
-  total: valueSchema
+var reportValueSchema = z10.string().max(2e3);
+var reportChartTypeSchema = z10.enum(["column", "line", "bar"]);
+function inspectReportHierarchy(nodes) {
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+  const invalidParentIndexes = [];
+  nodes.forEach((node, index) => {
+    const parent = node.parentId ? nodesById.get(node.parentId) : void 0;
+    const validParent = node.type === "section" && node.parentId === null || node.type === "group" && parent?.type === "section" || node.type === "indicator" && parent?.type === "group";
+    if (!validParent) invalidParentIndexes.push(index);
+  });
+  return {
+    hasDuplicateIds: nodesById.size !== nodes.length,
+    invalidParentIndexes
+  };
+}
+
+// src/contracts/accomplishmentResource.ts
+var periodEntrySchema = z11.object({
+  q1: reportValueSchema,
+  q2: reportValueSchema,
+  q3: reportValueSchema,
+  q4: reportValueSchema,
+  total: reportValueSchema
 });
-var dataRowEntrySchema = z10.object({
+var dataRowEntrySchema = z11.object({
   target: periodEntrySchema,
   accomplishment: periodEntrySchema
 });
-var indicatorEntrySchema = z10.object({
+var indicatorEntrySchema = z11.object({
   results: dataRowEntrySchema,
   rawData: dataRowEntrySchema
 });
-var currentAccomplishmentResourceDataSchema = z10.object({
-  version: z10.literal(2),
-  nodes: z10.array(treeNodeSchema).max(250),
-  entries: z10.record(
-    z10.string().regex(/^\d{4}$/u),
-    z10.record(nodeIdSchema, indicatorEntrySchema)
+var currentAccomplishmentResourceDataSchema = z11.object({
+  version: z11.literal(2),
+  nodes: z11.array(reportTreeNodeSchema).max(250),
+  entries: z11.record(
+    z11.string().regex(/^\d{4}$/u),
+    z11.record(reportNodeIdSchema, indicatorEntrySchema)
   ),
-  chartType: z10.enum(["column", "line", "bar"]),
+  chartType: reportChartTypeSchema,
   appearance: reportAppearanceSchema.optional()
 }).superRefine((data, context) => {
-  const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
-  if (nodesById.size !== data.nodes.length) {
+  const hierarchy = inspectReportHierarchy(data.nodes);
+  if (hierarchy.hasDuplicateIds) {
     context.addIssue({
       code: "custom",
       message: "Performance item identifiers must be unique.",
       path: ["nodes"]
     });
   }
-  data.nodes.forEach((node, index) => {
-    const parent = node.parentId ? nodesById.get(node.parentId) : void 0;
-    const validParent = node.type === "section" && node.parentId === null || node.type === "group" && parent?.type === "section" || node.type === "indicator" && parent?.type === "group";
-    if (!validParent) {
-      context.addIssue({
-        code: "custom",
-        message: "The performance hierarchy is invalid.",
-        path: ["nodes", index, "parentId"]
-      });
-    }
+  hierarchy.invalidParentIndexes.forEach((index) => {
+    context.addIssue({
+      code: "custom",
+      message: "The performance hierarchy is invalid.",
+      path: ["nodes", index, "parentId"]
+    });
   });
 });
-var legacyPeriodEntrySchema = z10.object({
-  target: valueSchema,
-  q1: valueSchema,
-  q2: valueSchema,
-  q3: valueSchema,
-  q4: valueSchema,
-  total: valueSchema
+var legacyPeriodEntrySchema = z11.object({
+  target: reportValueSchema,
+  q1: reportValueSchema,
+  q2: reportValueSchema,
+  q3: reportValueSchema,
+  q4: reportValueSchema,
+  total: reportValueSchema
 });
-var legacyAccomplishmentResourceDataSchema = z10.object({
-  version: z10.literal(1),
-  nodes: z10.array(treeNodeSchema).max(250),
-  entries: z10.record(
-    z10.string().regex(/^\d{4}$/u),
-    z10.record(
-      nodeIdSchema,
-      z10.object({
+var legacyAccomplishmentResourceDataSchema = z11.object({
+  version: z11.literal(1),
+  nodes: z11.array(reportTreeNodeSchema).max(250),
+  entries: z11.record(
+    z11.string().regex(/^\d{4}$/u),
+    z11.record(
+      reportNodeIdSchema,
+      z11.object({
         results: legacyPeriodEntrySchema,
         rawData: legacyPeriodEntrySchema
       })
     )
   ),
-  chartType: z10.enum(["column", "line", "bar"])
+  chartType: reportChartTypeSchema
 });
 function migrateLegacyData(value) {
   const legacy = legacyAccomplishmentResourceDataSchema.safeParse(value);
@@ -1574,372 +1587,351 @@ function migrateLegacyData(value) {
   );
   return { ...legacy.data, version: 2, entries };
 }
-var accomplishmentResourceDataSchema = z10.preprocess(
+var accomplishmentResourceDataSchema = z11.preprocess(
   migrateLegacyData,
   currentAccomplishmentResourceDataSchema
 );
-var accomplishmentResourceResponseSchema = z10.object({
+var accomplishmentResourceResponseSchema = z11.object({
   data: accomplishmentResourceDataSchema
 });
 
-// server/repository/accomplishmentResourceStore.ts
+// server/repository/jsonResourceStore.ts
 import { GetObjectCommand as GetObjectCommand3, PutObjectCommand as PutObjectCommand4 } from "@aws-sdk/client-s3";
-var key2 = "_system/accomplishment-resource.json";
-var defaults2 = {
-  version: 2,
-  nodes: [],
-  entries: {},
-  chartType: "column"
-};
-async function readBody(body) {
+async function readObjectBody(body, invalidBodyMessage) {
   if (body && typeof body === "object" && "transformToString" in body && typeof body.transformToString === "function")
     return body.transformToString();
-  throw new Error("Invalid accomplishment resource body.");
+  throw new Error(invalidBodyMessage);
 }
-async function readAccomplishmentResource(environment = process.env) {
-  const config = getR2Config(environment);
-  try {
-    const object = await createR2Client(config).send(
-      new GetObjectCommand3({ Bucket: config.bucketName, Key: key2 })
-    );
-    return accomplishmentResourceDataSchema.parse(
-      JSON.parse(await readBody(object.Body))
-    );
-  } catch (error) {
-    if (isR2NotFound(error)) return structuredClone(defaults2);
-    throw error;
+function createR2JsonResourceStore(options) {
+  function createWriteCommand(bucketName, data) {
+    return new PutObjectCommand4({
+      Bucket: bucketName,
+      Key: options.key,
+      Body: JSON.stringify(data),
+      ContentType: "application/json",
+      CacheControl: "no-store"
+    });
   }
-}
-function createAccomplishmentResourceWriteCommand(bucketName, data) {
-  return new PutObjectCommand4({
-    Bucket: bucketName,
-    Key: key2,
-    Body: JSON.stringify(data),
-    ContentType: "application/json",
-    CacheControl: "no-store"
-  });
-}
-async function writeAccomplishmentResource(payload, environment = process.env) {
-  const data = accomplishmentResourceDataSchema.parse(payload);
-  const config = getR2Config(environment);
-  await createR2Client(config).send(
-    createAccomplishmentResourceWriteCommand(config.bucketName, data)
-  );
-  return data;
+  async function read(environment = process.env) {
+    const config = getR2Config(environment);
+    try {
+      const object = await createR2Client(config).send(
+        new GetObjectCommand3({
+          Bucket: config.bucketName,
+          Key: options.key
+        })
+      );
+      const body = await readObjectBody(
+        object.Body,
+        options.invalidBodyMessage
+      );
+      return options.schema.parse(JSON.parse(body));
+    } catch (error) {
+      if (isR2NotFound(error)) return structuredClone(options.defaults);
+      throw error;
+    }
+  }
+  async function write(payload, environment = process.env) {
+    const data = options.schema.parse(payload);
+    const config = getR2Config(environment);
+    await createR2Client(config).send(
+      createWriteCommand(config.bucketName, data)
+    );
+    return data;
+  }
+  return { createWriteCommand, read, write };
 }
 
-// server/http/accomplishmentResourceHandler.ts
-var headers4 = {
+// server/repository/accomplishmentResourceStore.ts
+var store = createR2JsonResourceStore({
+  key: "_system/accomplishment-resource.json",
+  defaults: {
+    version: 2,
+    nodes: [],
+    entries: {},
+    chartType: "column"
+  },
+  schema: accomplishmentResourceDataSchema,
+  invalidBodyMessage: "Invalid accomplishment resource body."
+});
+var createAccomplishmentResourceWriteCommand = store.createWriteCommand;
+var readAccomplishmentResource = store.read;
+var writeAccomplishmentResource = store.write;
+
+// server/http/adminReportResourceHandler.ts
+var privateHeaders = {
   "cache-control": "private, no-store",
   "content-type": "application/json; charset=utf-8"
 };
-var json4 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers4 });
-async function handleAccomplishmentResourceRequest(request, environment = process.env, dependencies = {}) {
-  let identity;
-  try {
-    identity = await authenticateAdminRequest(request, { environment });
-  } catch (error) {
-    if (error instanceof AdminAuthorizationError)
-      return json4(
-        { error: { code: "FORBIDDEN", message: error.message } },
-        403
-      );
-    return json4(
-      {
-        error: {
-          code: "UNAUTHORIZED",
-          message: "Authentication is required."
-        }
-      },
-      401
-    );
-  }
-  try {
-    if (request.method === "GET")
-      return json4({ data: await readAccomplishmentResource(environment) });
-    if (request.method !== "PUT")
+function json4(body, status = 200, extraHeaders = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...privateHeaders, ...extraHeaders }
+  });
+}
+function createAdminReportResourceHandler(options) {
+  return async function handleAdminReportResourceRequest(request, environment = process.env, dependencies = {}) {
+    let identity;
+    try {
+      identity = await authenticateAdminRequest(request, { environment });
+    } catch (error) {
+      if (error instanceof AdminAuthorizationError) {
+        return json4(
+          { error: { code: "FORBIDDEN", message: error.message } },
+          403
+        );
+      }
       return json4(
         {
           error: {
-            code: "METHOD_NOT_ALLOWED",
-            message: "Only GET and PUT are supported."
+            code: "UNAUTHORIZED",
+            message: "Authentication is required."
           }
         },
-        405
+        401
       );
-    const payload = await request.json();
-    const parsed = accomplishmentResourceDataSchema.safeParse(payload);
-    if (!parsed.success)
+    }
+    try {
+      if (request.method === "GET") {
+        return json4({ data: await options.read(environment) });
+      }
+      if (request.method !== "PUT") {
+        return json4(
+          {
+            error: {
+              code: "METHOD_NOT_ALLOWED",
+              message: "Only GET and PUT are supported."
+            }
+          },
+          405,
+          { allow: "GET, PUT" }
+        );
+      }
+      const parsed = options.schema.safeParse(await request.json());
+      if (!parsed.success) {
+        return json4(
+          {
+            error: {
+              code: "INVALID_REQUEST",
+              message: options.invalidRequestMessage
+            }
+          },
+          400
+        );
+      }
+      await (dependencies.audit ?? recordAuditEvent)(
+        {
+          action: options.auditAction,
+          actor: identity,
+          target: options.auditTarget,
+          outcome: "attempted"
+        },
+        environment
+      );
+      return json4({ data: await options.write(parsed.data, environment) });
+    } catch {
       return json4(
         {
           error: {
-            code: "INVALID_REQUEST",
-            message: "The accomplishment resource data is invalid."
+            code: options.unavailableCode,
+            message: options.unavailableMessage
           }
         },
-        400
+        503
       );
-    await (dependencies.audit ?? recordAuditEvent)(
-      {
-        action: "accomplishment-resource.saved",
-        actor: identity,
-        target: "accomplishment-resource",
-        outcome: "attempted"
-      },
-      environment
-    );
-    return json4({
-      data: await writeAccomplishmentResource(parsed.data, environment)
-    });
-  } catch {
-    return json4(
-      {
-        error: {
-          code: "ACCOMPLISHMENT_RESOURCE_UNAVAILABLE",
-          message: "The accomplishment resource could not be saved."
-        }
-      },
-      503
-    );
-  }
+    }
+  };
 }
 
+// server/http/accomplishmentResourceHandler.ts
+var handleAccomplishmentResourceRequest = createAdminReportResourceHandler({
+  schema: accomplishmentResourceDataSchema,
+  read: readAccomplishmentResource,
+  write: writeAccomplishmentResource,
+  invalidRequestMessage: "The accomplishment resource data is invalid.",
+  unavailableCode: "ACCOMPLISHMENT_RESOURCE_UNAVAILABLE",
+  unavailableMessage: "The accomplishment resource could not be saved.",
+  auditAction: "accomplishment-resource.saved",
+  auditTarget: "accomplishment-resource"
+});
+
 // src/contracts/opcrResource.ts
-import { z as z11 } from "zod";
-var nodeIdSchema2 = z11.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var treeNodeSchema2 = z11.object({
-  id: nodeIdSchema2,
-  parentId: nodeIdSchema2.nullable(),
-  type: z11.enum(["section", "group", "indicator"]),
-  title: z11.string().trim().min(2).max(120)
+import { z as z12 } from "zod";
+var periodEntrySchema2 = z12.object({
+  h1: reportValueSchema,
+  h2: reportValueSchema,
+  total: reportValueSchema
 });
-var valueSchema2 = z11.string().max(2e3);
-var periodEntrySchema2 = z11.object({
-  h1: valueSchema2,
-  h2: valueSchema2,
-  total: valueSchema2
-});
-var dataRowEntrySchema2 = z11.object({
+var dataRowEntrySchema2 = z12.object({
   target: periodEntrySchema2,
   accomplishment: periodEntrySchema2
 });
-var indicatorEntrySchema2 = z11.object({
+var indicatorEntrySchema2 = z12.object({
   results: dataRowEntrySchema2,
   rawData: dataRowEntrySchema2
 });
-var opcrResourceDataSchema = z11.object({
-  version: z11.literal(1),
-  nodes: z11.array(treeNodeSchema2).max(250),
-  entries: z11.record(
-    z11.string().regex(/^\d{4}$/u),
-    z11.record(nodeIdSchema2, indicatorEntrySchema2)
+var opcrResourceDataSchema = z12.object({
+  version: z12.literal(1),
+  nodes: z12.array(reportTreeNodeSchema).max(250),
+  entries: z12.record(
+    z12.string().regex(/^\d{4}$/u),
+    z12.record(reportNodeIdSchema, indicatorEntrySchema2)
   ),
-  chartType: z11.enum(["column", "line", "bar"]),
+  chartType: reportChartTypeSchema,
   appearance: reportAppearanceSchema.optional()
 }).superRefine((data, context) => {
-  const nodesById = new Map(data.nodes.map((node) => [node.id, node]));
-  if (nodesById.size !== data.nodes.length) {
+  const hierarchy = inspectReportHierarchy(data.nodes);
+  if (hierarchy.hasDuplicateIds) {
     context.addIssue({
       code: "custom",
       message: "OPCR performance item identifiers must be unique.",
       path: ["nodes"]
     });
   }
-  data.nodes.forEach((node, index) => {
-    const parent = node.parentId ? nodesById.get(node.parentId) : void 0;
-    const validParent = node.type === "section" && node.parentId === null || node.type === "group" && parent?.type === "section" || node.type === "indicator" && parent?.type === "group";
-    if (!validParent) {
-      context.addIssue({
-        code: "custom",
-        message: "The OPCR performance hierarchy is invalid.",
-        path: ["nodes", index, "parentId"]
-      });
-    }
+  hierarchy.invalidParentIndexes.forEach((index) => {
+    context.addIssue({
+      code: "custom",
+      message: "The OPCR performance hierarchy is invalid.",
+      path: ["nodes", index, "parentId"]
+    });
   });
 });
-var opcrResourceResponseSchema = z11.object({
+var opcrResourceResponseSchema = z12.object({
   data: opcrResourceDataSchema
 });
 
 // server/repository/opcrResourceStore.ts
-import { GetObjectCommand as GetObjectCommand4, PutObjectCommand as PutObjectCommand5 } from "@aws-sdk/client-s3";
-var key3 = "_system/opcr-resource.json";
-var defaults3 = {
-  version: 1,
-  nodes: [],
-  entries: {},
-  chartType: "column"
-};
-async function readBody2(body) {
-  if (body && typeof body === "object" && "transformToString" in body && typeof body.transformToString === "function")
-    return body.transformToString();
-  throw new Error("Invalid OPCR resource body.");
-}
-async function readOpcrResource(environment = process.env) {
-  const config = getR2Config(environment);
-  try {
-    const object = await createR2Client(config).send(
-      new GetObjectCommand4({ Bucket: config.bucketName, Key: key3 })
-    );
-    return opcrResourceDataSchema.parse(
-      JSON.parse(await readBody2(object.Body))
-    );
-  } catch (error) {
-    if (isR2NotFound(error)) return structuredClone(defaults3);
-    throw error;
-  }
-}
-function createOpcrResourceWriteCommand(bucketName, data) {
-  return new PutObjectCommand5({
-    Bucket: bucketName,
-    Key: key3,
-    Body: JSON.stringify(data),
-    ContentType: "application/json",
-    CacheControl: "no-store"
-  });
-}
-async function writeOpcrResource(payload, environment = process.env) {
-  const data = opcrResourceDataSchema.parse(payload);
-  const config = getR2Config(environment);
-  await createR2Client(config).send(
-    createOpcrResourceWriteCommand(config.bucketName, data)
-  );
-  return data;
-}
+var store2 = createR2JsonResourceStore({
+  key: "_system/opcr-resource.json",
+  defaults: {
+    version: 1,
+    nodes: [],
+    entries: {},
+    chartType: "column"
+  },
+  schema: opcrResourceDataSchema,
+  invalidBodyMessage: "Invalid OPCR resource body."
+});
+var createOpcrResourceWriteCommand = store2.createWriteCommand;
+var readOpcrResource = store2.read;
+var writeOpcrResource = store2.write;
 
 // server/http/opcrResourceHandler.ts
-var headers5 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
-function json5(body, status = 200, extra = {}) {
-  return new Response(JSON.stringify(body), { status, headers: { ...headers5, ...extra } });
-}
-async function handleOpcrResourceRequest(request, environment = process.env) {
-  let identity;
-  try {
-    identity = await authenticateAdminRequest(request, { environment });
-  } catch (error) {
-    if (error instanceof AdminAuthorizationError)
-      return json5({ error: { code: "FORBIDDEN", message: error.message } }, 403);
-    return json5({ error: { code: "UNAUTHORIZED", message: "Authentication is required." } }, 401);
-  }
-  try {
-    if (request.method === "GET") return json5({ data: await readOpcrResource(environment) });
-    if (request.method !== "PUT") {
-      return json5({ error: { code: "METHOD_NOT_ALLOWED", message: "Only GET and PUT are supported." } }, 405, { allow: "GET, PUT" });
-    }
-    const parsed = opcrResourceDataSchema.safeParse(await request.json());
-    if (!parsed.success) return json5({ error: { code: "INVALID_REQUEST", message: "The OPCR resource data is invalid." } }, 400);
-    await recordAuditEvent({ action: "opcr-resource.saved", actor: identity, target: "opcr-resource", outcome: "attempted" }, environment);
-    return json5({ data: await writeOpcrResource(parsed.data, environment) });
-  } catch {
-    return json5({ error: { code: "OPCR_RESOURCE_UNAVAILABLE", message: "The OPCR resource is temporarily unavailable." } }, 503);
-  }
-}
+var handleOpcrResourceRequest = createAdminReportResourceHandler({
+  schema: opcrResourceDataSchema,
+  read: readOpcrResource,
+  write: writeOpcrResource,
+  invalidRequestMessage: "The OPCR resource data is invalid.",
+  unavailableCode: "OPCR_RESOURCE_UNAVAILABLE",
+  unavailableMessage: "The OPCR resource is temporarily unavailable.",
+  auditAction: "opcr-resource.saved",
+  auditTarget: "opcr-resource"
+});
 
-// server/http/publicAccomplishmentResourceHandler.ts
+// server/http/publicReportResourceHandler.ts
 var publicHeaders = {
   "cache-control": "no-store",
   "content-type": "application/json; charset=utf-8"
 };
-function json6(body, status = 200, headers11 = publicHeaders) {
-  return new Response(JSON.stringify(body), { status, headers: headers11 });
+function json5(body, status = 200, extraHeaders = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...publicHeaders, ...extraHeaders }
+  });
 }
-async function handlePublicAccomplishmentResourceRequest(request, environment = process.env, dependencies = {}) {
-  if (request.method !== "GET") {
-    return json6(
-      {
-        error: {
-          code: "METHOD_NOT_ALLOWED",
-          message: "Only GET is supported."
+function createPublicReportResourceHandler(options) {
+  return async function handlePublicReportResourceRequest(request, environment = process.env, dependencies = {}) {
+    if (request.method !== "GET") {
+      return json5(
+        {
+          error: {
+            code: "METHOD_NOT_ALLOWED",
+            message: "Only GET is supported."
+          }
+        },
+        405,
+        { allow: "GET" }
+      );
+    }
+    const year = new URL(request.url).searchParams.get("year");
+    if (!year || !/^\d{4}$/u.test(year)) {
+      return json5(
+        {
+          error: {
+            code: "INVALID_YEAR",
+            message: "Select a valid year."
+          }
+        },
+        400
+      );
+    }
+    try {
+      const data = await (dependencies.read ?? options.read)(environment);
+      return json5({
+        data: {
+          ...data,
+          entries: { [year]: data.entries[year] ?? {} }
         }
-      },
-      405,
-      { ...publicHeaders, allow: "GET" }
-    );
-  }
-  const year = new URL(request.url).searchParams.get("year");
-  if (!year || !/^\d{4}$/u.test(year)) {
-    return json6(
-      {
-        error: {
-          code: "INVALID_YEAR",
-          message: "Select a valid year."
-        }
-      },
-      400
-    );
-  }
-  try {
-    const data = await (dependencies.read ?? readAccomplishmentResource)(
-      environment
-    );
-    return json6({
-      data: {
-        ...data,
-        entries: { [year]: data.entries[year] ?? {} }
-      }
-    });
-  } catch {
-    return json6(
-      {
-        error: {
-          code: "ACCOMPLISHMENT_RESOURCE_UNAVAILABLE",
-          message: "Accomplishment data is temporarily unavailable."
-        }
-      },
-      503,
-      { ...publicHeaders, "cache-control": "no-store" }
-    );
-  }
+      });
+    } catch {
+      return json5(
+        {
+          error: {
+            code: options.unavailableCode,
+            message: options.unavailableMessage
+          }
+        },
+        503
+      );
+    }
+  };
 }
+
+// server/http/publicAccomplishmentResourceHandler.ts
+var handlePublicAccomplishmentResourceRequest = createPublicReportResourceHandler({
+  read: readAccomplishmentResource,
+  unavailableCode: "ACCOMPLISHMENT_RESOURCE_UNAVAILABLE",
+  unavailableMessage: "Accomplishment data is temporarily unavailable."
+});
 
 // server/http/publicOpcrResourceHandler.ts
-var headers6 = { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" };
-function json7(body, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: headers6 });
-}
-async function handlePublicOpcrResourceRequest(request, environment = process.env, dependencies = {}) {
-  if (request.method !== "GET") return json7({ error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } }, 405);
-  const year = new URL(request.url).searchParams.get("year");
-  if (!year || !/^\d{4}$/u.test(year)) return json7({ error: { code: "INVALID_YEAR", message: "Select a valid year." } }, 400);
-  try {
-    const data = await (dependencies.read ?? readOpcrResource)(environment);
-    return json7({ data: { ...data, entries: { [year]: data.entries[year] ?? {} } } });
-  } catch {
-    return json7({ error: { code: "OPCR_RESOURCE_UNAVAILABLE", message: "OPCR data is temporarily unavailable." } }, 503);
-  }
-}
+var handlePublicOpcrResourceRequest = createPublicReportResourceHandler({
+  read: readOpcrResource,
+  unavailableCode: "OPCR_RESOURCE_UNAVAILABLE",
+  unavailableMessage: "OPCR data is temporarily unavailable."
+});
 
 // server/http/publicResourcePreviewHandler.ts
-import { GetObjectCommand as GetObjectCommand5 } from "@aws-sdk/client-s3";
+import { GetObjectCommand as GetObjectCommand4 } from "@aws-sdk/client-s3";
 import { getSignedUrl as getSignedUrl2 } from "@aws-sdk/s3-request-presigner";
 
 // src/contracts/publicResourcePreview.ts
-import { z as z12 } from "zod";
-var publicResourceIdSchema = z12.string().regex(/^[A-Za-z0-9_-]{43}$/u);
-var publicResourcePreviewRequestSchema = z12.object({
+import { z as z13 } from "zod";
+var publicResourceIdSchema = z13.string().regex(/^[A-Za-z0-9_-]{43}$/u);
+var publicResourcePreviewRequestSchema = z13.object({
   id: publicResourceIdSchema
 });
-var publicResourcePreviewResponseSchema = z12.object({
-  data: z12.object({
-    url: z12.url(),
-    expiresAt: z12.iso.datetime({ offset: true })
+var publicResourcePreviewResponseSchema = z13.object({
+  data: z13.object({
+    url: z13.url(),
+    expiresAt: z13.iso.datetime({ offset: true })
   })
 });
 
 // server/http/publicResourcePreviewHandler.ts
 var previewLifetimeSeconds = 60;
-var headers7 = {
+var headers4 = {
   "cache-control": "private, no-store",
   "content-type": "application/json; charset=utf-8"
 };
-var json8 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers7 });
+var json6 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers4 });
 function inlineContentDisposition(filename) {
   const utf8Prefix = "UTF-8" + String.fromCharCode(39, 39);
   return "inline; filename*=" + utf8Prefix + encodeURIComponent(filename);
 }
 async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
   if (request.method !== "POST") {
-    return json8(
+    return json6(
       {
         error: {
           code: "METHOD_NOT_ALLOWED",
@@ -1953,7 +1945,7 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
   try {
     payload = await request.json();
   } catch {
-    return json8(
+    return json6(
       {
         error: {
           code: "INVALID_REQUEST",
@@ -1965,7 +1957,7 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
   }
   const result = publicResourcePreviewRequestSchema.safeParse(payload);
   if (!result.success) {
-    return json8(
+    return json6(
       {
         error: {
           code: "INVALID_REQUEST",
@@ -1979,7 +1971,7 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
     const findResource = dependencies.findResource ?? findResourceByPublicId;
     const resource = await findResource(result.data.id, dependencies);
     if (!resource) {
-      return json8(
+      return json6(
         {
           error: {
             code: "RESOURCE_NOT_FOUND",
@@ -1990,7 +1982,7 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
       );
     }
     if (resource.fileType === "xlsx" || resource.fileType === "link") {
-      return json8(
+      return json6(
         {
           error: {
             code: "RESOURCE_NOT_PREVIEWABLE",
@@ -2001,7 +1993,7 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
       );
     }
     const config = dependencies.config ?? getR2Config(dependencies.environment);
-    const command = new GetObjectCommand5({
+    const command = new GetObjectCommand4({
       Bucket: config.bucketName,
       Key: resource.key,
       ResponseCacheControl: "private, no-store",
@@ -2012,7 +2004,7 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
       expiresIn: previewLifetimeSeconds
     });
     const now = dependencies.now?.() ?? /* @__PURE__ */ new Date();
-    return json8({
+    return json6({
       data: {
         url,
         expiresAt: new Date(
@@ -2021,7 +2013,7 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
       }
     });
   } catch {
-    return json8(
+    return json6(
       {
         error: {
           code: "PREVIEW_UNAVAILABLE",
@@ -2034,13 +2026,13 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
 }
 
 // server/http/publicResourceLinkHandler.ts
-import { GetObjectCommand as GetObjectCommand6 } from "@aws-sdk/client-s3";
+import { GetObjectCommand as GetObjectCommand5 } from "@aws-sdk/client-s3";
 var responseHeaders = {
   "cache-control": "private, no-store",
   "referrer-policy": "no-referrer",
   "x-robots-tag": "noindex, nofollow"
 };
-function json9(body, status) {
+function json7(body, status) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -2051,7 +2043,7 @@ function json9(body, status) {
 }
 async function handlePublicResourceLinkRequest(request, dependencies = {}) {
   if (request.method !== "GET") {
-    return json9(
+    return json7(
       { error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } },
       405
     );
@@ -2060,7 +2052,7 @@ async function handlePublicResourceLinkRequest(request, dependencies = {}) {
     new URL(request.url).searchParams.get("id")
   );
   if (!idResult.success) {
-    return json9(
+    return json7(
       { error: { code: "INVALID_REQUEST", message: "The link request is invalid." } },
       400
     );
@@ -2069,21 +2061,21 @@ async function handlePublicResourceLinkRequest(request, dependencies = {}) {
     const findResource = dependencies.findResource ?? findResourceByPublicId;
     const resource = await findResource(idResult.data, dependencies);
     if (!resource) {
-      return json9(
+      return json7(
         { error: { code: "RESOURCE_NOT_FOUND", message: "The requested link could not be found." } },
         404
       );
     }
     if (resource.fileType !== "link" || resource.fileSize > maximumResourceLinkPayloadSize) {
-      return json9(
+      return json7(
         { error: { code: "RESOURCE_NOT_LINK", message: "The requested resource is not a public link." } },
         400
       );
     }
     const config = dependencies.config ?? getR2Config(dependencies.environment);
-    const readLink = dependencies.readLink ?? (async (bucket, key4) => {
+    const readLink = dependencies.readLink ?? (async (bucket, key2) => {
       const result = await createR2Client(config).send(
-        new GetObjectCommand6({ Bucket: bucket, Key: key4 })
+        new GetObjectCommand5({ Bucket: bucket, Key: key2 })
       );
       if (!result.Body) throw new Error("The link resource is empty.");
       return result.Body.transformToString("utf-8");
@@ -2098,7 +2090,7 @@ async function handlePublicResourceLinkRequest(request, dependencies = {}) {
       headers: { ...responseHeaders, location: payload.url }
     });
   } catch {
-    return json9(
+    return json7(
       { error: { code: "LINK_UNAVAILABLE", message: "The link could not be opened. Please try again." } },
       503
     );
@@ -2106,14 +2098,14 @@ async function handlePublicResourceLinkRequest(request, dependencies = {}) {
 }
 
 // server/http/repositoryStructureHandler.ts
-var headers8 = { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" };
-var json10 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers8 });
+var headers5 = { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" };
+var json8 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers5 });
 async function handleRepositoryStructureRequest(request, environment = process.env) {
   try {
-    if (request.method !== "GET") return json10({ error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } }, 405);
-    return json10({ data: await readRepositoryStructure(environment) });
+    if (request.method !== "GET") return json8({ error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } }, 405);
+    return json8({ data: await readRepositoryStructure(environment) });
   } catch {
-    return json10({ error: { code: "STRUCTURE_UNAVAILABLE", message: "Repository structure is unavailable." } }, 503);
+    return json8({ error: { code: "STRUCTURE_UNAVAILABLE", message: "Repository structure is unavailable." } }, 503);
   }
 }
 async function handleAdminRepositoryStructureRequest(request, environment = process.env, dependencies = {}) {
@@ -2121,32 +2113,32 @@ async function handleAdminRepositoryStructureRequest(request, environment = proc
   try {
     identity = await authenticateAdminRequest(request, { environment });
   } catch (error) {
-    if (error instanceof AdminAuthorizationError) return json10({ error: { code: "FORBIDDEN", message: error.message } }, 403);
-    return json10({ error: { code: "UNAUTHORIZED", message: "Authentication is required." } }, 401);
+    if (error instanceof AdminAuthorizationError) return json8({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+    return json8({ error: { code: "UNAUTHORIZED", message: "Authentication is required." } }, 401);
   }
   try {
-    if (request.method === "GET") return json10({ data: await readRepositoryStructure(environment) });
-    if (request.method !== "POST") return json10({ error: { code: "METHOD_NOT_ALLOWED", message: "Unsupported method." } }, 405);
+    if (request.method === "GET") return json8({ data: await readRepositoryStructure(environment) });
+    if (request.method !== "POST") return json8({ error: { code: "METHOD_NOT_ALLOWED", message: "Unsupported method." } }, 405);
     const payload = await request.json();
     const mutation = structureMutationSchema.safeParse(payload);
-    if (!mutation.success) return json10({ error: { code: "INVALID_REQUEST", message: "The repository organization change is invalid." } }, 400);
+    if (!mutation.success) return json8({ error: { code: "INVALID_REQUEST", message: "The repository organization change is invalid." } }, 400);
     await (dependencies.audit ?? recordAuditEvent)({
       action: "structure.changed",
       actor: identity,
       target: mutation.data.action,
       outcome: "attempted"
     }, environment);
-    return json10({ data: await mutateRepositoryStructure(mutation.data, environment) });
+    return json8({ data: await mutateRepositoryStructure(mutation.data, environment) });
   } catch (error) {
     if (error instanceof RepositoryStructureConflictError) {
-      return json10({ error: { code: "STRUCTURE_CONFLICT", message: error.message } }, 409);
+      return json8({ error: { code: "STRUCTURE_CONFLICT", message: error.message } }, 409);
     }
-    return json10({ error: { code: "STRUCTURE_OPERATION_FAILED", message: "The repository organization could not be changed." } }, 400);
+    return json8({ error: { code: "STRUCTURE_OPERATION_FAILED", message: "The repository organization could not be changed." } }, 400);
   }
 }
 
 // src/contracts/resourceUpload.ts
-import { z as z13 } from "zod";
+import { z as z14 } from "zod";
 var maximumResourceFileSize = 25 * 1024 * 1024;
 var resourceUploadFileDefinitions = {
   pdf: { mimeType: "application/pdf" },
@@ -2161,42 +2153,42 @@ var resourceUploadMimeTypes = [
   "image/png",
   "image/webp"
 ];
-var resourceUploadMimeTypeSchema = z13.enum(resourceUploadMimeTypes);
-var resourceUploadRequestSchema = z13.object({
+var resourceUploadMimeTypeSchema = z14.enum(resourceUploadMimeTypes);
+var resourceUploadRequestSchema = z14.object({
   filename: resourceFilenameSchema,
   sectionId: repositorySectionIdSchema,
-  categoryId: z13.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
+  categoryId: z14.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
   year: resourceYearSchema,
   mimeType: resourceUploadMimeTypeSchema,
-  fileSize: z13.number().int().positive().max(maximumResourceFileSize)
+  fileSize: z14.number().int().positive().max(maximumResourceFileSize)
 });
-var resourceUploadAuthorizationSchema = z13.object({
-  data: z13.object({
-    key: z13.string().min(1),
-    uploadUrl: z13.url(),
-    expiresInSeconds: z13.number().int().positive(),
-    headers: z13.object({
-      "content-type": z13.string().min(1),
-      "if-none-match": z13.literal("*")
+var resourceUploadAuthorizationSchema = z14.object({
+  data: z14.object({
+    key: z14.string().min(1),
+    uploadUrl: z14.url(),
+    expiresInSeconds: z14.number().int().positive(),
+    headers: z14.object({
+      "content-type": z14.string().min(1),
+      "if-none-match": z14.literal("*")
     })
   })
 });
-var resourceUploadCompletionRequestSchema = z13.object({
-  key: z13.string().min(1).max(1024),
+var resourceUploadCompletionRequestSchema = z14.object({
+  key: z14.string().min(1).max(1024),
   mimeType: resourceUploadMimeTypeSchema,
-  fileSize: z13.number().int().positive().max(maximumResourceFileSize)
+  fileSize: z14.number().int().positive().max(maximumResourceFileSize)
 });
-var resourceUploadCompletionResponseSchema = z13.object({
-  data: z13.object({
-    key: z13.string().min(1),
-    mimeType: z13.string().min(1),
-    fileSize: z13.number().int().positive(),
-    uploadedAt: z13.iso.datetime({ offset: true })
+var resourceUploadCompletionResponseSchema = z14.object({
+  data: z14.object({
+    key: z14.string().min(1),
+    mimeType: z14.string().min(1),
+    fileSize: z14.number().int().positive(),
+    uploadedAt: z14.iso.datetime({ offset: true })
   })
 });
 
 // server/repository/authorizeResourceUpload.ts
-import { HeadObjectCommand as HeadObjectCommand2, PutObjectCommand as PutObjectCommand6 } from "@aws-sdk/client-s3";
+import { HeadObjectCommand as HeadObjectCommand2, PutObjectCommand as PutObjectCommand5 } from "@aws-sdk/client-s3";
 import { getSignedUrl as getSignedUrl3 } from "@aws-sdk/s3-request-presigner";
 var uploadExpirationSeconds = 5 * 60;
 var InvalidResourceUploadError = class extends Error {
@@ -2233,7 +2225,7 @@ async function authorizeResourceUpload(input, dependencies = {}) {
     );
   }
   const config = dependencies.config ?? getR2Config(dependencies.environment);
-  const key4 = input.categoryId ? `${input.sectionId}/${input.categoryId}/${input.year}/${validated.filename}` : `${input.sectionId}/${input.year}/${validated.filename}`;
+  const key2 = input.categoryId ? `${input.sectionId}/${input.categoryId}/${input.year}/${validated.filename}` : `${input.sectionId}/${input.year}/${validated.filename}`;
   const client = createR2Client(config);
   const objectExists = dependencies.objectExists ?? (async (bucket, objectKey) => {
     try {
@@ -2247,13 +2239,13 @@ async function authorizeResourceUpload(input, dependencies = {}) {
       throw error;
     }
   });
-  if (await objectExists(config.bucketName, key4))
+  if (await objectExists(config.bucketName, key2))
     throw new DuplicateResourceError(
       "A resource with this repository key already exists."
     );
   const createUploadUrl = dependencies.createUploadUrl ?? (async (_config, bucket, objectKey, mimeType, fileSize) => getSignedUrl3(
     client,
-    new PutObjectCommand6({
+    new PutObjectCommand5({
       Bucket: bucket,
       Key: objectKey,
       ContentType: mimeType,
@@ -2263,11 +2255,11 @@ async function authorizeResourceUpload(input, dependencies = {}) {
     { expiresIn: uploadExpirationSeconds }
   ));
   return {
-    key: key4,
+    key: key2,
     uploadUrl: await createUploadUrl(
       config,
       config.bucketName,
-      key4,
+      key2,
       input.mimeType,
       input.fileSize
     ),
@@ -2277,30 +2269,30 @@ async function authorizeResourceUpload(input, dependencies = {}) {
 }
 
 // server/http/uploadAuthorizeHandler.ts
-var headers9 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
-var json11 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers9 });
+var headers6 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
+var json9 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers6 });
 async function handleUploadAuthorizeRequest(request, dependencies = {}) {
-  if (request.method !== "POST") return json11({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
+  if (request.method !== "POST") return json9({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
   try {
     await authenticateAdminRequest(request, dependencies);
   } catch (error) {
-    if (error instanceof AdminAuthorizationError) return json11({ error: { code: "FORBIDDEN", message: error.message } }, 403);
-    return json11({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
+    if (error instanceof AdminAuthorizationError) return json9({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+    return json9({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
   }
   let payload;
   try {
     payload = await request.json();
   } catch {
-    return json11({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+    return json9({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
   }
   const result = resourceUploadRequestSchema.safeParse(payload);
-  if (!result.success) return json11({ error: { code: "INVALID_UPLOAD", message: "The upload information is invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "upload", message: issue.message })) } }, 400);
+  if (!result.success) return json9({ error: { code: "INVALID_UPLOAD", message: "The upload information is invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "upload", message: issue.message })) } }, 400);
   try {
-    return json11({ data: await authorizeResourceUpload(result.data, { environment: dependencies.environment, ...dependencies.upload }) });
+    return json9({ data: await authorizeResourceUpload(result.data, { environment: dependencies.environment, ...dependencies.upload }) });
   } catch (error) {
-    if (error instanceof DuplicateResourceError) return json11({ error: { code: "DUPLICATE_RESOURCE", message: error.message } }, 409);
-    if (error instanceof InvalidResourceUploadError) return json11({ error: { code: "INVALID_UPLOAD", message: error.message } }, 400);
-    return json11({ error: { code: "UPLOAD_AUTHORIZATION_FAILED", message: "Upload authorization is temporarily unavailable." } }, 503);
+    if (error instanceof DuplicateResourceError) return json9({ error: { code: "DUPLICATE_RESOURCE", message: error.message } }, 409);
+    if (error instanceof InvalidResourceUploadError) return json9({ error: { code: "INVALID_UPLOAD", message: error.message } }, 400);
+    return json9({ error: { code: "UPLOAD_AUTHORIZATION_FAILED", message: "Upload authorization is temporarily unavailable." } }, 503);
   }
 }
 
@@ -2324,7 +2316,7 @@ async function verifyResourceUpload(input, dependencies = {}) {
   }
   const config = dependencies.config ?? getR2Config(dependencies.environment);
   const client = createR2Client(config);
-  const headObject = dependencies.headObject ?? (async (bucket, key4) => client.send(new HeadObjectCommand3({ Bucket: bucket, Key: key4 })));
+  const headObject = dependencies.headObject ?? (async (bucket, key2) => client.send(new HeadObjectCommand3({ Bucket: bucket, Key: key2 })));
   let object;
   try {
     object = await headObject(config.bucketName, parsedKey.key);
@@ -2354,25 +2346,25 @@ async function verifyResourceUpload(input, dependencies = {}) {
 }
 
 // server/http/uploadCompleteHandler.ts
-var headers10 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
-var json12 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers10 });
+var headers7 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
+var json10 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers7 });
 async function handleUploadCompleteRequest(request, dependencies = {}) {
-  if (request.method !== "POST") return json12({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
+  if (request.method !== "POST") return json10({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST is supported." } }, 405);
   let identity;
   try {
     identity = await authenticateAdminRequest(request, dependencies);
   } catch (error) {
-    if (error instanceof AdminAuthorizationError) return json12({ error: { code: "FORBIDDEN", message: error.message } }, 403);
-    return json12({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
+    if (error instanceof AdminAuthorizationError) return json10({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+    return json10({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
   }
   let payload;
   try {
     payload = await request.json();
   } catch {
-    return json12({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+    return json10({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
   }
   const result = resourceUploadCompletionRequestSchema.safeParse(payload);
-  if (!result.success) return json12({ error: { code: "INVALID_UPLOAD_COMPLETION", message: "The upload completion information is invalid." } }, 400);
+  if (!result.success) return json10({ error: { code: "INVALID_UPLOAD_COMPLETION", message: "The upload completion information is invalid." } }, 400);
   try {
     const resource = await verifyResourceUpload(result.data, { environment: dependencies.environment, ...dependencies.verification });
     await (dependencies.audit ?? recordAuditEvent)({
@@ -2382,9 +2374,9 @@ async function handleUploadCompleteRequest(request, dependencies = {}) {
       outcome: "succeeded",
       details: { fileSize: resource.fileSize, mimeType: resource.mimeType }
     }, dependencies.environment);
-    return json12({ data: resource });
+    return json10({ data: resource });
   } catch (error) {
-    return json12({ error: { code: "UPLOAD_VERIFICATION_FAILED", message: error instanceof ResourceUploadVerificationError ? error.message : "The upload could not be completed. Please try again." } }, 422);
+    return json10({ error: { code: "UPLOAD_VERIFICATION_FAILED", message: error instanceof ResourceUploadVerificationError ? error.message : "The upload could not be completed. Please try again." } }, 422);
   }
 }
 

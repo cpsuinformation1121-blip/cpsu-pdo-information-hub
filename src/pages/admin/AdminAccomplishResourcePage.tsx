@@ -5,10 +5,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Pencil,
   Plus,
   Save,
-  Trash2,
   X,
 } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
@@ -29,33 +27,27 @@ import {
 } from "../../features/accomplishments/reportCalculations";
 import { buildAccomplishmentOverviewGroups } from "../../features/accomplishments/reportOverview";
 import { FloatingSaveAction } from "../../features/admin/FloatingSaveAction";
+import {
+  reportChildType as childType,
+  reportNodeName as nodeName,
+  type ReportDataRowType as DataRowType,
+  type ReportEditorState as EditorState,
+  type ReportNodeType as NodeType,
+  type ReportTreeNode as TreeNode,
+  type ReportValueType as ValueType,
+} from "../../features/reports/adminReportEditorModel";
+import { ReportNodeActions as NodeActions } from "../../features/reports/ReportNodeActions";
 import { useAuth } from "../../features/auth/useAuth";
 import {
   getAccomplishmentResource,
   saveAccomplishmentResource,
 } from "../../services/accomplishmentResource";
 
-type NodeType = "section" | "group" | "indicator";
-type TreeNode = {
-  id: string;
-  parentId: string | null;
-  type: NodeType;
-  title: string;
-};
-type DataRowType = "results" | "rawData";
-type ValueType = "target" | "accomplishment";
 type PeriodField = "q1" | "q2" | "q3" | "q4" | "total";
 type PeriodEntry = Record<PeriodField, string>;
 type DataRowEntry = Record<ValueType, PeriodEntry>;
 type IndicatorEntry = Record<DataRowType, DataRowEntry>;
 type EntriesByYear = Record<string, Record<string, IndicatorEntry>>;
-type EditorState = {
-  mode: "add" | "edit";
-  type: NodeType;
-  parentId: string | null;
-  nodeId?: string;
-  value: string;
-};
 
 const periodFields = [
   { id: "q1", label: "Q1" },
@@ -90,8 +82,6 @@ const valueGroups = [
 ] as const;
 const fieldClass =
   "min-h-10 w-full border border-strong-border px-2 py-1 text-center text-sm font-medium tabular-nums outline-none placeholder:text-xs placeholder:font-normal placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20";
-const actionClass =
-  "inline-flex min-h-9 cursor-pointer items-center gap-1 px-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function emptyPeriodEntry(): PeriodEntry {
   return { q1: "", q2: "", q3: "", q4: "", total: "" };
@@ -103,61 +93,6 @@ function emptyDataRowEntry(): DataRowEntry {
 
 function emptyIndicatorEntry(): IndicatorEntry {
   return { results: emptyDataRowEntry(), rawData: emptyDataRowEntry() };
-}
-
-function nodeName(type: NodeType) {
-  if (type === "section") return "section";
-  if (type === "group") return "group";
-  return "indicator";
-}
-
-function childType(type: NodeType): NodeType | null {
-  if (type === "section") return "group";
-  if (type === "group") return "indicator";
-  return null;
-}
-
-function NodeActions({
-  node,
-  onAdd,
-  onEdit,
-  onDelete,
-}: {
-  node: TreeNode;
-  onAdd: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <span className="flex shrink-0 items-center">
-      {childType(node.type) ? (
-        <button
-          type="button"
-          onClick={onAdd}
-          className={actionClass + " text-primary"}
-        >
-          <Plus className="size-3.5" aria-hidden="true" />
-          Add
-        </button>
-      ) : null}
-      <button
-        type="button"
-        onClick={onEdit}
-        aria-label={`Edit ${node.title}`}
-        className={actionClass + " text-primary"}
-      >
-        <Pencil className="size-3.5" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label={`Delete ${node.title}`}
-        className={actionClass + " text-danger"}
-      >
-        <Trash2 className="size-3.5" aria-hidden="true" />
-      </button>
-    </span>
-  );
 }
 
 export function AdminAccomplishResourcePage() {

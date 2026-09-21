@@ -22,6 +22,10 @@ import { useAdminResourcesQuery } from "./useAdminResourcesQuery";
 import { deleteResource, renameResource } from "../../services/adminOperations";
 import { authorizeAdminResourceAccess } from "../../services/adminResourceAccess";
 import { useAuth } from "../auth/useAuth";
+import {
+  resourceFileTypeOptions,
+  resourceSortOptions,
+} from "../repository/resourceFilterOptions";
 import { formatResourceFileType } from "../../utils/formatResourceFileType";
 import {
   formatResourceDate,
@@ -37,24 +41,6 @@ import {
   type RenameTarget,
 } from "./AdminResourceDialogs";
 
-const fileTypeOptions: readonly {
-  value: ResourceFileType | "";
-  label: string;
-}[] = [
-  { value: "", label: "All file types" },
-  { value: "pdf", label: "PDF documents" },
-  { value: "image", label: "Images" },
-  { value: "link", label: "Links" },
-];
-
-const sortOptions: readonly { value: ResourceSort; label: string }[] = [
-  { value: "newest", label: "Newest first" },
-  { value: "oldest", label: "Oldest first" },
-  { value: "name-asc", label: "Name A–Z" },
-  { value: "name-desc", label: "Name Z–A" },
-  { value: "file-size", label: "Largest first" },
-  { value: "file-type", label: "File type" },
-];
 
 type PageState = { cursor?: string; history: (string | undefined)[] };
 
@@ -228,7 +214,7 @@ export function AdminResourceInventory() {
             }}
             className="mt-2 min-h-11 w-full cursor-pointer border border-strong-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           >
-            {fileTypeOptions.map((option) => (
+            {resourceFileTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -247,7 +233,7 @@ export function AdminResourceInventory() {
             }}
             className="mt-2 min-h-11 w-full cursor-pointer border border-strong-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           >
-            {sortOptions.map((option) => (
+            {resourceSortOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

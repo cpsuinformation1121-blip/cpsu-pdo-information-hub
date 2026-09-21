@@ -1,6 +1,7 @@
 import type { User } from "firebase/auth";
+import { fetchAuthenticatedJson } from "./authenticatedApi";
 import { adminSessionSchema } from "../contracts/adminSession";
-import { parseApiError, readJsonResponse } from "./apiResponse";
+import { parseApiError } from "./apiResponse";
 
 export class AdminSessionRequestError extends Error {
   readonly code: string;
@@ -19,12 +20,10 @@ export class AdminSessionRequestError extends Error {
 }
 
 export async function fetchAdminSession(user: User) {
-  const idToken = await user.getIdToken();
-  const response = await fetch("/api/admin/session", {
-    headers: { authorization: `Bearer ${idToken}` },
-  });
-
-  const payload = await readJsonResponse(response);
+  const { response, payload } = await fetchAuthenticatedJson(
+    user,
+    "/api/admin/session",
+  );
   if (!response.ok) {
     const error = parseApiError(
       payload,

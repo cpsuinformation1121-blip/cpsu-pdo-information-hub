@@ -56,10 +56,15 @@ const currentSchoolYearStart =
   currentDate.getMonth() >= 5
     ? currentDate.getFullYear()
     : currentDate.getFullYear() - 1;
-const schoolYearOptions = Array.from({ length: 12 }, (_, index) => {
-  const start = currentSchoolYearStart + 1 - index;
-  return `${start}-${start + 1}`;
-});
+const latestSchoolYearStart = Math.max(currentSchoolYearStart + 1, 2029);
+const earliestSchoolYearStart = currentSchoolYearStart - 10;
+const schoolYearOptions = Array.from(
+  { length: latestSchoolYearStart - earliestSchoolYearStart + 1 },
+  (_, index) => {
+    const start = latestSchoolYearStart - index;
+    return `${start}-${start + 1}`;
+  },
+);
 
 export function ResourceUploadForm() {
   const { user } = useAuth();

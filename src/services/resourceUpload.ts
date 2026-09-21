@@ -1,11 +1,12 @@
 import type { User } from "firebase/auth";
+import { fetchAuthenticatedJson } from "./authenticatedApi";
 import {
   resourceUploadAuthorizationSchema,
   type ResourceUploadRequest,
 } from "../contracts/resourceUpload";
 import { resourceUploadCompletionResponseSchema } from "../contracts/resourceUpload";
 import { RepositoryApiError } from "./resources";
-import { parseApiError, readJsonResponse } from "./apiResponse";
+import { parseApiError } from "./apiResponse";
 
 export async function uploadResource(
   user: User,
@@ -13,14 +14,15 @@ export async function uploadResource(
   input: Omit<ResourceUploadRequest, "filename" | "mimeType" | "fileSize">,
 ) {
   const token = await user.getIdToken();
-  const authorizationResponse = await fetch(
+  const {
+    response: authorizationResponse,
+    payload,
+  } = await fetchAuthenticatedJson(
+    user,
     "/api/admin/resources/upload-authorize",
     {
       method: "POST",
-      headers: {
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
         ...input,
         filename: file.name,
@@ -28,8 +30,8 @@ export async function uploadResource(
         fileSize: file.size,
       }),
     },
+    token,
   );
-  const payload = await readJsonResponse(authorizationResponse);
   if (!authorizationResponse.ok) {
     const error = parseApiError(
       payload,
@@ -62,22 +64,23 @@ export async function uploadResource(
       "UPLOAD_FAILED",
       uploadResponse.status,
     );
-  const completionResponse = await fetch(
+  const {
+    response: completionResponse,
+    payload: completionPayload,
+  } = await fetchAuthenticatedJson(
+    user,
     "/api/admin/resources/upload-complete",
     {
       method: "POST",
-      headers: {
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
         key: authorization.key,
         mimeType: file.type,
         fileSize: file.size,
       }),
     },
+    token,
   );
-  const completionPayload = await readJsonResponse(completionResponse);
   if (!completionResponse.ok) {
     const error = parseApiError(
       completionPayload,

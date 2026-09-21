@@ -1,10 +1,11 @@
 import type { User } from "firebase/auth";
+import { fetchAuthenticatedJson } from "./authenticatedApi";
 import {
   adminResourceListResponseSchema,
   type AdminResourceListResponse,
   type ResourceQuery,
 } from "../contracts/resource";
-import { parseApiError, readJsonResponse } from "./apiResponse";
+import { parseApiError } from "./apiResponse";
 import { RepositoryApiError } from "./resources";
 
 export async function getAdminResources(
@@ -18,19 +19,13 @@ export async function getAdminResources(
       searchParams.set(key, String(value));
   });
 
-  const idToken = await user.getIdToken();
   const queryString = searchParams.toString();
-  const response = await fetch(
-    `/api/admin/resources${queryString ? `?${queryString}` : ""}`,
-    {
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${idToken}`,
-      },
-      signal,
-    },
-  );
-  const payload = await readJsonResponse(response);
+  const path =
+    "/api/admin/resources" + (queryString ? "?" + queryString : "");
+  const { response, payload } = await fetchAuthenticatedJson(user, path, {
+    headers: { accept: "application/json" },
+    signal,
+  });
 
   if (!response.ok) {
     const error = parseApiError(

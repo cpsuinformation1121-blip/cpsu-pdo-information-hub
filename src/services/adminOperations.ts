@@ -1,10 +1,11 @@
 import type { User } from "firebase/auth";
+import { fetchAuthenticatedJson } from "./authenticatedApi";
 import {
   administratorListSchema,
   administratorSchema,
   type Administrator,
 } from "../contracts/adminOperations";
-import { parseApiError, readJsonResponse } from "./apiResponse";
+import { parseApiError } from "./apiResponse";
 import {
   resourceLinkCreateResponseSchema,
   type ResourceLinkCreate,
@@ -16,15 +17,11 @@ async function request(
   method = "GET",
   body?: unknown,
 ) {
-  const response = await fetch(path, {
+  const { response, payload } = await fetchAuthenticatedJson(user, path, {
     method,
-    headers: {
-      authorization: `Bearer ${await user.getIdToken()}`,
-      ...(body ? { "content-type": "application/json" } : {}),
-    },
+    headers: body ? { "content-type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
-  const payload = await readJsonResponse(response);
   if (!response.ok) {
     throw new Error(
       parseApiError(payload, "The administrator operation failed.").message,
