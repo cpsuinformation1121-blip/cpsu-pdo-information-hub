@@ -1,10 +1,4 @@
-import {
-  AlertCircle,
-  LoaderCircle,
-  Scan,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { AlertCircle, LoaderCircle } from "lucide-react";
 import {
   type PDFDocumentProxy,
   type PDFPageProxy,
@@ -14,17 +8,10 @@ import {
 import pdfWorkerUrl from "./pdf.worker.compat.ts?worker&url";
 import { installPromiseWithResolversPolyfill } from "../../utils/promiseWithResolvers";
 import { useEffect, useRef, useState } from "react";
+import { GestureZoomViewport } from "./GestureZoomViewport";
 
 installPromiseWithResolversPolyfill();
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-
-const MIN_ZOOM = 50;
-const MAX_ZOOM = 200;
-const ZOOM_STEP = 25;
-
-function clampZoom(value: number) {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
-}
 
 function PdfPage({
   document,
@@ -115,22 +102,8 @@ function PdfPage({
 }
 
 export function PdfPreview({ url, title }: { url: string; title: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [document, setDocument] = useState<PDFDocumentProxy | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [width, setWidth] = useState(0);
-  const [zoom, setZoom] = useState(100);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const updateWidth = () => setWidth(Math.max(1, container.clientWidth - 24));
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,93 +132,51 @@ export function PdfPreview({ url, title }: { url: string; title: string }) {
   }, [url]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-surface-secondary">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-surface px-3 py-2 sm:px-4">
-        <div
-          className="flex items-center gap-1"
-          role="group"
-          aria-label="PDF zoom controls"
-        >
-          <button
-            type="button"
-            onClick={() => setZoom((value) => clampZoom(value - ZOOM_STEP))}
-            disabled={zoom <= MIN_ZOOM}
-            aria-label="Zoom out"
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg text-foreground hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ZoomOut className="size-5" aria-hidden="true" />
-          </button>
-          <output
-            className="min-w-14 text-center text-sm font-semibold tabular-nums text-muted-foreground"
-            aria-live="polite"
-          >
-            {zoom}%
-          </output>
-          <button
-            type="button"
-            onClick={() => setZoom((value) => clampZoom(value + ZOOM_STEP))}
-            disabled={zoom >= MAX_ZOOM}
-            aria-label="Zoom in"
-            className="inline-flex size-10 cursor-pointer items-center justify-center rounded-lg text-foreground hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ZoomIn className="size-5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setZoom(100)}
-            className="ml-1 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-primary"
-          >
-            <Scan className="size-4" aria-hidden="true" />
-            Fit
-          </button>
-        </div>
-        {document ? (
-          <span className="text-xs font-medium text-muted-foreground">
-            {document.numPages} {document.numPages === 1 ? "page" : "pages"}
-          </span>
-        ) : null}
-      </div>
-
-      <div
-        ref={containerRef}
-        className="min-h-0 flex-1 overflow-auto overscroll-contain p-3"
-        aria-label={"Scrollable PDF preview of " + title}
-      >
-        {error ? (
-          <div className="flex min-h-full items-center justify-center p-6 text-center">
-            <p
-              className="flex max-w-md items-start gap-2 text-sm text-danger"
-              role="alert"
+    <GestureZoomViewport
+      label={"Gesture-enabled PDF preview of " + title}
+      maxZoom={250}
+    >
+      {({ zoom, viewportWidth }) => (
+        <div className="min-h-full w-full">
+          {error ? (
+            <div className="flex min-h-full items-center justify-center p-6 text-center">
+              <p
+                className="flex max-w-md items-start gap-2 text-sm text-danger"
+                role="alert"
+              >
+                <AlertCircle
+                  className="mt-0.5 size-5 shrink-0"
+                  aria-hidden="true"
+                />
+                {error}
+              </p>
+            </div>
+          ) : document ? (
+            <div className="flex min-w-max flex-col items-center gap-3">
+              <p className="sticky top-0 z-[1] self-end rounded-full bg-surface/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur">
+                {document.numPages} {document.numPages === 1 ? "page" : "pages"}
+              </p>
+              {Array.from({ length: document.numPages }, (_, index) => (
+                <PdfPage
+                  key={index + 1}
+                  document={document}
+                  pageNumber={index + 1}
+                  width={Math.max(1, viewportWidth - 32)}
+                  zoom={zoom}
+                />
+              ))}
+            </div>
+          ) : (
+            <div
+              className="flex min-h-full items-center justify-center gap-3 p-6 text-sm text-muted-foreground"
+              role="status"
             >
-              <AlertCircle
-                className="mt-0.5 size-5 shrink-0"
-                aria-hidden="true"
-              />
-              {error}
-            </p>
-          </div>
-        ) : document ? (
-          <div className="flex min-w-max flex-col items-center gap-3">
-            {Array.from({ length: document.numPages }, (_, index) => (
-              <PdfPage
-                key={index + 1}
-                document={document}
-                pageNumber={index + 1}
-                width={width}
-                zoom={zoom}
-              />
-            ))}
-          </div>
-        ) : (
-          <div
-            className="flex min-h-full items-center justify-center gap-3 p-6 text-sm text-muted-foreground"
-            role="status"
-          >
-            <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
-            Loading PDF preview…
-          </div>
-        )}
-      </div>
-    </div>
+              <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+              Loading PDF preview…
+            </div>
+          )}
+        </div>
+      )}
+    </GestureZoomViewport>
   );
 }

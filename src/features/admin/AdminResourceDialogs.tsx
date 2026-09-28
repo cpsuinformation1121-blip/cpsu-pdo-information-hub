@@ -1,6 +1,7 @@
 import type { AdminResource } from "../../contracts/resource";
 import { AppDialog } from "../../components/ui/AppDialog";
 import { LazyPdfPreview } from "../repository/LazyPdfPreview";
+import { ZoomableImagePreview } from "../repository/ZoomableImagePreview";
 
 export type RenameTarget = {
   key: string;
@@ -35,35 +36,22 @@ export function AdminResourcePreviewDialog({
   return (
     <AppDialog
       title={target.resource.filename}
-      description="Temporary staff preview."
-      size="wide"
+      description="Temporary staff preview. Pinch to zoom and drag to move."
+      size="viewport"
       onClose={onClose}
     >
-      <div className="p-4 sm:p-6">
+      <div className="flex min-h-0 flex-1 bg-surface-secondary">
         {target.resource.fileType === "image" ? (
-          <img
-            src={target.url}
-            alt={`Preview of ${target.resource.displayName}`}
-            referrerPolicy="no-referrer"
-            className="max-h-[65dvh] w-full object-contain"
+          <ZoomableImagePreview
+            url={target.url}
+            title={target.resource.displayName}
           />
         ) : (
-          <div className="flex h-[65dvh] min-h-0">
-            <LazyPdfPreview
-              url={target.url}
-              title={target.resource.displayName}
-            />
-          </div>
+          <LazyPdfPreview
+            url={target.url}
+            title={target.resource.displayName}
+          />
         )}
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-11 cursor-pointer border border-strong-border px-5 font-semibold"
-          >
-            Close
-          </button>
-        </div>
       </div>
     </AppDialog>
   );
