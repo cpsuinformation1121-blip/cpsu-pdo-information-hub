@@ -29,6 +29,7 @@ export async function handleUploadCompleteRequest(request: Request, dependencies
       target: resource.key,
       outcome: 'succeeded',
       details: { fileSize: resource.fileSize, mimeType: resource.mimeType },
+      idempotencyKey: `${resource.key}:${resource.uploadedAt}`,
     }, dependencies.environment)
     return json({ data: resource })
   }

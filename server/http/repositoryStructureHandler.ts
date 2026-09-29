@@ -2,13 +2,18 @@ import { structureMutationSchema } from '../../src/contracts/repositoryStructure
 import { AdminAuthorizationError, authenticateAdminRequest } from '../auth/authenticateAdminRequest.ts'
 import {
   mutateRepositoryStructure,
+  readCachedPublicRepositoryStructure,
   readRepositoryStructure,
   RepositoryStructureConflictError,
 } from '../repository/repositoryStructureStore.ts'
 import { recordAuditEvent } from '../security/auditLog.ts'
 
-const headers = { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' }
+const headers = { 'cache-control': 'private, no-store', 'content-type': 'application/json; charset=utf-8' }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers })
+const publicJson = (body: unknown) => new Response(JSON.stringify(body), {
+  status: 200,
+  headers: { ...headers, 'cache-control': 'public, max-age=0, s-maxage=60' },
+})
 
 export async function handleRepositoryStructureRequest(
   request: Request,
@@ -16,7 +21,7 @@ export async function handleRepositoryStructureRequest(
 ) {
   try {
     if (request.method !== 'GET') return json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Only GET is supported.' } }, 405)
-    return json({ data: await readRepositoryStructure(environment) })
+    return publicJson({ data: await readCachedPublicRepositoryStructure(environment) })
   } catch {
     return json({ error: { code: 'STRUCTURE_UNAVAILABLE', message: 'Repository structure is unavailable.' } }, 503)
   }

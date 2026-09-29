@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { publicResourceIdSchema } from "./publicResourcePreview.ts";
 
 export const repositorySectionIds = [
   "statistical-profile",
@@ -90,7 +91,7 @@ export const resourceFilenameSchema = z
 
 const resourceMetadataSchema = z
   .object({
-    id: z.string().regex(/^[A-Za-z0-9_-]{43}$/u),
+    id: publicResourceIdSchema,
     filename: resourceFilenameSchema,
     displayName: z.string().min(1).max(200),
     sectionId: repositorySectionIdSchema,

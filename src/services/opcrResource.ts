@@ -15,3 +15,4 @@ const client = createReportResourceClient<OpcrResourceData>({
 export const getOpcrResource = client.getAdmin;
 export const saveOpcrResource = client.saveAdmin;
 export const getPublicOpcrResource = client.getPublic;
+export const getAllPublicOpcrResources = client.getPublicAll;

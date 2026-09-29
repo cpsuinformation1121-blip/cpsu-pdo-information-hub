@@ -12,7 +12,7 @@ import type {
 } from '../../src/contracts/resource.ts'
 
 const jsonHeaders: Record<string, string> = {
-  'cache-control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300',
+  'cache-control': 'public, max-age=0, s-maxage=60',
   'content-type': 'application/json; charset=utf-8',
 }
 

@@ -1,4 +1,4 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -17,7 +17,7 @@ import {
 } from "../features/accomplishments/chartData";
 import type { ReportAppearance } from "../features/accomplishments/reportAppearance";
 import { getAccomplishmentReportYears } from "../features/accomplishments/reportCalculations";
-import { getPublicAccomplishmentResource } from "../services/accomplishmentResource";
+import { getAllPublicAccomplishmentResources } from "../services/accomplishmentResource";
 import { ReportIndicatorDataTable } from "../features/reports/ReportIndicatorDataTable";
 
 type IndicatorEntry =
@@ -92,18 +92,12 @@ export function AccomplishmentsPage() {
   const years = getAccomplishmentReportYears(currentYear);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedIndicatorId, setSelectedIndicatorId] = useState("");
-  const resourceQueries = useQueries({
-    queries: years.map((year) => ({
-      queryKey: ["public-accomplishment-resource", year],
-      queryFn: ({ signal }: { signal: AbortSignal }) =>
-        getPublicAccomplishmentResource(year, signal),
-      staleTime: 0,
-      refetchOnMount: "always" as const,
-      refetchOnWindowFocus: true,
-    })),
+  const selectedQuery = useQuery({
+    queryKey: ["public-accomplishment-resource", "all"],
+    queryFn: ({ signal }) => getAllPublicAccomplishmentResources(signal),
+    staleTime: 60_000,
   });
-  const selectedQuery = resourceQueries[years.indexOf(selectedYear)];
-  const data = selectedQuery?.data;
+  const data = selectedQuery.data;
   const entries = data?.entries[String(selectedYear)] ?? {};
   const sections =
     data?.nodes.filter((node) => node.type === "section") ?? [];
@@ -128,10 +122,9 @@ export function AccomplishmentsPage() {
   );
   const annualIndicatorData = createAnnualIndicatorSeriesChartData(
     activeIndicatorId,
-    years.map((year, index) => ({
+    years.map((year) => ({
       year,
-      entries:
-        resourceQueries[index]?.data?.entries[String(year)] ?? {},
+      entries: data?.entries[String(year)] ?? {},
     })),
   );
   const annualOverviewData = createAnnualIndicatorChartData(indicators, entries);

@@ -35,11 +35,10 @@ export function createReportResourceClient<Data>(
     return options.responseSchema.parse(payload).data;
   }
 
-  async function getPublic(year: number, signal?: AbortSignal) {
+  async function getPublic(year: number | "all", signal?: AbortSignal) {
     const response = await fetch(
       `${options.publicEndpoint}?year=${encodeURIComponent(year)}`,
       {
-        cache: "no-store",
         headers: { accept: "application/json" },
         signal,
       },
@@ -59,5 +58,6 @@ export function createReportResourceClient<Data>(
     saveAdmin: (user: User, data: Data) =>
       requestAdmin(user, { method: "PUT", body: JSON.stringify(data) }),
     getPublic,
+    getPublicAll: (signal?: AbortSignal) => getPublic("all", signal),
   };
 }

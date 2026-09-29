@@ -1,4 +1,4 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -18,7 +18,7 @@ import {
   createOpcrComparisonChartData,
 } from "../features/opcr/opcrChartData";
 import { getAccomplishmentReportYears } from "../features/accomplishments/reportCalculations";
-import { getPublicOpcrResource } from "../services/opcrResource";
+import { getAllPublicOpcrResources } from "../services/opcrResource";
 import { ReportIndicatorDataTable } from "../features/reports/ReportIndicatorDataTable";
 
 type IndicatorEntry =
@@ -92,18 +92,12 @@ export function OpcrPublicPage() {
   const years = getAccomplishmentReportYears(currentYear);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedIndicatorId, setSelectedIndicatorId] = useState("");
-  const resourceQueries = useQueries({
-    queries: years.map((year) => ({
-      queryKey: ["public-opcr-resource", year],
-      queryFn: ({ signal }: { signal: AbortSignal }) =>
-        getPublicOpcrResource(year, signal),
-      staleTime: 0,
-      refetchOnMount: "always" as const,
-      refetchOnWindowFocus: true,
-    })),
+  const selectedQuery = useQuery({
+    queryKey: ["public-opcr-resource", "all"],
+    queryFn: ({ signal }) => getAllPublicOpcrResources(signal),
+    staleTime: 60_000,
   });
-  const selectedQuery = resourceQueries[years.indexOf(selectedYear)];
-  const data = selectedQuery?.data;
+  const data = selectedQuery.data;
   const entries = data?.entries[String(selectedYear)] ?? {};
   const sections =
     data?.nodes.filter((node) => node.type === "section") ?? [];
@@ -128,10 +122,9 @@ export function OpcrPublicPage() {
   );
   const annualIndicatorData = createOpcrAnnualIndicatorSeriesChartData(
     activeIndicatorId,
-    years.map((year, index) => ({
+    years.map((year) => ({
       year,
-      entries:
-        resourceQueries[index]?.data?.entries[String(year)] ?? {},
+      entries: data?.entries[String(year)] ?? {},
     })),
   );
   const annualOverviewData = createOpcrAnnualIndicatorChartData(indicators, entries);

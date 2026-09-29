@@ -3,10 +3,25 @@ import { GetObjectCommand as GetObjectCommand2 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // src/contracts/adminResourceAccess.ts
-import { z as z2 } from "zod";
+import { z as z3 } from "zod";
 
 // src/contracts/resource.ts
+import { z as z2 } from "zod";
+
+// src/contracts/publicResourcePreview.ts
 import { z } from "zod";
+var publicResourceIdSchema = z.string().regex(/^(?:[A-Za-z0-9_-]{43}|v1_[A-Za-z0-9_-]{40,6000})$/u);
+var publicResourcePreviewRequestSchema = z.object({
+  id: publicResourceIdSchema
+});
+var publicResourcePreviewResponseSchema = z.object({
+  data: z.object({
+    url: z.url(),
+    expiresAt: z.iso.datetime({ offset: true })
+  })
+});
+
+// src/contracts/resource.ts
 var resourceFileTypes = ["pdf", "xlsx", "image", "link"];
 var resourceFileDefinitions = {
   pdf: { fileType: "pdf", mimeType: "application/pdf" },
@@ -31,40 +46,40 @@ var resourceSortOptions = [
   "file-size",
   "file-type"
 ];
-var schoolYearSchema = z.string().regex(/^\d{4}-\d{4}$/u, "Select a valid school year.").refine(
+var schoolYearSchema = z2.string().regex(/^\d{4}-\d{4}$/u, "Select a valid school year.").refine(
   (value) => Number(value.slice(5)) === Number(value.slice(0, 4)) + 1,
   "Select a valid school year."
 );
-var resourceYearSchema = z.union([
-  z.number().int().min(1900).max(2200),
+var resourceYearSchema = z2.union([
+  z2.number().int().min(1900).max(2200),
   schoolYearSchema
 ]);
-var repositorySectionIdSchema = z.string().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var resourceFileTypeSchema = z.enum(resourceFileTypes);
-var resourceSortSchema = z.enum(resourceSortOptions);
-var resourceObjectKeySchema = z.string().min(1).max(1024).refine(
+var repositorySectionIdSchema = z2.string().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var resourceFileTypeSchema = z2.enum(resourceFileTypes);
+var resourceSortSchema = z2.enum(resourceSortOptions);
+var resourceObjectKeySchema = z2.string().min(1).max(1024).refine(
   (key2) => !key2.startsWith("/") && !key2.includes("..") && !key2.includes("\\"),
   {
     message: "Resource keys must use safe R2-style prefixes."
   }
 );
-var resourceFilenameSchema = z.string().min(1).max(180).refine(
+var resourceFilenameSchema = z2.string().min(1).max(180).refine(
   (filename) => filename === filename.normalize("NFKC") && filename !== "." && filename !== ".." && !/[. ]$/u.test(filename) && !filename.includes("/") && !filename.includes("\\") && !/[\p{Cc}\p{Cf}]/u.test(filename) && !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu.test(filename),
   {
     message: "Filename contains unsupported characters."
   }
 );
-var resourceMetadataSchema = z.object({
-  id: z.string().regex(/^[A-Za-z0-9_-]{43}$/u),
+var resourceMetadataSchema = z2.object({
+  id: publicResourceIdSchema,
   filename: resourceFilenameSchema,
-  displayName: z.string().min(1).max(200),
+  displayName: z2.string().min(1).max(200),
   sectionId: repositorySectionIdSchema,
-  categoryId: z.string().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
+  categoryId: z2.string().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
   year: resourceYearSchema,
   fileType: resourceFileTypeSchema,
-  mimeType: z.string().min(1).max(120),
-  fileSize: z.number().int().nonnegative(),
-  uploadedAt: z.iso.datetime({ offset: true })
+  mimeType: z2.string().min(1).max(120),
+  fileSize: z2.number().int().nonnegative(),
+  uploadedAt: z2.iso.datetime({ offset: true })
 }).superRefine((resource, context) => {
   const extension = resource.filename.split(".").pop()?.toLowerCase();
   const definition = extension ? resourceFileDefinitions[extension] : void 0;
@@ -87,46 +102,46 @@ var publicResourceSchema = resourceMetadataSchema;
 var adminResourceSchema = resourceMetadataSchema.safeExtend({
   key: resourceObjectKeySchema
 });
-var resourceQuerySchema = z.object({
-  q: z.string().trim().max(100).optional(),
+var resourceQuerySchema = z2.object({
+  q: z2.string().trim().max(100).optional(),
   section: repositorySectionIdSchema.optional(),
-  category: z.string().trim().max(80).optional(),
-  year: z.union([z.coerce.number().int().min(1900).max(2200), schoolYearSchema]).optional(),
+  category: z2.string().trim().max(80).optional(),
+  year: z2.union([z2.coerce.number().int().min(1900).max(2200), schoolYearSchema]).optional(),
   fileType: resourceFileTypeSchema.optional(),
   sort: resourceSortSchema.default("newest"),
-  cursor: z.string().trim().max(512).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50)
+  cursor: z2.string().trim().max(512).optional(),
+  limit: z2.coerce.number().int().min(1).max(100).default(50)
 });
-var resourceListMetaSchema = z.object({
-  total: z.number().int().nonnegative(),
-  nextCursor: z.string().nullable()
+var resourceListMetaSchema = z2.object({
+  total: z2.number().int().nonnegative(),
+  nextCursor: z2.string().nullable()
 });
-var publicResourceListResponseSchema = z.object({
-  data: z.array(publicResourceSchema),
+var publicResourceListResponseSchema = z2.object({
+  data: z2.array(publicResourceSchema),
   meta: resourceListMetaSchema
 });
-var adminResourceListResponseSchema = z.object({
-  data: z.array(adminResourceSchema),
+var adminResourceListResponseSchema = z2.object({
+  data: z2.array(adminResourceSchema),
   meta: resourceListMetaSchema
 });
-var apiErrorResponseSchema = z.object({
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-    details: z.array(z.object({ field: z.string(), message: z.string() })).optional()
+var apiErrorResponseSchema = z2.object({
+  error: z2.object({
+    code: z2.string(),
+    message: z2.string(),
+    details: z2.array(z2.object({ field: z2.string(), message: z2.string() })).optional()
   })
 });
 
 // src/contracts/adminResourceAccess.ts
-var adminResourceAccessModeSchema = z2.enum(["preview", "download"]);
-var adminResourceAccessRequestSchema = z2.object({
+var adminResourceAccessModeSchema = z3.enum(["preview", "download"]);
+var adminResourceAccessRequestSchema = z3.object({
   key: resourceObjectKeySchema,
   mode: adminResourceAccessModeSchema
 });
-var adminResourceAccessResponseSchema = z2.object({
-  data: z2.object({
-    url: z2.url(),
-    expiresAt: z2.iso.datetime({ offset: true })
+var adminResourceAccessResponseSchema = z3.object({
+  data: z3.object({
+    url: z3.url(),
+    expiresAt: z3.iso.datetime({ offset: true })
   })
 });
 
@@ -143,11 +158,11 @@ import { cert, getApp, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
 // server/config/firebaseAdmin.ts
-import { z as z3 } from "zod";
-var firebaseAdminEnvironmentSchema = z3.object({
-  FIREBASE_ADMIN_PROJECT_ID: z3.string().trim().min(1),
-  FIREBASE_ADMIN_CLIENT_EMAIL: z3.string().trim().email(),
-  FIREBASE_ADMIN_PRIVATE_KEY: z3.string().trim().min(1)
+import { z as z4 } from "zod";
+var firebaseAdminEnvironmentSchema = z4.object({
+  FIREBASE_ADMIN_PROJECT_ID: z4.string().trim().min(1),
+  FIREBASE_ADMIN_CLIENT_EMAIL: z4.string().trim().email(),
+  FIREBASE_ADMIN_PRIVATE_KEY: z4.string().trim().min(1)
 });
 var FirebaseAdminConfigurationError = class extends Error {
   constructor() {
@@ -223,20 +238,20 @@ async function authenticateAdminRequest(request, dependencies = {}) {
 }
 
 // server/config/r2.ts
-import { z as z4 } from "zod";
-var serverUrlSchema = z4.url().refine((value) => {
+import { z as z5 } from "zod";
+var serverUrlSchema = z5.url().refine((value) => {
   const url = new URL(value);
   return url.protocol === "https:" || url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
 }, "URL must use HTTPS. HTTP is allowed only for local development.");
-var optionalServerUrlSchema = z4.preprocess(
+var optionalServerUrlSchema = z5.preprocess(
   (value) => value === "" ? void 0 : value,
   serverUrlSchema.optional()
 );
-var r2EnvironmentSchema = z4.object({
-  R2_ACCOUNT_ID: z4.string().trim().min(1),
-  R2_ACCESS_KEY_ID: z4.string().trim().min(1),
-  R2_SECRET_ACCESS_KEY: z4.string().trim().min(1),
-  R2_BUCKET_NAME: z4.string().trim().min(1),
+var r2EnvironmentSchema = z5.object({
+  R2_ACCOUNT_ID: z5.string().trim().min(1),
+  R2_ACCESS_KEY_ID: z5.string().trim().min(1),
+  R2_SECRET_ACCESS_KEY: z5.string().trim().min(1),
+  R2_BUCKET_NAME: z5.string().trim().min(1),
   R2_ENDPOINT: optionalServerUrlSchema
 });
 var R2ConfigurationError = class extends Error {
@@ -446,44 +461,44 @@ function parseResourceObjectKey(rawKey, sections = repositorySections) {
 import { GetObjectCommand, ListObjectsV2Command as ListObjectsV2Command2, PutObjectCommand } from "@aws-sdk/client-s3";
 
 // src/contracts/repositoryStructure.ts
-import { z as z5 } from "zod";
-var structureItemIdSchema = z5.string().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var managedCategorySchema = z5.object({
+import { z as z6 } from "zod";
+var structureItemIdSchema = z6.string().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var managedCategorySchema = z6.object({
   id: structureItemIdSchema,
-  title: z5.string().trim().min(2).max(100)
+  title: z6.string().trim().min(2).max(100)
 });
-var managedSectionSchema = z5.object({
+var managedSectionSchema = z6.object({
   id: structureItemIdSchema,
-  title: z5.string().trim().min(2).max(100),
-  categories: z5.array(managedCategorySchema)
+  title: z6.string().trim().min(2).max(100),
+  categories: z6.array(managedCategorySchema)
 });
-var repositoryStructureSchema = z5.object({
-  data: z5.array(managedSectionSchema)
+var repositoryStructureSchema = z6.object({
+  data: z6.array(managedSectionSchema)
 });
-var structureMutationSchema = z5.discriminatedUnion("action", [
-  z5.object({
-    action: z5.literal("add-section"),
-    title: z5.string().trim().min(2).max(100)
+var structureMutationSchema = z6.discriminatedUnion("action", [
+  z6.object({
+    action: z6.literal("add-section"),
+    title: z6.string().trim().min(2).max(100)
   }),
-  z5.object({
-    action: z5.literal("rename-section"),
+  z6.object({
+    action: z6.literal("rename-section"),
     id: structureItemIdSchema,
-    title: z5.string().trim().min(2).max(100)
+    title: z6.string().trim().min(2).max(100)
   }),
-  z5.object({ action: z5.literal("delete-section"), id: structureItemIdSchema }),
-  z5.object({
-    action: z5.literal("add-category"),
+  z6.object({ action: z6.literal("delete-section"), id: structureItemIdSchema }),
+  z6.object({
+    action: z6.literal("add-category"),
     sectionId: structureItemIdSchema,
-    title: z5.string().trim().min(2).max(100)
+    title: z6.string().trim().min(2).max(100)
   }),
-  z5.object({
-    action: z5.literal("rename-category"),
+  z6.object({
+    action: z6.literal("rename-category"),
     sectionId: structureItemIdSchema,
     id: structureItemIdSchema,
-    title: z5.string().trim().min(2).max(100)
+    title: z6.string().trim().min(2).max(100)
   }),
-  z5.object({
-    action: z5.literal("delete-category"),
+  z6.object({
+    action: z6.literal("delete-category"),
     sectionId: structureItemIdSchema,
     id: structureItemIdSchema
   })
@@ -505,6 +520,7 @@ function isR2PreconditionFailed(error) {
 
 // server/repository/repositoryStructureStore.ts
 var key = "_system/repository-structure.json";
+var publicStructureCache = /* @__PURE__ */ new Map();
 var defaults = repositorySections.map(({ id, title, categories }) => ({
   id,
   title,
@@ -568,6 +584,19 @@ async function readRepositoryStructureSnapshot(environment = process.env) {
 }
 async function readRepositoryStructure(environment = process.env) {
   return (await readRepositoryStructureSnapshot(environment)).data;
+}
+function readCachedPublicRepositoryStructure(environment = process.env) {
+  const config = getR2Config(environment);
+  const cacheKey = `${config.accountId}:${config.bucketName}`;
+  const cached = publicStructureCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const value = readRepositoryStructure(environment);
+  publicStructureCache.set(cacheKey, { expiresAt: Date.now() + 6e4, value });
+  if (publicStructureCache.size > 8) publicStructureCache.delete(publicStructureCache.keys().next().value);
+  void value.catch(() => {
+    if (publicStructureCache.get(cacheKey)?.value === value) publicStructureCache.delete(cacheKey);
+  });
+  return value;
 }
 async function writeRepositoryStructure(data, etag, environment) {
   const config = getR2Config(environment);
@@ -658,39 +687,55 @@ async function mutateRepositoryStructure(payload, environment = process.env) {
 }
 
 // server/security/auditLog.ts
-import { randomUUID } from "node:crypto";
-import { PutObjectCommand as PutObjectCommand2 } from "@aws-sdk/client-s3";
-import { z as z6 } from "zod";
-var auditEnvironmentSchema = z6.object({
-  R2_AUDIT_BUCKET_NAME: z6.string().trim().min(1)
+import { createHash, randomUUID } from "node:crypto";
+import { HeadObjectCommand, PutObjectCommand as PutObjectCommand2 } from "@aws-sdk/client-s3";
+import { z as z7 } from "zod";
+var auditEnvironmentSchema = z7.object({
+  R2_AUDIT_BUCKET_NAME: z7.string().trim().min(1)
 });
 async function recordAuditEvent(event, environment = process.env) {
   const occurredAt = /* @__PURE__ */ new Date();
-  const id = randomUUID();
+  const id = event.idempotencyKey ? createHash("sha256").update(event.action).update(":").update(event.idempotencyKey).digest("hex") : randomUUID();
   const date = occurredAt.toISOString().slice(0, 10).replaceAll("-", "/");
   const timestamp = occurredAt.toISOString().replaceAll(":", "-");
-  const key2 = `_system/audit/${date}/${timestamp}-${id}.json`;
+  const key2 = event.idempotencyKey ? `_system/audit/idempotent/${id}.json` : `_system/audit/${date}/${timestamp}-${id}.json`;
   const config = getR2Config(environment);
   const auditEnvironment = auditEnvironmentSchema.safeParse(environment);
   if (!auditEnvironment.success) {
     throw new Error("The private audit bucket is not configured.");
   }
-  await createR2Client(config).send(createAuditWriteCommand(
-    auditEnvironment.data.R2_AUDIT_BUCKET_NAME,
-    key2,
-    {
-      id,
-      occurredAt: occurredAt.toISOString(),
-      action: event.action,
-      outcome: event.outcome,
-      actor: {
-        uid: event.actor.uid,
-        email: event.actor.email ?? null
-      },
-      target: event.target,
-      details: event.details ?? {}
+  const client = createR2Client(config);
+  if (event.idempotencyKey) {
+    try {
+      await client.send(new HeadObjectCommand({
+        Bucket: auditEnvironment.data.R2_AUDIT_BUCKET_NAME,
+        Key: key2
+      }));
+      return key2;
+    } catch (error) {
+      if (!isR2NotFound(error)) throw error;
     }
-  ));
+  }
+  try {
+    await client.send(createAuditWriteCommand(
+      auditEnvironment.data.R2_AUDIT_BUCKET_NAME,
+      key2,
+      {
+        id,
+        occurredAt: occurredAt.toISOString(),
+        action: event.action,
+        outcome: event.outcome,
+        actor: {
+          uid: event.actor.uid,
+          email: event.actor.email ?? null
+        },
+        target: event.target,
+        details: event.details ?? {}
+      }
+    ));
+  } catch (error) {
+    if (!event.idempotencyKey || !isR2PreconditionFailed(error)) throw error;
+  }
   return key2;
 }
 function createAuditWriteCommand(bucketName, key2, event) {
@@ -820,64 +865,65 @@ async function handleAdminResourceAccessRequest(request, dependencies = {}) {
 }
 
 // server/http/adminResourceMutationHandler.ts
-import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand, PutObjectCommand as PutObjectCommand3 } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand as HeadObjectCommand2, PutObjectCommand as PutObjectCommand3 } from "@aws-sdk/client-s3";
 
 // src/contracts/adminOperations.ts
-import { z as z7 } from "zod";
-var resourceRenameSchema = z7.object({
+import { z as z8 } from "zod";
+var resourceRenameSchema = z8.object({
   key: resourceObjectKeySchema,
   filename: resourceFilenameSchema
 });
-var resourceDeleteSchema = z7.object({
+var resourceDeleteSchema = z8.object({
   key: resourceObjectKeySchema,
   confirmation: resourceFilenameSchema
 });
-var administratorCreateSchema = z7.object({
-  email: z7.string().trim().email(),
-  password: z7.string().min(12).max(128),
-  displayName: z7.string().trim().min(2).max(80)
+var administratorCreateSchema = z8.object({
+  email: z8.string().trim().email(),
+  password: z8.string().min(12).max(128),
+  displayName: z8.string().trim().min(2).max(80)
 });
-var administratorUpdateSchema = z7.object({
-  uid: z7.string().min(1),
-  displayName: z7.string().trim().min(2).max(80),
-  disabled: z7.boolean()
+var administratorUpdateSchema = z8.object({
+  uid: z8.string().min(1),
+  displayName: z8.string().trim().min(2).max(80),
+  disabled: z8.boolean()
 });
-var administratorDeleteSchema = z7.object({ uid: z7.string().min(1) });
-var administratorSchema = z7.object({
-  uid: z7.string(),
-  email: z7.string().email(),
-  displayName: z7.string(),
-  disabled: z7.boolean(),
-  createdAt: z7.string()
+var administratorDeleteSchema = z8.object({ uid: z8.string().min(1) });
+var administratorSchema = z8.object({
+  uid: z8.string(),
+  email: z8.string().email(),
+  displayName: z8.string(),
+  disabled: z8.boolean(),
+  createdAt: z8.string()
 });
-var administratorListSchema = z7.object({
-  data: z7.array(administratorSchema)
+var administratorListSchema = z8.object({
+  data: z8.array(administratorSchema),
+  canManage: z8.boolean()
 });
 
 // src/contracts/resourceLink.ts
-import { z as z8 } from "zod";
+import { z as z9 } from "zod";
 var maximumResourceLinkPayloadSize = 4 * 1024;
-var resourceLinkNameSchema = z8.string().trim().min(1, "Enter a link name.").max(170, "The link name is too long.").refine((name) => !name.toLocaleLowerCase().endsWith(".link"), {
+var resourceLinkNameSchema = z9.string().trim().min(1, "Enter a link name.").max(170, "The link name is too long.").refine((name) => !name.toLocaleLowerCase().endsWith(".link"), {
   message: "Enter the link name without a file extension."
 }).refine((name) => resourceFilenameSchema.safeParse(`${name}.link`).success, {
   message: "The link name contains unsupported characters."
 });
-var resourceLinkUrlSchema = z8.url("Enter a valid web address.").refine((value) => {
+var resourceLinkUrlSchema = z9.url("Enter a valid web address.").refine((value) => {
   const url = new URL(value);
   return url.protocol === "https:" && !url.username && !url.password;
 }, "Enter a secure HTTPS address without embedded credentials.");
-var resourceLinkCreateSchema = z8.object({
+var resourceLinkCreateSchema = z9.object({
   name: resourceLinkNameSchema,
   url: resourceLinkUrlSchema,
   sectionId: repositorySectionIdSchema,
-  categoryId: z8.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
+  categoryId: z9.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u).optional(),
   year: resourceYearSchema
 });
-var resourceLinkPayloadSchema = z8.object({
+var resourceLinkPayloadSchema = z9.object({
   url: resourceLinkUrlSchema
 });
-var resourceLinkCreateResponseSchema = z8.object({
-  data: z8.object({ key: resourceObjectKeySchema })
+var resourceLinkCreateResponseSchema = z9.object({
+  data: z9.object({ key: resourceObjectKeySchema })
 });
 
 // server/http/adminResourceMutationHandler.ts
@@ -916,7 +962,7 @@ async function handleAdminResourceMutationRequest(request, dependencies = {}) {
   const config = dependencies.config ?? getR2Config(dependencies.environment);
   const client = createR2Client(config);
   const send = dependencies.send ?? ((command) => {
-    if (command instanceof HeadObjectCommand) return client.send(command);
+    if (command instanceof HeadObjectCommand2) return client.send(command);
     if (command instanceof CopyObjectCommand) return client.send(command);
     if (command instanceof PutObjectCommand3) return client.send(command);
     return client.send(command);
@@ -975,7 +1021,7 @@ async function handleAdminResourceMutationRequest(request, dependencies = {}) {
       if (result.data.filename.split(".").pop()?.toLowerCase() !== extension) return json2({ error: { code: "INVALID_EXTENSION", message: "Renaming cannot change the file type." } }, 400);
       const targetKey = parsed.categoryId ? `${parsed.sectionId}/${parsed.categoryId}/${parsed.year}/${result.data.filename}` : `${parsed.sectionId}/${parsed.year}/${result.data.filename}`;
       try {
-        await send(new HeadObjectCommand({ Bucket: config.bucketName, Key: targetKey }));
+        await send(new HeadObjectCommand2({ Bucket: config.bucketName, Key: targetKey }));
         return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A resource with that filename already exists." } }, 409);
       } catch (error) {
         if (!isR2NotFound(error)) throw error;
@@ -1010,9 +1056,44 @@ async function handleAdminResourceMutationRequest(request, dependencies = {}) {
 }
 
 // server/repository/listResources.ts
-import { createHash } from "node:crypto";
+import { HeadObjectCommand as HeadObjectCommand3 } from "@aws-sdk/client-s3";
+
+// server/repository/publicResourceId.ts
+import { createCipheriv, createDecipheriv, createHmac } from "node:crypto";
+var version = "v1_";
+function deriveKey(config) {
+  return createHmac("sha256", config.secretAccessKey).update(`cpsu-public-resource-id:${config.accountId}:${config.bucketName}`).digest();
+}
+function createPublicResourceId(key2, config) {
+  const encryptionKey = deriveKey(config);
+  const nonce = createHmac("sha256", encryptionKey).update(key2).digest().subarray(0, 12);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey, nonce);
+  const ciphertext = Buffer.concat([cipher.update(key2, "utf8"), cipher.final()]);
+  return version + Buffer.concat([nonce, cipher.getAuthTag(), ciphertext]).toString("base64url");
+}
+function decodePublicResourceId(id, config) {
+  if (!/^v1_[A-Za-z0-9_-]{40,6000}$/u.test(id)) return null;
+  try {
+    const bytes = Buffer.from(id.slice(version.length), "base64url");
+    if (bytes.length < 29) return null;
+    const encryptionKey = deriveKey(config);
+    const nonce = bytes.subarray(0, 12);
+    const tag = bytes.subarray(12, 28);
+    const decipher = createDecipheriv("aes-256-gcm", encryptionKey, nonce);
+    decipher.setAuthTag(tag);
+    const key2 = Buffer.concat([decipher.update(bytes.subarray(28)), decipher.final()]).toString("utf8");
+    const expectedNonce = createHmac("sha256", encryptionKey).update(key2).digest().subarray(0, 12);
+    return nonce.equals(expectedNonce) ? key2 : null;
+  } catch {
+    return null;
+  }
+}
+
+// server/repository/listResources.ts
 var r2PageSize = 1e3;
 var maximumListedObjects = 1e4;
+var publicListCacheLifetimeMs = 6e4;
+var publicListCache = /* @__PURE__ */ new Map();
 var InvalidResourceCursorError = class extends Error {
   constructor() {
     super("The repository cursor is invalid.");
@@ -1054,16 +1135,27 @@ async function getAllObjectSummaries(bucketName, prefix, listObjects) {
   } while (continuationToken);
   return objects;
 }
-function createPublicResourceId(key2) {
-  return createHash("sha256").update(key2).digest("base64url");
+function getCachedPublicObjectSummaries(config, prefix, listObjects) {
+  const cacheKey = JSON.stringify([config.accountId, config.bucketName, prefix]);
+  const cached = publicListCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const value = getAllObjectSummaries(config.bucketName, prefix, listObjects);
+  publicListCache.set(cacheKey, { expiresAt: Date.now() + publicListCacheLifetimeMs, value });
+  if (publicListCache.size > 32) {
+    publicListCache.delete(publicListCache.keys().next().value);
+  }
+  void value.catch(() => {
+    if (publicListCache.get(cacheKey)?.value === value) publicListCache.delete(cacheKey);
+  });
+  return value;
 }
-function mapObjectToResource(object, structure) {
+function mapObjectToResource(object, structure, config) {
   if (!object.Key || object.Size === void 0 || !object.LastModified)
     return null;
   try {
     const parsedKey = parseResourceObjectKey(object.Key, structure);
     return adminResourceSchema.parse({
-      id: createPublicResourceId(parsedKey.key),
+      id: createPublicResourceId(parsedKey.key, config),
       key: parsedKey.key,
       filename: parsedKey.filename,
       displayName: parsedKey.displayName,
@@ -1144,17 +1236,14 @@ function decodeCursor(cursor) {
 function encodeCursor(offset) {
   return Buffer.from(String(offset), "utf8").toString("base64url");
 }
-async function listResourceRecords(query, dependencies = {}) {
+async function listResourceRecords(query, dependencies = {}, usePublicCache = false) {
   const config = dependencies.config ?? getR2Config(dependencies.environment);
-  const structure = dependencies.structure ?? (dependencies.environment ? await readRepositoryStructure(dependencies.environment) : repositorySections);
+  const structure = dependencies.structure ?? (dependencies.listObjects ? repositorySections : await (usePublicCache ? readCachedPublicRepositoryStructure(dependencies.environment) : readRepositoryStructure(dependencies.environment)));
   const listObjects = dependencies.listObjects ?? createR2ObjectLister(createR2Client(config));
-  const objectSummaries = await getAllObjectSummaries(
-    config.bucketName,
-    getListPrefix(query),
-    listObjects
-  );
+  const prefix = getListPrefix(query);
+  const objectSummaries = await (usePublicCache && !dependencies.listObjects ? getCachedPublicObjectSummaries(config, prefix, listObjects) : getAllObjectSummaries(config.bucketName, prefix, listObjects));
   const resources = sortResources(
-    objectSummaries.map((object) => mapObjectToResource(object, structure)).filter((resource) => resource !== null).filter((resource) => matchesQuery(resource, query)),
+    objectSummaries.map((object) => mapObjectToResource(object, structure, config)).filter((resource) => resource !== null).filter((resource) => matchesQuery(resource, query)),
     query.sort
   );
   const offset = decodeCursor(query.cursor);
@@ -1173,21 +1262,21 @@ async function listAdminResources(query, dependencies = {}) {
 }
 async function findResourceByPublicId(id, dependencies = {}) {
   const config = dependencies.config ?? getR2Config(dependencies.environment);
-  const structure = dependencies.structure ?? (dependencies.environment ? await readRepositoryStructure(dependencies.environment) : repositorySections);
-  const listObjects = dependencies.listObjects ?? createR2ObjectLister(createR2Client(config));
-  const objects = await getAllObjectSummaries(
-    config.bucketName,
-    void 0,
-    listObjects
-  );
-  for (const object of objects) {
-    const resource = mapObjectToResource(object, structure);
-    if (resource?.id === id) return resource;
+  const key2 = decodePublicResourceId(id, config);
+  if (!key2) return null;
+  const structure = dependencies.structure ?? (dependencies.headObject ? repositorySections : await readCachedPublicRepositoryStructure(dependencies.environment));
+  try {
+    parseResourceObjectKey(key2, structure);
+    const headObject = dependencies.headObject ?? (async (bucket, objectKey) => createR2Client(config).send(new HeadObjectCommand3({ Bucket: bucket, Key: objectKey })));
+    const object = await headObject(config.bucketName, key2);
+    return mapObjectToResource({ Key: key2, Size: object.ContentLength, LastModified: object.LastModified }, structure, config);
+  } catch (error) {
+    if (isR2NotFound(error) || error instanceof InvalidResourceObjectKeyError) return null;
+    throw error;
   }
-  return null;
 }
 async function listResources(query, dependencies = {}) {
-  const result = await listResourceRecords(query, dependencies);
+  const result = await listResourceRecords(query, dependencies, true);
   return {
     data: result.data.map(
       (resource) => publicResourceSchema.parse(resource)
@@ -1198,7 +1287,7 @@ async function listResources(query, dependencies = {}) {
 
 // server/http/resourcesHandler.ts
 var jsonHeaders = {
-  "cache-control": "public, max-age=0, s-maxage=60, stale-while-revalidate=300",
+  "cache-control": "public, max-age=0, s-maxage=60",
   "content-type": "application/json; charset=utf-8"
 };
 function jsonResponse(body, status = 200, headers8 = jsonHeaders) {
@@ -1391,12 +1480,17 @@ async function handleAdminUsersRequest(request, dependencies = {}) {
     if (error instanceof AdminAuthorizationError) return json3({ error: { code: "FORBIDDEN", message: error.message } }, 403);
     return json3({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
   }
+  const ownerUid = (dependencies.environment ?? process.env).FIREBASE_BOOTSTRAP_ADMIN_UID?.trim();
+  const canManage = !ownerUid || identity.uid === ownerUid;
+  if (!canManage && request.method !== "GET") {
+    return json3({ error: { code: "FORBIDDEN", message: "Only the designated account owner can manage administrators." } }, 403);
+  }
   const auth = dependencies.auth ?? getAuth2(getFirebaseAdminApp(getFirebaseAdminConfig(dependencies.environment)));
   const audit = dependencies.audit ?? recordAuditEvent;
   try {
     if (request.method === "GET") {
       const users = (await auth.listUsers(1e3)).users.filter((user) => user.email && hasAdministratorAccess(user, dependencies.environment ?? process.env)).map(mapUser);
-      return json3({ data: users });
+      return json3({ data: users, canManage });
     }
     const payload = await request.json();
     if (request.method === "POST") {
@@ -1443,35 +1537,35 @@ async function handleAdminUsersRequest(request, dependencies = {}) {
 }
 
 // src/contracts/accomplishmentResource.ts
-import { z as z11 } from "zod";
+import { z as z12 } from "zod";
 
 // src/contracts/reportAppearance.ts
-import { z as z9 } from "zod";
-var chartColorSchema = z9.string().regex(/^#[0-9a-fA-F]{6}$/u, "Select a valid chart color.");
-var legendIdSchema = z9.string().min(1).max(60).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var reportLegendItemSchema = z9.object({
+import { z as z10 } from "zod";
+var chartColorSchema = z10.string().regex(/^#[0-9a-fA-F]{6}$/u, "Select a valid chart color.");
+var legendIdSchema = z10.string().min(1).max(60).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var reportLegendItemSchema = z10.object({
   id: legendIdSchema,
-  label: z9.string().trim().min(1).max(40),
+  label: z10.string().trim().min(1).max(40),
   color: chartColorSchema
 });
-var barColorKeySchema = z9.string().min(1).max(160).regex(/^[A-Za-z0-9:_-]+$/u);
-var barColorValueSchema = z9.union([chartColorSchema, legendIdSchema]);
-var reportAppearanceSchema = z9.object({
-  legend: z9.array(reportLegendItemSchema).max(12).optional(),
-  barColors: z9.record(barColorKeySchema, barColorValueSchema).optional()
+var barColorKeySchema = z10.string().min(1).max(160).regex(/^[A-Za-z0-9:_-]+$/u);
+var barColorValueSchema = z10.union([chartColorSchema, legendIdSchema]);
+var reportAppearanceSchema = z10.object({
+  legend: z10.array(reportLegendItemSchema).max(12).optional(),
+  barColors: z10.record(barColorKeySchema, barColorValueSchema).optional()
 });
 
 // src/contracts/reportResource.ts
-import { z as z10 } from "zod";
-var reportNodeIdSchema = z10.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
-var reportTreeNodeSchema = z10.object({
+import { z as z11 } from "zod";
+var reportNodeIdSchema = z11.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u);
+var reportTreeNodeSchema = z11.object({
   id: reportNodeIdSchema,
   parentId: reportNodeIdSchema.nullable(),
-  type: z10.enum(["section", "group", "indicator"]),
-  title: z10.string().trim().min(2).max(120)
+  type: z11.enum(["section", "group", "indicator"]),
+  title: z11.string().trim().min(2).max(120)
 });
-var reportValueSchema = z10.string().max(2e3);
-var reportChartTypeSchema = z10.enum(["column", "line", "bar"]);
+var reportValueSchema = z11.string().max(2e3);
+var reportChartTypeSchema = z11.enum(["column", "line", "bar"]);
 function inspectReportHierarchy(nodes) {
   const nodesById = new Map(nodes.map((node) => [node.id, node]));
   const invalidParentIndexes = [];
@@ -1487,31 +1581,38 @@ function inspectReportHierarchy(nodes) {
 }
 
 // src/contracts/accomplishmentResource.ts
-var periodEntrySchema = z11.object({
+var periodEntrySchema = z12.object({
   q1: reportValueSchema,
   q2: reportValueSchema,
   q3: reportValueSchema,
   q4: reportValueSchema,
   total: reportValueSchema
 });
-var dataRowEntrySchema = z11.object({
+var dataRowEntrySchema = z12.object({
   target: periodEntrySchema,
   accomplishment: periodEntrySchema
 });
-var indicatorEntrySchema = z11.object({
+var indicatorEntrySchema = z12.object({
   results: dataRowEntrySchema,
   rawData: dataRowEntrySchema
 });
-var currentAccomplishmentResourceDataSchema = z11.object({
-  version: z11.literal(2),
-  nodes: z11.array(reportTreeNodeSchema).max(250),
-  entries: z11.record(
-    z11.string().regex(/^\d{4}$/u),
-    z11.record(reportNodeIdSchema, indicatorEntrySchema)
+var currentAccomplishmentResourceDataSchema = z12.object({
+  version: z12.literal(2),
+  nodes: z12.array(reportTreeNodeSchema).max(250),
+  entries: z12.record(
+    z12.string().regex(/^\d{4}$/u),
+    z12.record(reportNodeIdSchema, indicatorEntrySchema)
   ),
   chartType: reportChartTypeSchema,
   appearance: reportAppearanceSchema.optional()
 }).superRefine((data, context) => {
+  if (Object.keys(data.entries).length > 50 || Object.values(data.entries).some((yearEntries) => Object.keys(yearEntries).length > 250)) {
+    context.addIssue({
+      code: "custom",
+      message: "The report contains too many years or indicator entries.",
+      path: ["entries"]
+    });
+  }
   const hierarchy = inspectReportHierarchy(data.nodes);
   if (hierarchy.hasDuplicateIds) {
     context.addIssue({
@@ -1528,7 +1629,7 @@ var currentAccomplishmentResourceDataSchema = z11.object({
     });
   });
 });
-var legacyPeriodEntrySchema = z11.object({
+var legacyPeriodEntrySchema = z12.object({
   target: reportValueSchema,
   q1: reportValueSchema,
   q2: reportValueSchema,
@@ -1536,14 +1637,14 @@ var legacyPeriodEntrySchema = z11.object({
   q4: reportValueSchema,
   total: reportValueSchema
 });
-var legacyAccomplishmentResourceDataSchema = z11.object({
-  version: z11.literal(1),
-  nodes: z11.array(reportTreeNodeSchema).max(250),
-  entries: z11.record(
-    z11.string().regex(/^\d{4}$/u),
-    z11.record(
+var legacyAccomplishmentResourceDataSchema = z12.object({
+  version: z12.literal(1),
+  nodes: z12.array(reportTreeNodeSchema).max(250),
+  entries: z12.record(
+    z12.string().regex(/^\d{4}$/u),
+    z12.record(
       reportNodeIdSchema,
-      z11.object({
+      z12.object({
         results: legacyPeriodEntrySchema,
         rawData: legacyPeriodEntrySchema
       })
@@ -1587,11 +1688,11 @@ function migrateLegacyData(value) {
   );
   return { ...legacy.data, version: 2, entries };
 }
-var accomplishmentResourceDataSchema = z11.preprocess(
+var accomplishmentResourceDataSchema = z12.preprocess(
   migrateLegacyData,
   currentAccomplishmentResourceDataSchema
 );
-var accomplishmentResourceResponseSchema = z11.object({
+var accomplishmentResourceResponseSchema = z12.object({
   data: accomplishmentResourceDataSchema
 });
 
@@ -1658,6 +1759,40 @@ var createAccomplishmentResourceWriteCommand = store.createWriteCommand;
 var readAccomplishmentResource = store.read;
 var writeAccomplishmentResource = store.write;
 
+// server/http/readLimitedJson.ts
+var RequestBodyTooLargeError = class extends Error {
+};
+var InvalidJsonBodyError = class extends Error {
+};
+async function readLimitedJson(request, maximumBytes) {
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
+    throw new RequestBodyTooLargeError();
+  }
+  if (!request.body) throw new InvalidJsonBodyError();
+  const reader = request.body.getReader();
+  const chunks = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteCount += value.byteLength;
+      if (byteCount > maximumBytes) {
+        await reader.cancel();
+        throw new RequestBodyTooLargeError();
+      }
+      chunks.push(value);
+    }
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) throw error;
+    throw new InvalidJsonBodyError();
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 // server/http/adminReportResourceHandler.ts
 var privateHeaders = {
   "cache-control": "private, no-store",
@@ -1707,7 +1842,19 @@ function createAdminReportResourceHandler(options) {
           { allow: "GET, PUT" }
         );
       }
-      const parsed = options.schema.safeParse(await request.json());
+      let payload;
+      try {
+        payload = await readLimitedJson(request, 3 * 1024 * 1024);
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return json4({ error: { code: "PAYLOAD_TOO_LARGE", message: "The report is too large to save." } }, 413);
+        }
+        if (error instanceof InvalidJsonBodyError) {
+          return json4({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+        }
+        throw error;
+      }
+      const parsed = options.schema.safeParse(payload);
       if (!parsed.success) {
         return json4(
           {
@@ -1756,30 +1903,37 @@ var handleAccomplishmentResourceRequest = createAdminReportResourceHandler({
 });
 
 // src/contracts/opcrResource.ts
-import { z as z12 } from "zod";
-var periodEntrySchema2 = z12.object({
+import { z as z13 } from "zod";
+var periodEntrySchema2 = z13.object({
   h1: reportValueSchema,
   h2: reportValueSchema,
   total: reportValueSchema
 });
-var dataRowEntrySchema2 = z12.object({
+var dataRowEntrySchema2 = z13.object({
   target: periodEntrySchema2,
   accomplishment: periodEntrySchema2
 });
-var indicatorEntrySchema2 = z12.object({
+var indicatorEntrySchema2 = z13.object({
   results: dataRowEntrySchema2,
   rawData: dataRowEntrySchema2
 });
-var opcrResourceDataSchema = z12.object({
-  version: z12.literal(1),
-  nodes: z12.array(reportTreeNodeSchema).max(250),
-  entries: z12.record(
-    z12.string().regex(/^\d{4}$/u),
-    z12.record(reportNodeIdSchema, indicatorEntrySchema2)
+var opcrResourceDataSchema = z13.object({
+  version: z13.literal(1),
+  nodes: z13.array(reportTreeNodeSchema).max(250),
+  entries: z13.record(
+    z13.string().regex(/^\d{4}$/u),
+    z13.record(reportNodeIdSchema, indicatorEntrySchema2)
   ),
   chartType: reportChartTypeSchema,
   appearance: reportAppearanceSchema.optional()
 }).superRefine((data, context) => {
+  if (Object.keys(data.entries).length > 50 || Object.values(data.entries).some((yearEntries) => Object.keys(yearEntries).length > 250)) {
+    context.addIssue({
+      code: "custom",
+      message: "The report contains too many years or indicator entries.",
+      path: ["entries"]
+    });
+  }
   const hierarchy = inspectReportHierarchy(data.nodes);
   if (hierarchy.hasDuplicateIds) {
     context.addIssue({
@@ -1796,7 +1950,7 @@ var opcrResourceDataSchema = z12.object({
     });
   });
 });
-var opcrResourceResponseSchema = z12.object({
+var opcrResourceResponseSchema = z13.object({
   data: opcrResourceDataSchema
 });
 
@@ -1854,7 +2008,7 @@ function createPublicReportResourceHandler(options) {
       );
     }
     const year = new URL(request.url).searchParams.get("year");
-    if (!year || !/^\d{4}$/u.test(year)) {
+    if (!year || year !== "all" && !/^\d{4}$/u.test(year)) {
       return json5(
         {
           error: {
@@ -1870,9 +2024,9 @@ function createPublicReportResourceHandler(options) {
       return json5({
         data: {
           ...data,
-          entries: { [year]: data.entries[year] ?? {} }
+          entries: year === "all" ? data.entries : { [year]: data.entries[year] ?? {} }
         }
-      });
+      }, 200, { "cache-control": "public, max-age=0, s-maxage=60" });
     } catch {
       return json5(
         {
@@ -1904,21 +2058,6 @@ var handlePublicOpcrResourceRequest = createPublicReportResourceHandler({
 // server/http/publicResourcePreviewHandler.ts
 import { GetObjectCommand as GetObjectCommand4 } from "@aws-sdk/client-s3";
 import { getSignedUrl as getSignedUrl2 } from "@aws-sdk/s3-request-presigner";
-
-// src/contracts/publicResourcePreview.ts
-import { z as z13 } from "zod";
-var publicResourceIdSchema = z13.string().regex(/^[A-Za-z0-9_-]{43}$/u);
-var publicResourcePreviewRequestSchema = z13.object({
-  id: publicResourceIdSchema
-});
-var publicResourcePreviewResponseSchema = z13.object({
-  data: z13.object({
-    url: z13.url(),
-    expiresAt: z13.iso.datetime({ offset: true })
-  })
-});
-
-// server/http/publicResourcePreviewHandler.ts
 var previewLifetimeSeconds = 60;
 var headers4 = {
   "cache-control": "private, no-store",
@@ -2098,12 +2237,16 @@ async function handlePublicResourceLinkRequest(request, dependencies = {}) {
 }
 
 // server/http/repositoryStructureHandler.ts
-var headers5 = { "cache-control": "no-store", "content-type": "application/json; charset=utf-8" };
+var headers5 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
 var json8 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers5 });
+var publicJson = (body) => new Response(JSON.stringify(body), {
+  status: 200,
+  headers: { ...headers5, "cache-control": "public, max-age=0, s-maxage=60" }
+});
 async function handleRepositoryStructureRequest(request, environment = process.env) {
   try {
     if (request.method !== "GET") return json8({ error: { code: "METHOD_NOT_ALLOWED", message: "Only GET is supported." } }, 405);
-    return json8({ data: await readRepositoryStructure(environment) });
+    return publicJson({ data: await readCachedPublicRepositoryStructure(environment) });
   } catch {
     return json8({ error: { code: "STRUCTURE_UNAVAILABLE", message: "Repository structure is unavailable." } }, 503);
   }
@@ -2188,7 +2331,7 @@ var resourceUploadCompletionResponseSchema = z14.object({
 });
 
 // server/repository/authorizeResourceUpload.ts
-import { HeadObjectCommand as HeadObjectCommand2, PutObjectCommand as PutObjectCommand5 } from "@aws-sdk/client-s3";
+import { HeadObjectCommand as HeadObjectCommand4, PutObjectCommand as PutObjectCommand5 } from "@aws-sdk/client-s3";
 import { getSignedUrl as getSignedUrl3 } from "@aws-sdk/s3-request-presigner";
 var uploadExpirationSeconds = 5 * 60;
 var InvalidResourceUploadError = class extends Error {
@@ -2230,7 +2373,7 @@ async function authorizeResourceUpload(input, dependencies = {}) {
   const objectExists = dependencies.objectExists ?? (async (bucket, objectKey) => {
     try {
       await client.send(
-        new HeadObjectCommand2({ Bucket: bucket, Key: objectKey })
+        new HeadObjectCommand4({ Bucket: bucket, Key: objectKey })
       );
       return true;
     } catch (error) {
@@ -2297,7 +2440,7 @@ async function handleUploadAuthorizeRequest(request, dependencies = {}) {
 }
 
 // server/repository/verifyResourceUpload.ts
-import { HeadObjectCommand as HeadObjectCommand3 } from "@aws-sdk/client-s3";
+import { HeadObjectCommand as HeadObjectCommand5 } from "@aws-sdk/client-s3";
 var ResourceUploadVerificationError = class extends Error {
 };
 async function verifyResourceUpload(input, dependencies = {}) {
@@ -2316,7 +2459,7 @@ async function verifyResourceUpload(input, dependencies = {}) {
   }
   const config = dependencies.config ?? getR2Config(dependencies.environment);
   const client = createR2Client(config);
-  const headObject = dependencies.headObject ?? (async (bucket, key2) => client.send(new HeadObjectCommand3({ Bucket: bucket, Key: key2 })));
+  const headObject = dependencies.headObject ?? (async (bucket, key2) => client.send(new HeadObjectCommand5({ Bucket: bucket, Key: key2 })));
   let object;
   try {
     object = await headObject(config.bucketName, parsedKey.key);
@@ -2372,12 +2515,44 @@ async function handleUploadCompleteRequest(request, dependencies = {}) {
       actor: identity,
       target: resource.key,
       outcome: "succeeded",
-      details: { fileSize: resource.fileSize, mimeType: resource.mimeType }
+      details: { fileSize: resource.fileSize, mimeType: resource.mimeType },
+      idempotencyKey: `${resource.key}:${resource.uploadedAt}`
     }, dependencies.environment);
     return json10({ data: resource });
   } catch (error) {
     return json10({ error: { code: "UPLOAD_VERIFICATION_FAILED", message: error instanceof ResourceUploadVerificationError ? error.message : "The upload could not be completed. Please try again." } }, 422);
   }
+}
+
+// server/security/apiRateLimit.ts
+var windowMs = 6e4;
+var counters = /* @__PURE__ */ new Map();
+function requestLimit(path) {
+  if (path === "/api/resources" || path === "/api/repository-structure") return 60;
+  if (path === "/api/resource-preview" || path === "/api/resource-link") return 30;
+  if (path === "/api/accomplishments" || path === "/api/opcr") return 30;
+  if (path === "/api/admin/session" || path === "/api/admin/users") return 30;
+  return path.startsWith("/api/admin/") ? 120 : 60;
+}
+function checkApiRateLimit(request, path, now = Date.now()) {
+  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (!clientIp || clientIp.length > 64) return null;
+  const key2 = `${clientIp}:${path}`;
+  const current = counters.get(key2);
+  const next = !current || current.resetAt <= now ? { count: 1, resetAt: now + windowMs } : { count: current.count + 1, resetAt: current.resetAt };
+  counters.set(key2, next);
+  if (counters.size > 4096) counters.delete(counters.keys().next().value);
+  if (next.count <= requestLimit(path)) return null;
+  return new Response(JSON.stringify({
+    error: { code: "RATE_LIMITED", message: "Too many requests. Please try again shortly." }
+  }), {
+    status: 429,
+    headers: {
+      "cache-control": "private, no-store",
+      "content-type": "application/json; charset=utf-8",
+      "retry-after": String(Math.max(1, Math.ceil((next.resetAt - now) / 1e3)))
+    }
+  });
 }
 
 // server/apiEntry.ts
@@ -2426,8 +2601,10 @@ function resolveApiPath(request) {
 }
 var apiEntry_default = {
   fetch(request) {
-    const handler = routes[resolveApiPath(request)];
-    return handler ? handler(request) : notFound();
+    const path = resolveApiPath(request);
+    const handler = routes[path];
+    if (!handler) return notFound();
+    return checkApiRateLimit(request, path) ?? handler(request);
   }
 };
 export {

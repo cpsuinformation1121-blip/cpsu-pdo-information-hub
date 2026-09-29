@@ -50,7 +50,7 @@ export function createPublicReportResourceHandler<
     }
 
     const year = new URL(request.url).searchParams.get("year");
-    if (!year || !/^\d{4}$/u.test(year)) {
+    if (!year || (year !== "all" && !/^\d{4}$/u.test(year))) {
       return json(
         {
           error: {
@@ -67,9 +67,9 @@ export function createPublicReportResourceHandler<
       return json({
         data: {
           ...data,
-          entries: { [year]: data.entries[year] ?? {} },
+          entries: year === "all" ? data.entries : { [year]: data.entries[year] ?? {} },
         },
-      });
+      }, 200, { "cache-control": "public, max-age=0, s-maxage=60" });
     } catch {
       return json(
         {

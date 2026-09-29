@@ -30,8 +30,7 @@ async function request(
   return payload;
 }
 export async function getAdministrators(user: User) {
-  return administratorListSchema.parse(await request(user, "/api/admin/users"))
-    .data;
+  return administratorListSchema.parse(await request(user, "/api/admin/users"));
 }
 export async function createAdministrator(
   user: User,

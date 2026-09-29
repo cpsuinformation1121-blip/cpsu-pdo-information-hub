@@ -63,10 +63,21 @@ describe("handlePublicAccomplishmentResourceRequest", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("cache-control")).toContain("s-maxage=60");
     expect(await response.json()).toEqual({
       data: { ...data, entries: { "2026": data.entries["2026"] } },
     });
+  });
+
+  it("returns all years in one response when requested by the public report page", async () => {
+    const response = await handlePublicAccomplishmentResourceRequest(
+      new Request("https://example.edu/api/accomplishments?year=all"),
+      {},
+      { read: async () => data },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data });
   });
 
   it("rejects a missing or malformed year", async () => {

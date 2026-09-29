@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import {
   adminResourceSchema,
   publicResourceSchema,
@@ -10,15 +10,17 @@ import {
 } from "../../src/contracts/resource.ts";
 import { repositoryCategoryById } from "../../src/config/repository.ts";
 import { getR2Config, type R2Config } from "../config/r2.ts";
-import { parseResourceObjectKey } from "./parseResourceObjectKey.ts";
+import { InvalidResourceObjectKeyError, parseResourceObjectKey } from "./parseResourceObjectKey.ts";
 import {
   createR2Client,
   createR2ObjectLister,
   type ListR2Objects,
   type R2ObjectSummary,
 } from "./r2Client.ts";
-import { readRepositoryStructure } from "./repositoryStructureStore.ts";
+import { readCachedPublicRepositoryStructure, readRepositoryStructure } from "./repositoryStructureStore.ts";
 import { repositorySections } from "../../src/config/repository.ts";
+import { createPublicResourceId, decodePublicResourceId } from "./publicResourceId.ts";
+import { isR2NotFound } from "./r2Errors.ts";
 type StructureSection = {
   id: string;
   title: string;
@@ -27,6 +29,8 @@ type StructureSection = {
 
 const r2PageSize = 1000;
 const maximumListedObjects = 10_000;
+const publicListCacheLifetimeMs = 60_000;
+const publicListCache = new Map<string, { expiresAt: number; value: Promise<R2ObjectSummary[]> }>();
 
 export class InvalidResourceCursorError extends Error {
   constructor() {
@@ -40,6 +44,7 @@ export type ListResourcesDependencies = {
   config?: R2Config;
   listObjects?: ListR2Objects;
   structure?: readonly StructureSection[];
+  headObject?: (bucket: string, key: string) => Promise<{ ContentLength?: number; LastModified?: Date }>;
 };
 
 function getListPrefix(query: ResourceQuery): string | undefined {
@@ -91,13 +96,30 @@ async function getAllObjectSummaries(
   return objects;
 }
 
-function createPublicResourceId(key: string): string {
-  return createHash("sha256").update(key).digest("base64url");
+function getCachedPublicObjectSummaries(
+  config: R2Config,
+  prefix: string | undefined,
+  listObjects: ListR2Objects,
+) {
+  const cacheKey = JSON.stringify([config.accountId, config.bucketName, prefix]);
+  const cached = publicListCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const value = getAllObjectSummaries(config.bucketName, prefix, listObjects);
+  publicListCache.set(cacheKey, { expiresAt: Date.now() + publicListCacheLifetimeMs, value });
+  if (publicListCache.size > 32) {
+    publicListCache.delete(publicListCache.keys().next().value!);
+  }
+  void value.catch(() => {
+    if (publicListCache.get(cacheKey)?.value === value) publicListCache.delete(cacheKey);
+  });
+  return value;
 }
 
 function mapObjectToResource(
   object: R2ObjectSummary,
   structure: readonly StructureSection[],
+  config: R2Config,
 ): AdminResource | null {
   if (!object.Key || object.Size === undefined || !object.LastModified)
     return null;
@@ -106,7 +128,7 @@ function mapObjectToResource(
     const parsedKey = parseResourceObjectKey(object.Key, structure);
 
     return adminResourceSchema.parse({
-      id: createPublicResourceId(parsedKey.key),
+      id: createPublicResourceId(parsedKey.key, config),
       key: parsedKey.key,
       filename: parsedKey.filename,
       displayName: parsedKey.displayName,
@@ -208,23 +230,25 @@ function encodeCursor(offset: number): string {
 async function listResourceRecords(
   query: ResourceQuery,
   dependencies: ListResourcesDependencies = {},
+  usePublicCache = false,
 ): Promise<AdminResourceListResponse> {
   const config = dependencies.config ?? getR2Config(dependencies.environment);
   const structure =
     dependencies.structure ??
-    (dependencies.environment
-      ? await readRepositoryStructure(dependencies.environment)
-      : repositorySections);
+    (dependencies.listObjects
+      ? repositorySections
+      : await (usePublicCache
+          ? readCachedPublicRepositoryStructure(dependencies.environment)
+          : readRepositoryStructure(dependencies.environment)));
   const listObjects =
     dependencies.listObjects ?? createR2ObjectLister(createR2Client(config));
-  const objectSummaries = await getAllObjectSummaries(
-    config.bucketName,
-    getListPrefix(query),
-    listObjects,
-  );
+  const prefix = getListPrefix(query);
+  const objectSummaries = await (usePublicCache && !dependencies.listObjects
+    ? getCachedPublicObjectSummaries(config, prefix, listObjects)
+    : getAllObjectSummaries(config.bucketName, prefix, listObjects));
   const resources = sortResources(
     objectSummaries
-      .map((object) => mapObjectToResource(object, structure))
+      .map((object) => mapObjectToResource(object, structure, config))
       .filter((resource): resource is AdminResource => resource !== null)
       .filter((resource) => matchesQuery(resource, query)),
     query.sort,
@@ -255,32 +279,31 @@ export async function findResourceByPublicId(
   dependencies: ListResourcesDependencies = {},
 ): Promise<AdminResource | null> {
   const config = dependencies.config ?? getR2Config(dependencies.environment);
+  const key = decodePublicResourceId(id, config);
+  if (!key) return null;
   const structure =
     dependencies.structure ??
-    (dependencies.environment
-      ? await readRepositoryStructure(dependencies.environment)
-      : repositorySections);
-  const listObjects =
-    dependencies.listObjects ?? createR2ObjectLister(createR2Client(config));
-  const objects = await getAllObjectSummaries(
-    config.bucketName,
-    undefined,
-    listObjects,
-  );
-
-  for (const object of objects) {
-    const resource = mapObjectToResource(object, structure);
-    if (resource?.id === id) return resource;
+    (dependencies.headObject
+      ? repositorySections
+      : await readCachedPublicRepositoryStructure(dependencies.environment));
+  try {
+    parseResourceObjectKey(key, structure);
+    const headObject = dependencies.headObject ??
+      (async (bucket: string, objectKey: string) =>
+        createR2Client(config).send(new HeadObjectCommand({ Bucket: bucket, Key: objectKey })));
+    const object = await headObject(config.bucketName, key);
+    return mapObjectToResource({ Key: key, Size: object.ContentLength, LastModified: object.LastModified }, structure, config);
+  } catch (error) {
+    if (isR2NotFound(error) || error instanceof InvalidResourceObjectKeyError) return null;
+    throw error;
   }
-
-  return null;
 }
 
 export async function listResources(
   query: ResourceQuery,
   dependencies: ListResourcesDependencies = {},
 ): Promise<PublicResourceListResponse> {
-  const result = await listResourceRecords(query, dependencies);
+  const result = await listResourceRecords(query, dependencies, true);
   return {
     data: result.data.map((resource): PublicResource =>
       publicResourceSchema.parse(resource),

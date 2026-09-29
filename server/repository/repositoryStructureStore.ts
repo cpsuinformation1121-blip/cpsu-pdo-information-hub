@@ -9,6 +9,7 @@ import { createR2Client } from './r2Client.ts'
 import { isR2NotFound, isR2PreconditionFailed } from './r2Errors.ts'
 
 const key = '_system/repository-structure.json'
+const publicStructureCache = new Map<string, { expiresAt: number; value: Promise<ManagedSection[]> }>()
 const defaults = repositorySections.map(({ id, title, categories }) => ({
   id,
   title,
@@ -108,6 +109,23 @@ export async function readRepositoryStructure(
   environment: NodeJS.ProcessEnv = process.env,
 ): Promise<ManagedSection[]> {
   return (await readRepositoryStructureSnapshot(environment)).data
+}
+
+export function readCachedPublicRepositoryStructure(
+  environment: NodeJS.ProcessEnv = process.env,
+): Promise<ManagedSection[]> {
+  const config = getR2Config(environment)
+  const cacheKey = `${config.accountId}:${config.bucketName}`
+  const cached = publicStructureCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) return cached.value
+
+  const value = readRepositoryStructure(environment)
+  publicStructureCache.set(cacheKey, { expiresAt: Date.now() + 60_000, value })
+  if (publicStructureCache.size > 8) publicStructureCache.delete(publicStructureCache.keys().next().value!)
+  void value.catch(() => {
+    if (publicStructureCache.get(cacheKey)?.value === value) publicStructureCache.delete(cacheKey)
+  })
+  return value
 }
 
 async function writeRepositoryStructure(

@@ -45,6 +45,22 @@ describe('administrator operation authorization', () => {
     await expect(response.json()).resolves.toMatchObject({ error: { code: 'UNAUTHORIZED' } })
   })
 
+  it('prevents a non-owner admin from creating administrator accounts when an owner UID is configured', async () => {
+    const createUser = vi.fn()
+    const response = await handleAdminUsersRequest(new Request('http://localhost/api/admin/users', {
+      method: 'POST',
+      headers: { authorization: 'Bearer valid', 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'other@cpsu.edu.ph', password: 'a-long-password-here', displayName: 'Other' }),
+    }), {
+      environment: { FIREBASE_BOOTSTRAP_ADMIN_UID: 'bootstrap-admin' },
+      verifyIdToken: async () => administrator,
+      auth: { createUser } as unknown as Auth,
+    })
+
+    expect(response.status).toBe(403)
+    expect(createUser).not.toHaveBeenCalled()
+  })
+
   it('lists only Firebase users carrying the administrator claim', async () => {
     const users = [
       {
@@ -90,7 +106,7 @@ describe('administrator operation authorization', () => {
     })
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toMatchObject({ data: [{ uid: user.uid }] })
+    await expect(response.json()).resolves.toMatchObject({ data: [{ uid: user.uid }], canManage: false })
   })
 
   it('grants the administrator claim to staff accounts created by an administrator', async () => {

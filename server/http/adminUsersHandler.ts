@@ -38,6 +38,14 @@ export async function handleAdminUsersRequest(
     return json({ error: { code: 'UNAUTHORIZED', message: error instanceof AdminAuthenticationError ? error.message : 'Authentication is required.' } }, 401)
   }
 
+  // When a bootstrap owner is configured, only that account may manage
+  // administrator identities or mint additional admin claims.
+  const ownerUid = (dependencies.environment ?? process.env).FIREBASE_BOOTSTRAP_ADMIN_UID?.trim()
+  const canManage = !ownerUid || identity.uid === ownerUid
+  if (!canManage && request.method !== 'GET') {
+    return json({ error: { code: 'FORBIDDEN', message: 'Only the designated account owner can manage administrators.' } }, 403)
+  }
+
   const auth = dependencies.auth ?? getAuth(getFirebaseAdminApp(getFirebaseAdminConfig(dependencies.environment)))
   const audit = dependencies.audit ?? recordAuditEvent
   try {
@@ -45,7 +53,7 @@ export async function handleAdminUsersRequest(
       const users = (await auth.listUsers(1000)).users
         .filter((user) => user.email && hasAdministratorAccess(user, dependencies.environment ?? process.env))
         .map(mapUser)
-      return json({ data: users })
+      return json({ data: users, canManage })
     }
 
     const payload: unknown = await request.json()

@@ -117,6 +117,32 @@ of the repository.
 Checkpoint: the build succeeds and the public Home page loads.
 
 `VITE_*` values are baked in at build time; changing them requires a redeploy.
+`FIREBASE_BOOTSTRAP_ADMIN_UID` also designates the only administrator allowed
+to create, update, or delete other administrator accounts. Other administrators
+may still view the staff list.
+
+### Billing and abuse controls (required before opening the site publicly)
+
+The code applies a per-instance API throttle and caches public R2-backed reads,
+but Vercel can run multiple instances. Configure a distributed Vercel Firewall
+rate-limit rule in the project dashboard as well:
+
+1. Match the path prefix `/api/`, **including `/api/handler`**. The latter is
+   the underlying Vercel function; rules on individual friendly API paths alone
+   can miss it.
+2. Start in log mode, inspect ordinary office traffic, then apply a per-IP
+   rate limit with a 429 response. A starting point is 120 requests per
+   60 seconds per IP for `/api/`; tighten costly public preview/list routes
+   after checking legitimate usage.
+3. Set Vercel usage alerts and, where your plan supports it, an automatic
+   spend response. Set Cloudflare R2 usage/billing alerts separately.
+4. Monitor R2 Class A `ListObjects` and Class B `GetObject`/`HeadObject`
+   counts after deployment. A sudden increase warrants checking API traffic.
+
+Public repository listings and structure may take roughly two minutes to
+reflect an administrator change because the function and CDN each cache
+successful reads briefly. Public reports use CDN caching for 60 seconds.
+Administrator reads remain uncached.
 
 ---
 

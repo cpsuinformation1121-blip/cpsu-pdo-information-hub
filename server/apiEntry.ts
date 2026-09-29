@@ -16,6 +16,7 @@ import {
 import { handleResourcesRequest } from "./http/resourcesHandler.ts";
 import { handleUploadAuthorizeRequest } from "./http/uploadAuthorizeHandler.ts";
 import { handleUploadCompleteRequest } from "./http/uploadCompleteHandler.ts";
+import { checkApiRateLimit } from "./security/apiRateLimit.ts";
 
 type ApiHandler = (request: Request) => Response | Promise<Response>;
 
@@ -70,7 +71,9 @@ export function resolveApiPath(request: Request) {
 
 export default {
   fetch(request: Request) {
-    const handler = routes[resolveApiPath(request)];
-    return handler ? handler(request) : notFound();
+    const path = resolveApiPath(request);
+    const handler = routes[path];
+    if (!handler) return notFound();
+    return checkApiRateLimit(request, path) ?? handler(request);
   },
 };

@@ -36,6 +36,14 @@ const currentAccomplishmentResourceDataSchema = z
     appearance: reportAppearanceSchema.optional(),
   })
   .superRefine((data, context) => {
+    if (Object.keys(data.entries).length > 50 ||
+      Object.values(data.entries).some((yearEntries) => Object.keys(yearEntries).length > 250)) {
+      context.addIssue({
+        code: "custom",
+        message: "The report contains too many years or indicator entries.",
+        path: ["entries"],
+      });
+    }
     const hierarchy = inspectReportHierarchy(data.nodes);
     if (hierarchy.hasDuplicateIds) {
       context.addIssue({

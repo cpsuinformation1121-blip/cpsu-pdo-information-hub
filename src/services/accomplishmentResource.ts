@@ -15,3 +15,4 @@ const client = createReportResourceClient<AccomplishmentResourceData>({
 export const getAccomplishmentResource = client.getAdmin;
 export const saveAccomplishmentResource = client.saveAdmin;
 export const getPublicAccomplishmentResource = client.getPublic;
+export const getAllPublicAccomplishmentResources = client.getPublicAll;

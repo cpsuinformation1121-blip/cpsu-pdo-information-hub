@@ -110,7 +110,7 @@ export function AdminHomePage() {
         <section className="rounded-2xl border border-border bg-surface p-6 shadow-[0_12px_32px_rgba(20,83,45,0.06)]">
           <Users className="size-7 text-primary" />
           <p className="mt-6 font-serif text-4xl">
-            {users.data?.length ?? "—"}
+            {users.data?.data.length ?? "—"}
           </p>
           <h2 className="mt-2 font-serif text-2xl">Staff access</h2>
           <p className="mt-3 leading-7 text-muted-foreground">

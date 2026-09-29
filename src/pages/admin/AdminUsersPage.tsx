@@ -14,6 +14,7 @@ export function AdminUsersPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const users = useAdministratorsQuery();
+  const canManage = users.data?.canManage ?? false;
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     displayName: "",
@@ -78,18 +79,18 @@ export function AdminUsersPage() {
             Staff access
           </h1>
           <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">
-            Add, pause, or remove staff access.
+            {canManage ? "Add, pause, or remove staff access." : "View staff access. Only the designated account owner can make changes."}
           </p>
         </div>
-        <button
+        {canManage ? <button
           onClick={() => setShowForm((value) => !value)}
           className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 bg-primary px-5 text-sm font-semibold text-primary-foreground min-[24rem]:w-auto"
         >
           <Plus className="size-4" />
           Add staff
-        </button>
+        </button> : null}
       </div>
-      {showForm ? (
+      {canManage && showForm ? (
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -155,7 +156,7 @@ export function AdminUsersPage() {
       {users.isSuccess ? (
         <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_28px_rgba(20,83,45,0.05)] sm:mt-8">
           <ul className="divide-y divide-border md:hidden">
-            {users.data.map((account) => (
+            {users.data.data.map((account) => (
               <li key={account.uid} className="p-4">
                 <p className="font-semibold">
                   {account.displayName || "Unnamed staff member"}
@@ -183,7 +184,7 @@ export function AdminUsersPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4">
+                {canManage ? <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4">
                   <button
                     type="button"
                     disabled={account.uid === user?.uid}
@@ -213,7 +214,7 @@ export function AdminUsersPage() {
                     <Trash2 className="mr-1.5 size-4" />
                     Delete
                   </button>
-                </div>
+                </div> : null}
               </li>
             ))}
           </ul>
@@ -228,7 +229,7 @@ export function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {users.data.map((account) => (
+              {users.data.data.map((account) => (
                 <tr key={account.uid}>
                   <td className="p-4">
                     <p className="font-semibold">
@@ -247,7 +248,7 @@ export function AdminUsersPage() {
                     {account.disabled ? "Access paused" : "Active"}
                   </td>
                   <td className="p-4">
-                    <div className="flex gap-4">
+                    {canManage ? <div className="flex gap-4">
                       <button
                         disabled={account.uid === user?.uid}
                         onClick={() =>
@@ -275,7 +276,7 @@ export function AdminUsersPage() {
                         <Trash2 className="mr-1 inline size-4" />
                         Delete
                       </button>
-                    </div>
+                    </div> : <span className="text-sm text-muted-foreground">Read only</span>}
                   </td>
                 </tr>
               ))}
@@ -284,7 +285,7 @@ export function AdminUsersPage() {
           </div>
         </div>
       ) : null}
-      {deleteTarget ? (
+      {canManage && deleteTarget ? (
         <AppDialog
           title="Remove staff access"
           description={`Remove ${deleteTarget.email}?`}

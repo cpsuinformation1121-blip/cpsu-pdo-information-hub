@@ -6,6 +6,7 @@ import {
   recordAuditEvent,
   type AuditAction,
 } from "../security/auditLog.ts";
+import { InvalidJsonBodyError, readLimitedJson, RequestBodyTooLargeError } from "./readLimitedJson.ts";
 
 type RuntimeSchema<Data> = {
   safeParse: (
@@ -93,7 +94,19 @@ export function createAdminReportResourceHandler<Data>(
         );
       }
 
-      const parsed = options.schema.safeParse(await request.json());
+      let payload: unknown;
+      try {
+        payload = await readLimitedJson(request, 3 * 1024 * 1024);
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return json({ error: { code: "PAYLOAD_TOO_LARGE", message: "The report is too large to save." } }, 413);
+        }
+        if (error instanceof InvalidJsonBodyError) {
+          return json({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+        }
+        throw error;
+      }
+      const parsed = options.schema.safeParse(payload);
       if (!parsed.success) {
         return json(
           {

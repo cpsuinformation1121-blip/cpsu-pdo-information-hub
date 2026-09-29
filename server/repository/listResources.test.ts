@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { resourceQuerySchema } from '../../src/contracts/resource'
 import type { R2Config } from '../config/r2'
 import {
+  findResourceByPublicId,
   InvalidResourceCursorError,
   listAdminResources,
   listResources,
@@ -50,7 +51,33 @@ describe('listResources', () => {
       expect(resource).not.toHaveProperty('key')
       expect(resource).not.toHaveProperty('downloadUrl')
       expect(resource).not.toHaveProperty('previewUrl')
+      expect(resource.id).not.toContain(resource.filename)
     }
+  })
+
+  it('resolves an opaque public ID with one object HEAD and no bucket listing', async () => {
+    const listed = await listResources(resourceQuerySchema.parse({}), {
+      config: testConfig,
+      listObjects: async () => ({ Contents: [objects[1]], IsTruncated: false }),
+    })
+    const listObjects = vi.fn()
+    const headObject = vi.fn(async () => ({
+      ContentLength: objects[1].Size,
+      LastModified: objects[1].LastModified,
+    }))
+    const result = await findResourceByPublicId(listed.data[0].id, {
+      config: testConfig,
+      listObjects,
+      headObject,
+    })
+
+    expect(result?.key).toBe(objects[1].Key)
+    expect(headObject).toHaveBeenCalledOnce()
+    expect(listObjects).not.toHaveBeenCalled()
+    expect(await findResourceByPublicId(listed.data[0].id + 'x', {
+      config: testConfig, listObjects, headObject,
+    })).toBeNull()
+    expect(headObject).toHaveBeenCalledOnce()
   })
 
   it('retains storage keys in the authenticated administrator inventory', async () => {

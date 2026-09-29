@@ -29,5 +29,6 @@ export const administratorSchema = z.object({
 });
 export const administratorListSchema = z.object({
   data: z.array(administratorSchema),
+  canManage: z.boolean(),
 });
 export type Administrator = z.infer<typeof administratorSchema>;
