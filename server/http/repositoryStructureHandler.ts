@@ -6,6 +6,7 @@ import {
   readCachedPublicRepositoryStructure,
   readRepositoryStructure,
   RepositoryStructureConflictError,
+  RepositoryStructureNotEmptyError,
 } from '../repository/repositoryStructureStore.ts'
 import { recordAuditEvent } from '../security/auditLog.ts'
 
@@ -62,6 +63,9 @@ export async function handleAdminRepositoryStructureRequest(
   } catch (error) {
     const bodyError = jsonBodyErrorResponse(error)
     if (bodyError) return bodyError
+    if (error instanceof RepositoryStructureNotEmptyError) {
+      return json({ error: { code: 'STRUCTURE_NOT_EMPTY', message: error.message } }, 409)
+    }
     if (error instanceof RepositoryStructureConflictError) {
       return json({ error: { code: 'STRUCTURE_CONFLICT', message: error.message } }, 409)
     }

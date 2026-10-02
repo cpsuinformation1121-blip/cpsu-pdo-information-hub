@@ -43,6 +43,10 @@ export function AdminRepositoryStructurePage() {
       });
     },
   });
+  function openDelete(target: DeleteState) {
+    mutation.reset();
+    setPendingDelete(target);
+  }
   function submitEditor() {
     if (!editor?.value.trim()) return;
     if (editor.kind === "add-category")
@@ -173,7 +177,7 @@ export function AdminRepositoryStructurePage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setPendingDelete({
+                      openDelete({
                         kind: "section",
                         sectionId: section.id,
                         id: section.id,
@@ -215,7 +219,7 @@ export function AdminRepositoryStructurePage() {
                       <button
                         type="button"
                         onClick={() =>
-                          setPendingDelete({
+                          openDelete({
                             kind: "category",
                             sectionId: section.id,
                             id: category.id,
@@ -292,12 +296,18 @@ export function AdminRepositoryStructurePage() {
         <AppDialog
           title={`Delete ${pendingDelete.kind}`}
           description={`Delete “${pendingDelete.title}”? It must be empty.`}
-          onClose={() => setPendingDelete(null)}
+          onClose={() => { if (!mutation.isPending) setPendingDelete(null); }}
         >
           <div className="p-5 sm:p-6">
+            {mutation.isError ? (
+              <p role="alert" className="border-l-2 border-danger bg-danger-soft px-4 py-3 text-sm text-danger">
+                {mutation.error instanceof Error ? mutation.error.message : "The category or section could not be deleted."}
+              </p>
+            ) : null}
             <div className="mt-6 grid gap-3 min-[24rem]:flex min-[24rem]:justify-end">
               <button
                 type="button"
+                disabled={mutation.isPending}
                 onClick={() => setPendingDelete(null)}
                 className="min-h-11 cursor-pointer border border-strong-border px-5 font-semibold"
               >

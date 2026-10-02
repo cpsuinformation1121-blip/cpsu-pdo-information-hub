@@ -4,6 +4,7 @@ import {
   applyRequiredStructureMigrations,
   assertRepositorySectionCanBeDeleted,
   createRepositoryStructureWriteCommand,
+  RepositoryStructureNotEmptyError,
 } from './repositoryStructureStore.ts'
 
 const data: ManagedSection[] = [{ id: 'reports', title: 'Reports', categories: [] }]
@@ -50,7 +51,7 @@ describe('required repository structure migrations', () => {
     ])
   })
 
-  it('preserves an existing Forms section and adds its required category', () => {
+  it('preserves administrator-managed categories in an existing Forms section', () => {
     const existing = [
       {
         id: 'forms',
@@ -65,9 +66,36 @@ describe('required repository structure migrations', () => {
         title: 'Office Forms',
         categories: [
           { id: 'requests', title: 'Request Forms' },
-          { id: 'excel', title: 'Excel' },
         ],
       },
     ])
+  })
+
+  it('does not recreate Excel after deleting it from Forms and reloading', () => {
+    const stored: ManagedSection[] = [{ id: 'forms', title: 'Forms', categories: [] }]
+    const firstRead = applyRequiredStructureMigrations(stored)
+    expect(firstRead).toEqual(stored)
+    expect(applyRequiredStructureMigrations(firstRead)).toEqual(stored)
+    expect(stored[0].categories).toEqual([])
+  })
+
+  it('keeps an existing renamed Excel category unchanged', () => {
+    const stored: ManagedSection[] = [{ id: 'forms', title: 'Forms', categories: [{ id: 'excel', title: 'Office Templates' }] }]
+    expect(applyRequiredStructureMigrations(stored)).toEqual(stored)
+  })
+})
+
+
+describe('nonempty structure deletion feedback', () => {
+  it('directs administrators to move or delete resources before removing a category', () => {
+    expect(new RepositoryStructureNotEmptyError('category').message).toBe(
+      'This category contains resources. Move or delete them in Resources before deleting the category.',
+    )
+  })
+
+  it('explains that sections must be cleared before deletion', () => {
+    expect(new RepositoryStructureNotEmptyError('section').message).toBe(
+      'This section contains categories or resources. Remove them before deleting the section.',
+    )
   })
 })

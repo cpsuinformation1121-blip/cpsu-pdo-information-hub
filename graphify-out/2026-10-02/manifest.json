@@ -135,8 +135,8 @@
     "semantic_hash": ""
   },
   "src/pages/HomePage.tsx": {
-    "mtime": 1790915630.3156178,
-    "ast_hash": "2b9dfb420ca290725ef7e7a8fff02b11",
+    "mtime": 1790915847.219551,
+    "ast_hash": "ce39e993b7ef802b5ade603814bba2a4",
     "semantic_hash": ""
   },
   "src/pages/NotFoundPage.tsx": {
@@ -495,8 +495,8 @@
     "semantic_hash": ""
   },
   "src/components/ui/AppDialog.tsx": {
-    "mtime": 1790911161.9738405,
-    "ast_hash": "ac2156bc591bc70e4b76fddce4b6881b",
+    "mtime": 1790916613.0742784,
+    "ast_hash": "08a9224f909a4790582d13d67e83616c",
     "semantic_hash": ""
   },
   "src/contracts/accomplishmentResource.test.ts": {
@@ -680,8 +680,8 @@
     "semantic_hash": ""
   },
   "src/features/repository/ResourceCategoryPanel.tsx": {
-    "mtime": 1790910494.3064556,
-    "ast_hash": "f93af502e3d49eab685acd48fa059c0b",
+    "mtime": 1790916273.2231286,
+    "ast_hash": "0b109c5371174c52a12f66754aa74204",
     "semantic_hash": ""
   },
   "src/features/repository/groupResourcesByCategory.test.ts": {
@@ -700,8 +700,8 @@
     "semantic_hash": ""
   },
   "src/layouts/AdminLayout.tsx": {
-    "mtime": 1790914898.5872514,
-    "ast_hash": "b5c0b51b70f1ce9226a73a8e7a65daae",
+    "mtime": 1790916417.528995,
+    "ast_hash": "f77f181f22986b757a75290beb32bab9",
     "semantic_hash": ""
   },
   "src/pages/AboutPage.tsx": {
@@ -725,8 +725,8 @@
     "semantic_hash": ""
   },
   "src/pages/admin/AdminAccomplishResourcePage.tsx": {
-    "mtime": 1790911624.77466,
-    "ast_hash": "55ceee993cb93a62c0e05474b3efc0e8",
+    "mtime": 1790916484.088303,
+    "ast_hash": "67a2240cd7dfef5795bd6a039fc04a41",
     "semantic_hash": ""
   },
   "src/pages/admin/AdminHomePage.tsx": {
@@ -740,8 +740,8 @@
     "semantic_hash": ""
   },
   "src/pages/admin/AdminOpcrPage.tsx": {
-    "mtime": 1790911624.773672,
-    "ast_hash": "117c8b37fc67712b396ac8c124b6f14c",
+    "mtime": 1790916484.0861092,
+    "ast_hash": "044efa7b7da2a323b3795a9a01bd15d0",
     "semantic_hash": ""
   },
   "src/pages/admin/AdminRepositoryStructurePage.tsx": {
@@ -1005,7 +1005,7 @@
     "semantic_hash": ""
   },
   "api/handler.js": {
-    "mtime": 1790914929.9576628,
+    "mtime": 1790916839.8681903,
     "ast_hash": "40c4998cd60618729b666a91d21ebcfa",
     "semantic_hash": ""
   },
@@ -1095,8 +1095,8 @@
     "semantic_hash": ""
   },
   "src/features/admin/AdminResourceEditDialog.tsx": {
-    "mtime": 1790903220.0787036,
-    "ast_hash": "da5efc684378e2a666b190e54f0cc7e1",
+    "mtime": 1790916738.6526744,
+    "ast_hash": "92217826111ee176a245934a00cd224a",
     "semantic_hash": ""
   },
   "src/features/admin/FloatingSaveAction.test.tsx": {
@@ -1125,8 +1125,8 @@
     "semantic_hash": ""
   },
   "src/features/reports/ReportNodeActions.tsx": {
-    "mtime": 1789955822.1923163,
-    "ast_hash": "7a4a9f899edbf8dae9720de06c0aa788",
+    "mtime": 1790916613.0742784,
+    "ast_hash": "2506bc68f1bd6df62f0c3a2daab9f5cc",
     "semantic_hash": ""
   },
   "src/features/reports/adminReportEditorModel.ts": {
@@ -1512,6 +1512,521 @@
   "artifacts/policy-pages-qa/terms-of-use-mobile.png": {
     "mtime": 1790914572.4986765,
     "ast_hash": "59c7c2ce44683bd656c02183a8000980",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/findings.json": {
+    "mtime": 1790916691.3600285,
+    "ast_hash": "1ec36e77dc925f9a00bb99ae42553e6f",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/interaction-findings.json": {
+    "mtime": 1790916605.9521432,
+    "ast_hash": "e14264dfa6b3f8124d80e83d42691efc",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/short-screen-findings.json": {
+    "mtime": 1790916758.8873858,
+    "ast_hash": "be890278196180f8eee5f40d217307a7",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/review.md": {
+    "mtime": 1790916844.590994,
+    "ast_hash": "07057e914cf8e5f79cfb553f14310225",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/about-1440.png": {
+    "mtime": 1790916677.4047363,
+    "ast_hash": "a1ee1ac92b2fa3f3510a384ecd9f498e",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/about-320.png": {
+    "mtime": 1790916619.184383,
+    "ast_hash": "af4608e2860196b0c63f69d68ae353a4",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/about-390.png": {
+    "mtime": 1790916637.7417738,
+    "ast_hash": "77784ab06c7003e0facc6077af4a1624",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/about-768.png": {
+    "mtime": 1790916657.1057973,
+    "ast_hash": "80e47226ab048dc986e373ff60bda210",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-add-staff-320.png": {
+    "mtime": 1790916748.3837416,
+    "ast_hash": "f97a0dc552d6a459aed860405759c83e",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-add-staff-390.png": {
+    "mtime": 1790916576.1885874,
+    "ast_hash": "cb042341c9704958a2da8ca2b23a1c96",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-add-staff-768.png": {
+    "mtime": 1790916595.4723432,
+    "ast_hash": "c39f9da3a6b68210bc20569f7a49b857",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-edit-dialog-320.png": {
+    "mtime": 1790916743.7191155,
+    "ast_hash": "6604b2bc503b3007d67da8e8c91b1a6c",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-edit-dialog-390.png": {
+    "mtime": 1790916571.3786736,
+    "ast_hash": "2b7664fcd0ecc09edddfaddd194c15f4",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-edit-dialog-768.png": {
+    "mtime": 1790916590.6262417,
+    "ast_hash": "d24f6bb5369c2e1bf079a5b057db829d",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-first-1440.png": {
+    "mtime": 1790916673.2731507,
+    "ast_hash": "c45b773c91ede16fe271b6b621325987",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-first-320.png": {
+    "mtime": 1790916615.3706012,
+    "ast_hash": "79681cd0effaccbd6f5cda4e0c4ac5cf",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-first-390.png": {
+    "mtime": 1790916633.857739,
+    "ast_hash": "3d6d9cc7344d731dd7a34a4dd5557b2c",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-first-768.png": {
+    "mtime": 1790916653.1144705,
+    "ast_hash": "9e75b0946d26129c8c203b84d0b1f6ac",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-link-form-320.png": {
+    "mtime": 1790916745.2696395,
+    "ast_hash": "ffa90bbd0b868625d56cb759ad7a0709",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-link-form-390.png": {
+    "mtime": 1790916572.977221,
+    "ast_hash": "104de3964b35a38dd7b21484bcfe6abd",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-link-form-768.png": {
+    "mtime": 1790916592.260567,
+    "ast_hash": "73cfe9e81e9b08d8a69379a9e985ca9a",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-login-1440.png": {
+    "mtime": 1790916691.3555603,
+    "ast_hash": "4a86d0fd7aa328d8708620385a84d071",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-login-320.png": {
+    "mtime": 1790916632.6882477,
+    "ast_hash": "421ab72b199742ec7e4145231eefb4cf",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-login-390.png": {
+    "mtime": 1790916651.916367,
+    "ast_hash": "73f467b19fbe0d4ee9647a4e004f6240",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-login-768.png": {
+    "mtime": 1790916671.6386917,
+    "ast_hash": "4c6481bfdcc0715ec7d9aacd6d85b1a8",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-1440.png": {
+    "mtime": 1790916688.2697792,
+    "ast_hash": "740d05c99c30a5ac180478fd3517a5ef",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-320.png": {
+    "mtime": 1790916629.0039024,
+    "ast_hash": "a643ae4425b374ff72459a053216ebb3",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-390.png": {
+    "mtime": 1790916648.2103248,
+    "ast_hash": "52dc4fb8a353eab8dfd587655a5064eb",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-768.png": {
+    "mtime": 1790916667.9890268,
+    "ast_hash": "35e3ab3b0407b1b336bc00ea56ed9315",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-expanded-320.png": {
+    "mtime": 1790916750.2270546,
+    "ast_hash": "b8b2859a455b383eef855994ea36cd6b",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-expanded-390.png": {
+    "mtime": 1790916578.227265,
+    "ast_hash": "ce583d586f3eedd23f949aa376f5da0a",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-expanded-768.png": {
+    "mtime": 1790916597.5946207,
+    "ast_hash": "35e3ab3b0407b1b336bc00ea56ed9315",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-opcr-tablet-header.png": {
+    "mtime": 1790916809.7745059,
+    "ast_hash": "bfdb8ff12d296cf53d613d10635fd403",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-overview-1440.png": {
+    "mtime": 1790916681.7875752,
+    "ast_hash": "c45b773c91ede16fe271b6b621325987",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-overview-320.png": {
+    "mtime": 1790916623.6305847,
+    "ast_hash": "79681cd0effaccbd6f5cda4e0c4ac5cf",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-overview-390.png": {
+    "mtime": 1790916642.256012,
+    "ast_hash": "3d6d9cc7344d731dd7a34a4dd5557b2c",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-overview-768.png": {
+    "mtime": 1790916661.5655525,
+    "ast_hash": "9e75b0946d26129c8c203b84d0b1f6ac",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-physical-1440.png": {
+    "mtime": 1790916686.5448928,
+    "ast_hash": "e1ebf52679e3921230168dcfda990343",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-physical-320.png": {
+    "mtime": 1790916627.366914,
+    "ast_hash": "37d983b98e1ff101994c9f37b93c920d",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-physical-390.png": {
+    "mtime": 1790916646.5454714,
+    "ast_hash": "c1a8231b1aa81bf24c58c453b17fa674",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-physical-768.png": {
+    "mtime": 1790916666.3333473,
+    "ast_hash": "cfbd6555eb82a067da4dcf30460ba9f8",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-physical-expanded-320.png": {
+    "mtime": 1790916752.2856696,
+    "ast_hash": "925c1d90e7d1ee52f0a20d22fcb81621",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-physical-expanded-390.png": {
+    "mtime": 1790916580.4005902,
+    "ast_hash": "1a61fd7abf905c11ea4eb08e068b6165",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-physical-expanded-768.png": {
+    "mtime": 1790916599.795432,
+    "ast_hash": "cfbd6555eb82a067da4dcf30460ba9f8",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-resources-1440.png": {
+    "mtime": 1790916683.547672,
+    "ast_hash": "a3bd70ef52a4f47e9f612766a889fcbb",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-resources-320.png": {
+    "mtime": 1790916624.6953707,
+    "ast_hash": "fe7c0154da537fb19acb0b3cbd4e5bd9",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-resources-390.png": {
+    "mtime": 1790916643.3276567,
+    "ast_hash": "6e396dba686ed1aad7623f88cbefa571",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-resources-768.png": {
+    "mtime": 1790916663.098904,
+    "ast_hash": "e29495663053862c9baade82750dd012",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-staff-1440.png": {
+    "mtime": 1790916690.2528446,
+    "ast_hash": "cbda5aaec6772a975be262ec4ba52abc",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-staff-320.png": {
+    "mtime": 1790916631.5267131,
+    "ast_hash": "35344dd67344a8db2bfc79c9c9653e1e",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-staff-390.png": {
+    "mtime": 1790916650.7488463,
+    "ast_hash": "1b1a0d6c72c0fa34dc2965015df86fb8",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-staff-768.png": {
+    "mtime": 1790916670.4435308,
+    "ast_hash": "67543e34392fe5ac831d061eecf6f9f2",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-structure-1440.png": {
+    "mtime": 1790916689.264484,
+    "ast_hash": "9c41bb37818b4ba2e3a269c47043fe02",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-structure-320.png": {
+    "mtime": 1790916630.5395215,
+    "ast_hash": "e55a770d2217637901486fffd4e8ca4d",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-structure-390.png": {
+    "mtime": 1790916649.2374427,
+    "ast_hash": "b676d464bc2c539c6e9cc629a3de4841",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-structure-768.png": {
+    "mtime": 1790916668.9831166,
+    "ast_hash": "41ee2b829597249b30f61b5016a4d0f7",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-structure-dialog-320.png": {
+    "mtime": 1790916746.8157516,
+    "ast_hash": "50107f3be247f2ba4629a6279cfbca5d",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-structure-dialog-390.png": {
+    "mtime": 1790916574.6053867,
+    "ast_hash": "76848281e97525052c2f7d9b8f46d252",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-structure-dialog-768.png": {
+    "mtime": 1790916593.852981,
+    "ast_hash": "31a15403c8402c46d5e1a2aba21aa050",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-upload-1440.png": {
+    "mtime": 1790916684.717371,
+    "ast_hash": "4012db57ab195ed29de808040b2f2af3",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-upload-320.png": {
+    "mtime": 1790916625.695317,
+    "ast_hash": "166006220d759af8e5ee73cfe08425b3",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-upload-390.png": {
+    "mtime": 1790916644.8289218,
+    "ast_hash": "9fcc39ae7f4cb6634638c1029bc1dc33",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-upload-768.png": {
+    "mtime": 1790916664.5905578,
+    "ast_hash": "ddabb27c73705a39caa197bec473c3d2",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-years-dialog-320.png": {
+    "mtime": 1790916742.71478,
+    "ast_hash": "6a8acb43fdd723be65c5c668000cbe85",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-years-dialog-390.png": {
+    "mtime": 1790916570.8318515,
+    "ast_hash": "5bbd4953b7b81d04152f2c0d91046a76",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/admin-years-dialog-768.png": {
+    "mtime": 1790916590.0824516,
+    "ast_hash": "8a2b8800fe54704e2173d67bfe1fb5b9",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/concerns-1440.png": {
+    "mtime": 1790916680.2621953,
+    "ast_hash": "0c75ebe9c68cbc13dd316d05ce9e167e",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/concerns-320.png": {
+    "mtime": 1790916622.1265402,
+    "ast_hash": "fdf6f591b4c2edcdbe8bda1a8232c087",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/concerns-390.png": {
+    "mtime": 1790916640.7378285,
+    "ast_hash": "f5d7772a37dce2e0b9a97266242cc078",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/concerns-768.png": {
+    "mtime": 1790916660.0406687,
+    "ast_hash": "0b0667236b49c09c0ee77be143b53e65",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/contact-1440.png": {
+    "mtime": 1790916678.0653324,
+    "ast_hash": "422a95ce0c2530b307d583851e68ca2e",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/contact-320.png": {
+    "mtime": 1790916619.8729825,
+    "ast_hash": "26fefe5f158372308bdc88c3dd5a0975",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/contact-390.png": {
+    "mtime": 1790916638.439695,
+    "ast_hash": "9506074fa69873887ab34e97b24f473f",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/contact-768.png": {
+    "mtime": 1790916657.7895906,
+    "ast_hash": "00fd33094cb77ca740d396fbbc5da003",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/home-1440.png": {
+    "mtime": 1790916673.9738226,
+    "ast_hash": "3a01d78823494cf0cc9d58ecda789a5d",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/home-320.png": {
+    "mtime": 1790916616.0634584,
+    "ast_hash": "8114f42ab1f0e5307f74df8da054305a",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/home-390.png": {
+    "mtime": 1790916634.55475,
+    "ast_hash": "0ceabe128d59899d1ef845dc9d86fc92",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/home-768.png": {
+    "mtime": 1790916653.8324938,
+    "ast_hash": "a56bdb3903f3271e61c45e021c44e53a",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/opcr-1440.png": {
+    "mtime": 1790916676.6600718,
+    "ast_hash": "ee36694626b1db744c5e7454296c3844",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/opcr-320.png": {
+    "mtime": 1790916618.4477737,
+    "ast_hash": "6bbca6fbc368efa71429b8e8dd8f2e5c",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/opcr-390.png": {
+    "mtime": 1790916636.9840891,
+    "ast_hash": "ff84327151d109d0d4025cbd3b8baf4a",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/opcr-768.png": {
+    "mtime": 1790916656.3486452,
+    "ast_hash": "9fe65ffabc53114870a644d5948dbfd0",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/physical-1440.png": {
+    "mtime": 1790916675.7726378,
+    "ast_hash": "61cafa9d3814de83c4d559bb3f3569a1",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/physical-320.png": {
+    "mtime": 1790916617.6513977,
+    "ast_hash": "24dbb704d6c2a7649a01dcb178756323",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/physical-390.png": {
+    "mtime": 1790916636.1255774,
+    "ast_hash": "66d5a01c86b0dfffabef762f690eabf6",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/physical-768.png": {
+    "mtime": 1790916655.4659817,
+    "ast_hash": "fdde8c3be57c00cedb6e4af9efe75538",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/privacy-1440.png": {
+    "mtime": 1790916678.80642,
+    "ast_hash": "9d0d6d518455cffd7215326252204a60",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/privacy-320.png": {
+    "mtime": 1790916620.6400046,
+    "ast_hash": "0a74cac817b5e29194d0a644517b4791",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/privacy-390.png": {
+    "mtime": 1790916639.2243757,
+    "ast_hash": "400caf1ff236472f94c8300333fc033f",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/privacy-768.png": {
+    "mtime": 1790916658.5132222,
+    "ast_hash": "a0e26ee501d3e49991f9da3ebc39cfae",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/public-menu-320.png": {
+    "mtime": 1790916740.3427682,
+    "ast_hash": "c0fa0fda1890a23ac4c727528d9ea20e",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/public-menu-390.png": {
+    "mtime": 1790916568.1982963,
+    "ast_hash": "5adc89f3752da74f83087d16d936d831",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/public-years-dialog-320.png": {
+    "mtime": 1790916741.1164284,
+    "ast_hash": "0e6ad4652423d6ef112dd392f9a37e09",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/public-years-dialog-390.png": {
+    "mtime": 1790916569.1321018,
+    "ast_hash": "7abc6c4fb038227315217f7de0754d11",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/public-years-dialog-768.png": {
+    "mtime": 1790916588.412968,
+    "ast_hash": "d7094d295ef6cd5c12ecda18b039117c",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/repository-1440.png": {
+    "mtime": 1790916674.7936962,
+    "ast_hash": "436b6d97de3eae902a1d9650e6fb3bca",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/repository-320.png": {
+    "mtime": 1790916616.8432796,
+    "ast_hash": "0ecac0fcd41bc3eeda7c08e13791da29",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/repository-390.png": {
+    "mtime": 1790916635.288769,
+    "ast_hash": "c0f5f62637d15f611048373b91f2e976",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/repository-768.png": {
+    "mtime": 1790916654.59174,
+    "ast_hash": "61694571e93633bec14f67ae5abcd3e9",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/terms-1440.png": {
+    "mtime": 1790916679.525084,
+    "ast_hash": "aae28bff2361e803d381c0d66a36773d",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/terms-320.png": {
+    "mtime": 1790916621.3697097,
+    "ast_hash": "41d463fc60b375374c1301636415be81",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/terms-390.png": {
+    "mtime": 1790916639.9753146,
+    "ast_hash": "b2b80e4585d9b67f235af4551a981621",
+    "semantic_hash": ""
+  },
+  "artifacts/mobile-review/terms-768.png": {
+    "mtime": 1790916659.2790065,
+    "ast_hash": "f5d31656d46c7d1c1d16e914fa663b26",
     "semantic_hash": ""
   }
 }

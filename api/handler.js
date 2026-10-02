@@ -584,18 +584,16 @@ function applyRequiredStructureMigrations(structure) {
     const existingSection = migrated.find((section) => section.id === id);
     if (!existingSection) {
       migrated.push(structuredClone(requiredSection));
-      continue;
-    }
-    for (const requiredCategory of requiredSection.categories) {
-      if (!existingSection.categories.some(
-        (category) => category.id === requiredCategory.id
-      )) {
-        existingSection.categories.push(structuredClone(requiredCategory));
-      }
     }
   }
   return migrated;
 }
+var RepositoryStructureNotEmptyError = class extends Error {
+  constructor(kind) {
+    super(kind === "category" ? "This category contains resources. Move or delete them in Resources before deleting the category." : "This section contains categories or resources. Remove them before deleting the section.");
+    this.name = "RepositoryStructureNotEmptyError";
+  }
+};
 var RepositoryStructureConflictError = class extends Error {
   constructor() {
     super("The repository organization changed while you were editing it. Refresh the page and try again.");
@@ -706,7 +704,7 @@ async function mutateRepositoryStructure(payload, environment = process.env) {
     const index = data.findIndex((section) => section.id === mutation.id);
     if (index < 0) throw new Error("Section not found.");
     if (data[index].categories.length || await prefixHasFiles(`${mutation.id}/`, environment)) {
-      throw new Error("Remove all categories and files before deleting this section.");
+      throw new RepositoryStructureNotEmptyError("section");
     }
     data.splice(index, 1);
   }
@@ -728,7 +726,7 @@ async function mutateRepositoryStructure(payload, environment = process.env) {
       const index = section.categories.findIndex((item) => item.id === mutation.id);
       if (index < 0) throw new Error("Category not found.");
       if (await prefixHasFiles(`${section.id}/${mutation.id}/`, environment)) {
-        throw new Error("Delete or move all files before deleting this category.");
+        throw new RepositoryStructureNotEmptyError("category");
       }
       section.categories.splice(index, 1);
     }
@@ -2475,6 +2473,9 @@ async function handleAdminRepositoryStructureRequest(request, environment = proc
   } catch (error) {
     const bodyError = jsonBodyErrorResponse(error);
     if (bodyError) return bodyError;
+    if (error instanceof RepositoryStructureNotEmptyError) {
+      return json8({ error: { code: "STRUCTURE_NOT_EMPTY", message: error.message } }, 409);
+    }
     if (error instanceof RepositoryStructureConflictError) {
       return json8({ error: { code: "STRUCTURE_CONFLICT", message: error.message } }, 409);
     }

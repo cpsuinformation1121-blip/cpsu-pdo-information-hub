@@ -1,16 +1,16 @@
 # Graph Report - cpsu-pdo-information-hub  (2026-10-02)
 
 ## Corpus Check
-- 259 files · ~281,668 words
+- 263 files · ~889,804 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1366 nodes · 2875 edges · 91 communities (90 shown, 1 thin omitted)
+- 1370 nodes · 2878 edges · 95 communities (93 shown, 2 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 51 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1ea10f48`
+- Built from commit: `7411293d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -31,7 +31,7 @@
 - SVG icon symbol sprite
 - Central Philippines State University Seal
 - Application favicon
-- AccomplishmentsPage.tsx
+- ReportIndicatorDataTable.tsx
 - adminResourceMutationHandler.ts
 - AdminOpcrPage.tsx
 - Metadata Derived from R2 Object Keys
@@ -40,18 +40,18 @@
 - compilerOptions
 - opcrResourceStore.ts
 - adminReportResourceHandler.ts
-- adminOperationsApiPlugin.ts
-- uploadCompleteHandler.ts
 - apiEntry.ts
+- contracts/resourceUpload.ts
+- repositoryStructureHandler.ts
 - design-qa.md
 - vite.config.ts
 - listResources.ts
-- resource.ts
-- accomplishmentResourceStore.ts
-- RepositoryResults.tsx
-- contracts/resourceUpload.ts
+- jsonResourceStore.ts
+- services/adminSession.ts
+- RepositoryToolbar.tsx
+- ResourceUploadForm.tsx
 - publicResourcePreviewHandler.ts
-- resourcesHandler.ts
+- resource.ts
 - authorizeResourceUpload.ts
 - chartData.ts
 - Q: Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals.
@@ -81,13 +81,14 @@
 - repository.ts
 - AdminRoutes.tsx
 - accomplishments/reportCalculations.ts
-- contracts/reportAppearance.ts
+- useRepositoryStructureQuery
 - PublicResourcePreviewDialog.tsx
 - Deployment Guide
 - OpcrPublicPage.tsx
-- AdminHomePage.tsx
-- apiRateLimit.ts
+- resourceLink.ts
+- adminSessionHandler.ts
 - Codebase bug and security review - 2026-10-02
+- services/accomplishmentResource.ts
 - Q: check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews.
 - Q: guide me to fix the recommended Vercel repair order
 - Q: Live /api/resources shows REPOSITORY_UNAVAILABLE after deployment
@@ -103,6 +104,9 @@
 - Q: the pdf viewing problem is still there please fix it well.
 - Q: in this section please change the sequence like into ascending order 2021, 2022, 2023...... not decending
 - pdfjs-worker.d.ts
+- reportResource.test.ts
+- Mobile layout review - 2 October 2026
+- resources.test.ts
 
 ## God Nodes (most connected - your core abstractions)
 1. `getR2Config()` - 25 edges
@@ -139,23 +143,23 @@
 - **Social platform icon set** — public_icons_bluesky_icon, public_icons_discord_icon, public_icons_github_icon, public_icons_x_icon [INFERRED 0.95]
 - **CPSU Seal Composition** — src_assets_cpsu_logo_transparent_torch_book_and_carabao, src_assets_cpsu_logo_transparent_philippines_map, src_assets_cpsu_logo_transparent_sunrise_and_mountains, src_assets_cpsu_logo_transparent_green_yellow_palette [EXTRACTED 1.00]
 
-## Communities (91 total, 1 thin omitted)
+## Communities (95 total, 2 thin omitted)
 
 ### Community 0 - "ResourceCategoryPanel.tsx"
-Cohesion: 0.15
-Nodes (11): PublicResource, groupResourcesByCategory(), ResourceCategoryGroup, StructureSection, fileTypeDetails, ResourceCategoryPanel(), ResourceCategoryPanelProps, ResourceRowProps (+3 more)
+Cohesion: 0.14
+Nodes (13): PublicResource, groupResourcesByCategory(), ResourceCategoryGroup, StructureSection, RepositoryResults(), fileTypeDetails, ResourceCategoryPanel(), ResourceCategoryPanelProps (+5 more)
 
 ### Community 1 - "repositoryStructureStore.ts"
-Cohesion: 0.15
-Nodes (22): getR2Config(), createR2Client(), applyRequiredStructureMigrations(), assertRepositorySectionCanBeDeleted(), bodyText(), createRepositoryStructureWriteCommand(), defaults, mutateRepositoryStructure() (+14 more)
+Cohesion: 0.14
+Nodes (23): getR2Config(), createR2Client(), applyRequiredStructureMigrations(), assertRepositorySectionCanBeDeleted(), bodyText(), createRepositoryStructureWriteCommand(), defaults, mutateRepositoryStructure() (+15 more)
 
 ### Community 2 - "devDependencies"
 Cohesion: 0.04
 Nodes (45): esbuild, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, devDependencies, esbuild (+37 more)
 
 ### Community 3 - "fetchAuthenticatedJson"
-Cohesion: 0.09
-Nodes (26): AdminSession, adminSessionSchema, ResourceQuery, resourceQueryKeys, useResourcesQuery(), getAdminResources(), AdminSessionRequestError, fetchAdminSession() (+18 more)
+Cohesion: 0.19
+Nodes (14): ResourceQuery, resourceQueryKeys, user, parseApiError(), readJsonResponse(), fetchAuthenticatedJson(), authorizePublicResourcePreview(), ReportResourceClientOptions (+6 more)
 
 ### Community 4 - "dependencies"
 Cohesion: 0.05
@@ -178,16 +182,16 @@ Cohesion: 0.19
 Nodes (13): Architecture-First Brick-by-Brick Development, Cloudflare R2 File Repository, CPSU PDO Information Hub Architecture Contract, Firebase Administrator Authentication, Protected Administrator Authorization Flow, React Application, Least Privilege and Server-Side Authorization, Vercel Server APIs (+5 more)
 
 ### Community 9 - "parseResourceObjectKey.ts"
-Cohesion: 0.15
-Nodes (10): administrator, config, createFallbackDisplayName(), invalidKey(), InvalidResourceObjectKeyError, ParsedResourceObjectKey, StructureSection, repositorySections (+2 more)
+Cohesion: 0.22
+Nodes (8): createFallbackDisplayName(), invalidKey(), InvalidResourceObjectKeyError, ParsedResourceObjectKey, StructureSection, resourceFileDefinitions, ResourceFileExtension, resourceFilenameSchema
 
 ### Community 10 - "AdminResourceInventory.tsx"
-Cohesion: 0.16
-Nodes (18): ResourceEdit, resourceEditSchema, AdminResource, AdminResourceDeleteDialog(), AdminResourcePreviewDialog(), AdminResourceRenameDialog(), DeleteTarget, DialogStateProps (+10 more)
+Cohesion: 0.15
+Nodes (20): AppDialog(), AppDialogProps, ResourceEdit, AdminResource, AdminResourceDeleteDialog(), AdminResourcePreviewDialog(), AdminResourceRenameDialog(), DeleteTarget (+12 more)
 
 ### Community 11 - "adminUsersHandler.ts"
-Cohesion: 0.08
-Nodes (33): AdminAuthenticationDependencies, AdminAuthenticationError, AdminAuthorizationError, AdministratorIdentity, authenticateAdminRequest(), hasAdministratorAccess(), request, parseBearerToken() (+25 more)
+Cohesion: 0.11
+Nodes (23): AdminAuthenticationDependencies, AdminAuthenticationError, AdminAuthorizationError, AdministratorIdentity, authenticateAdminRequest(), hasAdministratorAccess(), request, parseBearerToken() (+15 more)
 
 ### Community 12 - "handler.js"
 Cohesion: 0.06
@@ -205,17 +209,17 @@ Nodes (8): Foundation Year 1946, Green and Yellow Institutional Palette, Negros 
 Cohesion: 0.33
 Nodes (7): Lightning-shaped alpha mask, Blue highlight accents, Blurred multicolor glow, Application favicon, Stylized lightning-bolt emblem, Purple color palette, Vite visual identity
 
-### Community 16 - "AccomplishmentsPage.tsx"
-Cohesion: 0.12
-Nodes (18): AccomplishmentResourceData, accomplishmentResourceResponseSchema, ReportAppearance, AccomplishmentIndicatorSeriesChart(), displayValue(), ReportDataRow, ReportDataTableEntry, ReportIndicatorDataTable() (+10 more)
+### Community 16 - "ReportIndicatorDataTable.tsx"
+Cohesion: 0.31
+Nodes (7): formatPercentageValue(), displayValue(), ReportDataRow, ReportDataTableEntry, ReportIndicatorDataTable(), ReportValueGroup, rows
 
 ### Community 17 - "adminResourceMutationHandler.ts"
-Cohesion: 0.23
-Nodes (14): addDestinationMustNotExist(), authenticationFailure(), handleAdminResourceMutationRequest(), headers, json(), ResourceMutationDependencies, getR2ErrorStatus(), isR2NotFound() (+6 more)
+Cohesion: 0.13
+Nodes (18): administrator, config, addDestinationMustNotExist(), authenticationFailure(), handleAdminResourceMutationRequest(), headers, json(), ResourceMutationDependencies (+10 more)
 
 ### Community 18 - "AdminOpcrPage.tsx"
-Cohesion: 0.09
-Nodes (33): AppDialog(), AppDialogProps, FloatingSaveAction(), reportChildType(), ReportDataRowType, ReportEditorState, reportNodeName(), ReportNodeType (+25 more)
+Cohesion: 0.08
+Nodes (48): opcrResourceResponseSchema, ChartColorLegend(), isBaseLegendCategory(), resolveReportLegend(), restoreReportAppearance(), upsertCustomLegendItem(), calculatePeriodTotal(), getAccomplishmentReportYears() (+40 more)
 
 ### Community 19 - "Metadata Derived from R2 Object Keys"
 Cohesion: 0.67
@@ -234,24 +238,24 @@ Cohesion: 0.12
 Nodes (15): compilerOptions, allowImportingTsExtensions, lib, module, moduleDetection, moduleResolution, noEmit, skipLibCheck (+7 more)
 
 ### Community 24 - "opcrResourceStore.ts"
-Cohesion: 0.22
-Nodes (9): createR2JsonResourceStore(), store, createOpcrResourceWriteCommand, readOpcrResource, readOpcrResourceSnapshot, store, writeOpcrResource, writeOpcrResourceSnapshot (+1 more)
+Cohesion: 0.18
+Nodes (13): createPublicReportResourceHandler(), json(), publicHeaders, PublicReportData, PublicReportDependencies, PublicReportHandlerOptions, createOpcrResourceWriteCommand, readOpcrResource (+5 more)
 
 ### Community 25 - "adminReportResourceHandler.ts"
-Cohesion: 0.17
-Nodes (13): AdminReportDependencies, AdminReportHandlerOptions, createAdminReportResourceHandler(), json(), privateHeaders, RuntimeSchema, data, handler (+5 more)
+Cohesion: 0.16
+Nodes (15): AdminReportDependencies, AdminReportHandlerOptions, createAdminReportResourceHandler(), json(), privateHeaders, RuntimeSchema, InvalidJsonBodyError, readLimitedJson() (+7 more)
 
-### Community 26 - "adminOperationsApiPlugin.ts"
-Cohesion: 0.18
-Nodes (11): handleAccomplishmentResourceRequest, handleOpcrResourceRequest, handlePublicAccomplishmentResourceRequest, data, handlePublicOpcrResourceRequest, createPublicReportResourceHandler(), json(), publicHeaders (+3 more)
+### Community 26 - "apiEntry.ts"
+Cohesion: 0.15
+Nodes (14): ApiHandler, fetch(), notFound(), resolveApiPath(), routes, handleAccomplishmentResourceRequest, handleOpcrResourceRequest, handlePublicAccomplishmentResourceRequest (+6 more)
 
-### Community 27 - "uploadCompleteHandler.ts"
+### Community 27 - "contracts/resourceUpload.ts"
 Cohesion: 0.14
-Nodes (17): handleUploadCompleteRequest(), headers, json(), body, config, identity, invalidatePublicResourceCache(), ResourceUploadVerificationError (+9 more)
+Nodes (16): ResourceUploadVerificationError, StructureSection, config, input, UploadedObject, VerificationDependencies, ResourceUploadAuthorization, resourceUploadAuthorizationSchema (+8 more)
 
-### Community 28 - "apiEntry.ts"
-Cohesion: 0.17
-Nodes (14): ApiHandler, fetch(), notFound(), resolveApiPath(), routes, handleAdminRepositoryStructureRequest(), handleRepositoryStructureRequest(), headers (+6 more)
+### Community 28 - "repositoryStructureHandler.ts"
+Cohesion: 0.22
+Nodes (10): data, handler, writeSnapshot, handleAdminRepositoryStructureRequest(), handleRepositoryStructureRequest(), headers, json(), publicJson() (+2 more)
 
 ### Community 29 - "design-qa.md"
 Cohesion: 0.14
@@ -262,40 +266,40 @@ Cohesion: 0.27
 Nodes (10): adminOperationsApiPlugin(), adminResourcesApiPlugin(), adminSessionApiPlugin(), createDevRequest(), requestBody(), requestHeaders(), writeDevResponse(), resourcesApiPlugin() (+2 more)
 
 ### Community 31 - "listResources.ts"
-Cohesion: 0.12
-Nodes (27): compareByKey(), decodeCursor(), encodeCursor(), findResourceByPublicId(), getAllObjectSummaries(), getCachedPublicObjectSummaries(), getListPrefix(), InvalidResourceCursorError (+19 more)
-
-### Community 32 - "resource.ts"
 Cohesion: 0.14
-Nodes (15): publicResourceIdSchema, publicResourcePreviewRequestSchema, PublicResourcePreviewResponse, publicResourcePreviewResponseSchema, adminResourceSchema, ApiErrorResponse, publicResourceSchema, resourceFileTypes (+7 more)
+Nodes (25): compareByKey(), decodeCursor(), encodeCursor(), findResourceByPublicId(), getAllObjectSummaries(), getCachedPublicObjectSummaries(), getListPrefix(), InvalidResourceCursorError (+17 more)
 
-### Community 33 - "accomplishmentResourceStore.ts"
-Cohesion: 0.24
-Nodes (9): createAccomplishmentResourceWriteCommand, readAccomplishmentResource, readAccomplishmentResourceSnapshot, store, data, writeAccomplishmentResource, writeAccomplishmentResourceSnapshot, accomplishmentResourceDataSchema (+1 more)
+### Community 32 - "jsonResourceStore.ts"
+Cohesion: 0.27
+Nodes (7): createR2JsonResourceStore(), JsonResourceStoreOptions, RuntimeSchema, store, getR2ErrorStatus(), isR2NotFound(), isR2PreconditionFailed()
 
-### Community 34 - "RepositoryResults.tsx"
-Cohesion: 0.19
-Nodes (13): ResourceFileType, ResourceSort, RepositoryResults(), emptyFilters, RepositoryFilters, RepositoryToolbar(), RepositoryToolbarProps, resourceFileTypeOptions (+5 more)
+### Community 33 - "services/adminSession.ts"
+Cohesion: 0.30
+Nodes (6): AdminSession, adminSessionSchema, ProtectedAdminRoute(), useAdminSessionQuery(), AdminSessionRequestError, fetchAdminSession()
 
-### Community 35 - "contracts/resourceUpload.ts"
-Cohesion: 0.08
-Nodes (28): repositorySectionIdSchema, resourceFilenameSchema, resourceYearSchema, schoolYearSchema, maximumResourceLinkPayloadSize, ResourceLinkCreate, resourceLinkCreateResponseSchema, resourceLinkCreateSchema (+20 more)
+### Community 34 - "RepositoryToolbar.tsx"
+Cohesion: 0.20
+Nodes (10): RepositorySectionId, ResourceFileType, ResourceSort, emptyFilters, RepositoryFilters, RepositoryToolbarProps, resourceFileTypeOptions, resourceSortOptions (+2 more)
+
+### Community 35 - "ResourceUploadForm.tsx"
+Cohesion: 0.15
+Nodes (13): schoolYearSchema, maximumResourceFileSize, resourceUploadFileExtensions, resourceUploadMimeTypes, currentDate, FormInput, formSchema, FormValues (+5 more)
 
 ### Community 36 - "publicResourcePreviewHandler.ts"
-Cohesion: 0.09
-Nodes (20): config, identity, source, structure, values, handlePublicResourceLinkRequest(), json(), PublicResourceLinkDependencies (+12 more)
+Cohesion: 0.08
+Nodes (25): config, identity, source, structure, values, handlePublicResourceLinkRequest(), json(), PublicResourceLinkDependencies (+17 more)
 
-### Community 37 - "resourcesHandler.ts"
-Cohesion: 0.14
-Nodes (15): AdminResourcesDependencies, handleAdminResourcesRequest(), privateJsonHeaders, testConfig, verifiedAdministrator, unauthorizedResponse(), handleResourcesRequest(), jsonHeaders (+7 more)
+### Community 37 - "resource.ts"
+Cohesion: 0.11
+Nodes (22): testConfig, verifiedAdministrator, handleResourcesRequest(), jsonHeaders, jsonResponse(), emptyRepository, testR2Config, AdminResourceListResponse (+14 more)
 
 ### Community 38 - "authorizeResourceUpload.ts"
-Cohesion: 0.17
-Nodes (16): R2Config, jsonBodyErrorResponse(), handleUploadAuthorizeRequest(), headers, json(), body, config, identity (+8 more)
+Cohesion: 0.18
+Nodes (14): handleUploadAuthorizeRequest(), headers, json(), body, config, identity, authorizeResourceUpload(), DuplicateResourceError (+6 more)
 
 ### Community 39 - "chartData.ts"
-Cohesion: 0.12
-Nodes (29): AccomplishmentComparisonChart(), annualComparisonFields, AnnualIndicatorYearData, AnnualPerformanceEntry, AnnualPerformanceIndicator, ChartDataRow, ChartEntry, ComparisonField (+21 more)
+Cohesion: 0.11
+Nodes (31): annualComparisonFields, AnnualIndicatorYearData, AnnualPerformanceEntry, AnnualPerformanceIndicator, ChartDataRow, ChartEntry, ComparisonStatus, ComparisonValues (+23 more)
 
 ### Community 40 - "Q: Analyze the whole codebase and change the whole UI to a soft aesthetic with Poppins and color-preserving modals."
 Cohesion: 0.40
@@ -358,12 +362,12 @@ Cohesion: 0.33
 Nodes (7): authenticationMessages, getAuthenticationErrorMessage(), hasErrorCode(), loginSchema, LoginValues, AdminLoginPage(), getSafeDestination()
 
 ### Community 56 - "accomplishments/reportAppearance.ts"
-Cohesion: 0.21
-Nodes (12): ReportLegendItem, AccomplishmentDataChart(), ComparisonDatum, createCustomLegendId(), defaultReportLegend, isBaseLegendCategory(), restoreReportAppearance(), slugifyLabel() (+4 more)
+Cohesion: 0.14
+Nodes (16): barColorKeySchema, barColorValueSchema, chartColorSchema, legendIdSchema, ReportAppearance, reportLegendCategories, ReportLegendCategory, ReportLegendItem (+8 more)
 
 ### Community 57 - "adminResourceAccessHandler.ts"
 Cohesion: 0.18
-Nodes (12): AdminResourceAccessDependencies, authenticationFailure(), createContentDisposition(), handleAdminResourceAccessRequest(), headers, json(), StructureSection, administrator (+4 more)
+Nodes (16): AdminResourceAccessDependencies, authenticationFailure(), createContentDisposition(), handleAdminResourceAccessRequest(), headers, json(), StructureSection, jsonBodyErrorResponse() (+8 more)
 
 ### Community 58 - "useGestureZoom.ts"
 Cohesion: 0.11
@@ -371,43 +375,43 @@ Nodes (19): GestureZoomRenderState, GestureZoomViewport(), calculateAnchoredScro
 
 ### Community 59 - "AccomplishmentChart.tsx"
 Cohesion: 0.20
-Nodes (18): BarChart(), ChartColorLegend(), chartDescription(), ChartInteraction, ChartSourceBadge(), ChartType, chartValueLabel(), ColumnChart() (+10 more)
+Nodes (17): AccomplishmentComparisonChart(), BarChart(), chartDescription(), ChartInteraction, ChartSourceBadge(), ChartType, chartValueLabel(), ColumnChart() (+9 more)
 
 ### Community 60 - "contracts/accomplishmentResource.ts"
-Cohesion: 0.15
-Nodes (16): currentAccomplishmentResourceDataSchema, dataRowEntrySchema, indicatorEntrySchema, legacyAccomplishmentResourceDataSchema, legacyPeriodEntrySchema, periodEntrySchema, dataRowEntrySchema, indicatorEntrySchema (+8 more)
+Cohesion: 0.09
+Nodes (27): createAccomplishmentResourceWriteCommand, readAccomplishmentResource, readAccomplishmentResourceSnapshot, store, data, writeAccomplishmentResource, writeAccomplishmentResourceSnapshot, accomplishmentResourceDataSchema (+19 more)
 
 ### Community 61 - "AppRouter.tsx"
 Cohesion: 0.08
 Nodes (25): App(), AppProviders(), PublicFooter(), PublicHeader(), NavigationItem, publicNavigation, officeEmail, officeEmailHref (+17 more)
 
 ### Community 62 - "services/adminOperations.ts"
-Cohesion: 0.33
-Nodes (12): AdminResourceInventory(), useAdministratorsQuery(), AdminUsersPage(), createAdministrator(), createResourceLink(), deleteAdministrator(), deleteResource(), editResource() (+4 more)
+Cohesion: 0.29
+Nodes (13): AdminResourceInventory(), useAdministratorsQuery(), useAuth(), AdminLayout(), AdminUsersPage(), createAdministrator(), deleteAdministrator(), deleteResource() (+5 more)
 
 ### Community 63 - "contracts/adminResourceAccess.ts"
 Cohesion: 0.19
 Nodes (10): AdminResourceAccessMode, adminResourceAccessModeSchema, adminResourceAccessRequestSchema, AdminResourceAccessResponse, adminResourceAccessResponseSchema, apiErrorResponseSchema, resourceObjectKeySchema, AdminResourceActions() (+2 more)
 
 ### Community 64 - "r2.ts"
-Cohesion: 0.18
-Nodes (7): optionalServerUrlSchema, R2ConfigurationError, r2EnvironmentSchema, serverUrlSchema, validEnvironment, JsonResourceStoreOptions, RuntimeSchema
+Cohesion: 0.14
+Nodes (12): optionalServerUrlSchema, R2Config, R2ConfigurationError, r2EnvironmentSchema, serverUrlSchema, validEnvironment, body, config (+4 more)
 
 ### Community 65 - "repository.ts"
-Cohesion: 0.27
-Nodes (8): protectedRepositorySectionIds, RepositoryCategory, repositoryCategoryById, repositoryCategoryIds, RepositorySection, repositorySectionById, RepositorySectionId, repositorySectionIds
+Cohesion: 0.20
+Nodes (10): administrator, config, protectedRepositorySectionIds, RepositoryCategory, repositoryCategoryById, repositoryCategoryIds, RepositorySection, repositorySectionById (+2 more)
 
 ### Community 66 - "AdminRoutes.tsx"
-Cohesion: 0.20
-Nodes (12): ResourceUploadForm(), ProtectedAdminRoute(), useAdminSessionQuery(), useAuth(), AdminLayout(), AdminAccomplishResourcePage(), AdminOpcrPage(), AdminRepositoryStructurePage() (+4 more)
+Cohesion: 0.24
+Nodes (7): useAdminResourcesQuery(), AdminHomePage(), formatSize(), AdminOpcrPage(), AdminResourcesPage(), AdminResourceUploadPage(), getAdminResources()
 
 ### Community 67 - "accomplishments/reportCalculations.ts"
-Cohesion: 0.22
-Nodes (14): calculatePeriodTotal(), getAccomplishmentReportYears(), isQuarterInputValid(), quarterFields, QuarterlyValues, calculateHalfYearTotal(), halfYearFields, HalfYearValues (+6 more)
+Cohesion: 0.27
+Nodes (9): quarterFields, QuarterlyValues, calculateHalfYearTotal(), halfYearFields, HalfYearValues, isHalfYearInputValid(), calculateReportPeriodTotal(), getReportYears() (+1 more)
 
-### Community 68 - "contracts/reportAppearance.ts"
-Cohesion: 0.22
-Nodes (8): barColorKeySchema, barColorValueSchema, chartColorSchema, legendIdSchema, reportAppearanceSchema, reportLegendCategories, ReportLegendCategory, reportLegendItemSchema
+### Community 68 - "useRepositoryStructureQuery"
+Cohesion: 0.29
+Nodes (8): RepositoryToolbar(), useRepositoryStructureQuery(), AdminRepositoryStructurePage(), DeleteState, EditorState, HomePage(), getRepositoryStructure(), mutateRepositoryStructure()
 
 ### Community 69 - "PublicResourcePreviewDialog.tsx"
 Cohesion: 0.28
@@ -418,20 +422,24 @@ Cohesion: 0.17
 Nodes (11): Billing and abuse controls (required before opening the site publicly), Deployment Guide, Phase 0 — Pre-flight, Phase 1 — Commit and push, Phase 2 — Cloudflare R2, Phase 3 — Firebase, Phase 4 — Vercel, Phase 5 — Connect the domains (+3 more)
 
 ### Community 71 - "OpcrPublicPage.tsx"
-Cohesion: 0.12
-Nodes (22): OpcrResourceData, ChartDataSource, ReportOverviewGroup, createOpcrAnnualIndicatorChartData(), createOpcrAnnualIndicatorSeriesChartData(), createOpcrComparisonChartData(), OpcrEntry, OpcrPeriodValues (+14 more)
+Cohesion: 0.15
+Nodes (18): AccomplishmentIndicatorSeriesChart(), ChartDataSource, ReportOverviewGroup, createOpcrAnnualIndicatorChartData(), createOpcrAnnualIndicatorSeriesChartData(), createOpcrComparisonChartData(), OpcrEntry, OpcrPeriodValues (+10 more)
 
-### Community 72 - "AdminHomePage.tsx"
-Cohesion: 0.43
-Nodes (5): useAdminResourcesQuery(), AdminHomePage(), formatSize(), formatResourceFileType(), resourceFileTypeLabels
+### Community 72 - "resourceLink.ts"
+Cohesion: 0.22
+Nodes (8): repositorySectionIdSchema, resourceYearSchema, maximumResourceLinkPayloadSize, ResourceLinkCreate, resourceLinkCreateResponseSchema, resourceLinkCreateSchema, resourceLinkNameSchema, resourceLinkUrlSchema
 
-### Community 73 - "apiRateLimit.ts"
-Cohesion: 0.47
-Nodes (4): checkApiRateLimit(), Counter, counters, requestLimit()
+### Community 73 - "adminSessionHandler.ts"
+Cohesion: 0.38
+Nodes (5): AdminSessionDependencies, handleAdminSessionRequest(), jsonHeaders, jsonResponse(), verifiedToken
 
 ### Community 74 - "Codebase bug and security review - 2026-10-02"
 Cohesion: 0.40
 Nodes (4): Codebase bug and security review - 2026-10-02, Findings fixed, Scope and practical limits, Validation
+
+### Community 75 - "services/accomplishmentResource.ts"
+Cohesion: 0.33
+Nodes (5): AccomplishmentResourceData, AdminAccomplishResourcePage(), client, getAccomplishmentResource, getPublicAccomplishmentResource
 
 ### Community 76 - "Q: check the wholecode base I just deployed this in vercel but the cloudflare r2 and firebase auth won't work maybe we need to make some reviews."
 Cohesion: 0.40
@@ -489,10 +497,18 @@ Nodes (4): Answer, Outcome, Q: the pdf viewing problem is still there please fix
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: in this section please change the sequence like into ascending order 2021, 2022, 2023...... not decending, Source Nodes
 
+### Community 92 - "reportResource.test.ts"
+Cohesion: 0.40
+Nodes (3): createReportResourceClient(), client(), data
+
+### Community 93 - "Mobile layout review - 2 October 2026"
+Cohesion: 0.50
+Nodes (3): Findings fixed, Mobile layout review - 2 October 2026, Verification
+
 ## Knowledge Gaps
-- **471 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+466 more)
+- **473 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+468 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **2 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Work-memory lessons
 
@@ -511,17 +527,17 @@ Nodes (4): Answer, Outcome, Q: in this section please change the sequence like i
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `request()` connect `services/adminOperations.ts` to `adminReportResourceHandler.ts`, `fetchAuthenticatedJson`, `handler.js`?**
+- **Why does `request()` connect `services/adminOperations.ts` to `fetchAuthenticatedJson`, `adminReportResourceHandler.ts`, `ResourceUploadForm.tsx`, `handler.js`?**
   _High betweenness centrality (0.056) - this node is a cross-community bridge._
 - **Why does `createAdminReportResourceHandler()` connect `handler.js` to `services/adminOperations.ts`?**
   _High betweenness centrality (0.054) - this node is a cross-community bridge._
 - **Why does `mapUser()` connect `adminUsersHandler.ts` to `handler.js`?**
   _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
-  _471 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _473 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `ResourceCategoryPanel.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.14130434782608695 - nodes in this community are weakly interconnected._
+- **Should `repositoryStructureStore.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.13675213675213677 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.043478260869565216 - nodes in this community are weakly interconnected._
-- **Should `fetchAuthenticatedJson` be split into smaller, more focused modules?**
-  _Cohesion score 0.09485815602836879 - nodes in this community are weakly interconnected._
-- **Should `dependencies` be split into smaller, more focused modules?**
-  _Cohesion score 0.05128205128205128 - nodes in this community are weakly interconnected._
