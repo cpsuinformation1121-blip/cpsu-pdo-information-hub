@@ -1,3 +1,4 @@
+import { websitePolicyLinks } from "../../config/websitePolicies";
 import { NavLink } from "react-router-dom";
 
 export function PublicFooter() {
@@ -32,8 +33,11 @@ export function PublicFooter() {
         </nav>
       </div>
       <div className="border-t border-white/20">
-        <div className="mx-auto max-w-content px-5 py-5 text-xs text-primary-foreground/70 sm:px-8 lg:px-10">
-          © {new Date().getFullYear()} CPSU Planning and Development Office.
+        <div className="mx-auto flex max-w-content flex-wrap items-center justify-between gap-4 px-5 py-5 text-xs text-primary-foreground/80 sm:px-8 lg:px-10">
+          <p>© {new Date().getFullYear()} CPSU Planning and Development Office.</p>
+          <nav aria-label="Privacy and website terms" className="flex flex-wrap gap-x-5 gap-y-3">
+            {websitePolicyLinks.map(link => <NavLink key={link.path} to={link.path} className="underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-foreground">{link.label}</NavLink>)}
+          </nav>
         </div>
       </div>
     </footer>

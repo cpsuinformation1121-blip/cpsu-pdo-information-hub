@@ -17,6 +17,7 @@ export type ReportOverviewChart = {
   title: string;
   description: string;
   data: ComparisonDatum[];
+  preserveCategoryWidth?: boolean;
 };
 
 export type ReportOverviewGroup = {
@@ -268,6 +269,7 @@ export function ReportGraphOverview({
                     title={chart.title}
                     description={chart.description}
                     data={chart.data}
+                    preserveCategoryWidth={chart.preserveCategoryWidth}
                     appearance={appearance}
                     selectedBarKey={selectedBar?.key}
                     onSelectBar={(key, label, color) =>

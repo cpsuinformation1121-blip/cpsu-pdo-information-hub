@@ -1,3 +1,4 @@
+import { officeEmail, officeEmailHref } from "../config/officeContact";
 import { ArrowUpRight, Mail, MessageCircle, Phone, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -5,7 +6,7 @@ const contactDetails = [
   { label: "Phone", value: "+63917 715 2338", href: "tel:+639177152338", icon: Phone, external: false },
   { label: "Microsoft Teams", value: "Planning Office", href: null, icon: Users, external: false },
   { label: "Facebook", value: "Cpsu Pdo", href: "https://www.facebook.com/cpsu.pdo", icon: MessageCircle, external: true },
-  { label: "Email", value: "cpsu_pdo@cpsu.edu.ph", href: "mailto:cpsu_pdo@cpsu.edu.ph", icon: Mail, external: false },
+  { label: "Email", value: officeEmail, href: officeEmailHref, icon: Mail, external: false },
 ] as const;
 
 const contactCardClassName = "flex h-full min-w-0 flex-col rounded-2xl border border-border bg-surface p-5 shadow-[0_8px_24px_rgba(20,83,45,0.04)] sm:p-6";

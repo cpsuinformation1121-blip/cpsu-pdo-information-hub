@@ -28,6 +28,7 @@ export function buildOpcrOverviewGroups(
           description:
             "Annual target and accomplishment totals for the selected year.",
           data: annualOverview,
+          preserveCategoryWidth: true,
         },
       ],
     });

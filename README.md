@@ -154,3 +154,9 @@ The public repository and Admin > Resources automatically group resources whose 
 Select a group's **View years** button to open a modal with its resources ordered by year, newest first. Public PDF/image previews, link opening, and XLSX staff-only metadata retain their existing behavior. Administrators can preview, download, edit, or delete each resource from the group modal. Files and links remain independent R2 objects.
 
 List requests use the optional `groupBy=year` parameter. Pagination counts complete groups, so a group's years are returned together even when they exceed the page's group limit. The response keeps the existing resource array and total resource count, and adds `meta.groupTotal` for grouped requests. Search and filters apply before grouping.
+
+## Website notices and concern reporting
+
+Public routes /privacy-notice, /terms-of-use, and /report-a-concern are linked in the public footer. Their plain-language content applies to public visitors to this Information Hub. They do not describe administrator accounts, developer tools, or the technology stack, and do not link to the main university website or its policy PDFs. Concern links open the visitor's email application using the existing office address; no website form or automatic email transmission is introduced.
+
+The office should review the notices when website practices change and confirm the handling and retention of visitor inquiries. The notices do not claim legal approval or guarantee protection from legal claims.

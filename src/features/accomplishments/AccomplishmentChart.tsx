@@ -224,12 +224,12 @@ function ColumnChart({
       data-chart-type="column"
     >
       <div
-        className="grid h-60 gap-3 border-b border-strong-border px-2 pt-8"
+        className="grid gap-3 px-2 pt-8"
         style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
       >
-        {data.map((item) => (
-          <div key={item.id} className="flex min-w-0 flex-col justify-end">
-            <div className="flex h-44 items-end justify-center gap-2">
+        {data.map((item, index) => (
+          <div key={item.id} className="flex min-w-0 flex-col">
+            <div className="flex h-44 shrink-0 items-end justify-center gap-2 border-b border-strong-border">
               {[
                 {
                   id: "target" as const,
@@ -270,7 +270,7 @@ function ColumnChart({
             </div>
             <span
               title={item.label}
-              className="line-clamp-2 min-h-8 pt-3 text-center text-xs font-semibold leading-4 text-muted-foreground"
+              className={`relative block flex-1 break-words px-2 pb-1 pt-3 text-center text-xs font-semibold leading-5 text-muted-foreground [overflow-wrap:anywhere] ${index < data.length - 1 ? "after:absolute after:inset-y-3 after:-right-1.5 after:border-r after:border-strong-border" : ""}`}
             >
               {item.label}
             </span>
@@ -560,6 +560,7 @@ export function AccomplishmentDataChart({
   title,
   description,
   data,
+  preserveCategoryWidth = false,
   appearance,
   onSelectBar,
   selectedBarKey,
@@ -568,6 +569,7 @@ export function AccomplishmentDataChart({
   title: string;
   description: string;
   data: ComparisonDatum[];
+  preserveCategoryWidth?: boolean;
 } & ChartInteraction) {
   return (
     <figure className="min-w-0 rounded-xl border border-border bg-surface p-4 sm:p-5">
@@ -584,6 +586,7 @@ export function AccomplishmentDataChart({
         type={type}
         title={title}
         data={data}
+        preserveCategoryWidth={preserveCategoryWidth}
         appearance={appearance}
         onSelectBar={onSelectBar}
         selectedBarKey={selectedBarKey}

@@ -80,8 +80,8 @@
     "semantic_hash": ""
   },
   "src/components/layout/PublicFooter.tsx": {
-    "mtime": 1789631755.9923124,
-    "ast_hash": "8ce5fa23db4e6c9ac997bc8a1587edfe",
+    "mtime": 1790914305.1592174,
+    "ast_hash": "358ee557006f1befa2a00c707291211c",
     "semantic_hash": ""
   },
   "src/components/layout/PublicHeader.tsx": {
@@ -150,8 +150,8 @@
     "semantic_hash": ""
   },
   "src/routes/AppRouter.tsx": {
-    "mtime": 1789538121.4940345,
-    "ast_hash": "aa23d6cd2c0931c73f31f983d5ab9137",
+    "mtime": 1790914199.5985339,
+    "ast_hash": "071c2beb8eac519ecf02ecab7a072578",
     "semantic_hash": ""
   },
   "src/services/resources.ts": {
@@ -235,8 +235,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1790908227.0770805,
-    "ast_hash": "f5932f89c5fe4926b8db6c74e46a719f",
+    "mtime": 1790914898.5907755,
+    "ast_hash": "25f4cdde3f8c7b1c0a1c33a8a68ad889",
     "semantic_hash": ""
   },
   "index.html": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "src/features/accomplishments/AccomplishmentChart.tsx": {
-    "mtime": 1789623449.0146153,
-    "ast_hash": "10720f2b3854d94c1c67639f36ab7a03",
+    "mtime": 1790913448.979143,
+    "ast_hash": "4d887940552c9358b61fefc79201535d",
     "semantic_hash": ""
   },
   "src/features/accomplishments/chartData.test.ts": {
@@ -700,7 +700,7 @@
     "semantic_hash": ""
   },
   "src/layouts/AdminLayout.tsx": {
-    "mtime": 1789631755.9998431,
+    "mtime": 1790914898.5872514,
     "ast_hash": "b5c0b51b70f1ce9226a73a8e7a65daae",
     "semantic_hash": ""
   },
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "src/pages/ContactPage.tsx": {
-    "mtime": 1789348487.1226957,
-    "ast_hash": "bf6dcfe23d744a3ef354c6c16fa16ae3",
+    "mtime": 1790914199.5995338,
+    "ast_hash": "e0f5cc74c9d0fe45cc85f5ba62a3a672",
     "semantic_hash": ""
   },
   "src/pages/OpcrPublicPage.tsx": {
@@ -735,7 +735,7 @@
     "semantic_hash": ""
   },
   "src/pages/admin/AdminLoginPage.tsx": {
-    "mtime": 1788751462.7760556,
+    "mtime": 1790914898.5887618,
     "ast_hash": "012fcb8ee827976c5010e96d44f87f52",
     "semantic_hash": ""
   },
@@ -975,8 +975,8 @@
     "semantic_hash": ""
   },
   "src/features/accomplishments/ReportGraphOverview.tsx": {
-    "mtime": 1789543932.8370135,
-    "ast_hash": "a08d573842cba39dd9be5ebd7c33d9c8",
+    "mtime": 1790913448.9837358,
+    "ast_hash": "b44ca07964fe8091123da8660cf1d82f",
     "semantic_hash": ""
   },
   "src/features/accomplishments/reportAppearance.test.ts": {
@@ -995,17 +995,17 @@
     "semantic_hash": ""
   },
   "src/features/accomplishments/reportOverview.ts": {
-    "mtime": 1789622924.330628,
-    "ast_hash": "57242db4ed58282fe4da4982be170092",
+    "mtime": 1790913448.9847348,
+    "ast_hash": "7f03cdaa286c7af1908b42bc00482fc5",
     "semantic_hash": ""
   },
   "src/features/opcr/reportOverview.ts": {
-    "mtime": 1789622924.3347838,
-    "ast_hash": "8d75c64a5d729fdc61649da197f2bcdd",
+    "mtime": 1790913448.9857454,
+    "ast_hash": "3ad87c2f747eb360f6ad1f93c69ea15f",
     "semantic_hash": ""
   },
   "api/handler.js": {
-    "mtime": 1790912305.9164033,
+    "mtime": 1790914929.9576628,
     "ast_hash": "40c4998cd60618729b666a91d21ebcfa",
     "semantic_hash": ""
   },
@@ -1407,6 +1407,111 @@
   "artifacts/codebase-audit-qa/public.png": {
     "mtime": 1790912164.0368311,
     "ast_hash": "6bafc414d7bea9ce104a4eec7bed8e44",
+    "semantic_hash": ""
+  },
+  "artifacts/codebase-audit-2026-10-02.md": {
+    "mtime": 1790912492.7814033,
+    "ast_hash": "89ed05f0189333bde29a588af9d8b0ac",
+    "semantic_hash": ""
+  },
+  "artifacts/chart-label-qa/desktop.png": {
+    "mtime": 1790912885.1554174,
+    "ast_hash": "5a9c020eda7a93d2282f9c3acd814933",
+    "semantic_hash": ""
+  },
+  "artifacts/chart-label-qa/mobile.png": {
+    "mtime": 1790912885.316708,
+    "ast_hash": "fba90d24005c720d0fdd1a8552269a4c",
+    "semantic_hash": ""
+  },
+  "artifacts/admin-chart-label-qa/opcr-desktop.png": {
+    "mtime": 1790913538.0499418,
+    "ast_hash": "6a9df646a732b1ea2eaca4778c7c5686",
+    "semantic_hash": ""
+  },
+  "artifacts/admin-chart-label-qa/opcr-mobile.png": {
+    "mtime": 1790913538.3619688,
+    "ast_hash": "af3e1c2377e67878888ade02ef60518f",
+    "semantic_hash": ""
+  },
+  "artifacts/admin-chart-label-qa/physical-desktop.png": {
+    "mtime": 1790913538.6077514,
+    "ast_hash": "6a9df646a732b1ea2eaca4778c7c5686",
+    "semantic_hash": ""
+  },
+  "artifacts/admin-chart-label-qa/physical-mobile.png": {
+    "mtime": 1790913538.8938081,
+    "ast_hash": "133974eba649c4b9a3e600108ffccb6f",
+    "semantic_hash": ""
+  },
+  "artifacts/chart-label-qa/dividers-desktop.png": {
+    "mtime": 1790913124.8937542,
+    "ast_hash": "6dfcbdf4804b3d4635bdf3c22926b539",
+    "semantic_hash": ""
+  },
+  "artifacts/chart-label-qa/dividers-mobile.png": {
+    "mtime": 1790913125.0449705,
+    "ast_hash": "c6cb75f41c25039faf2d124dd68553ba",
+    "semantic_hash": ""
+  },
+  "src/config/officeContact.ts": {
+    "mtime": 1790914199.5935335,
+    "ast_hash": "3264f2e42e7307ccc82da4e2966c234c",
+    "semantic_hash": ""
+  },
+  "src/config/websitePolicies.ts": {
+    "mtime": 1790914898.5862505,
+    "ast_hash": "865dfcba5c287b0a6918bf8d07dbfd65",
+    "semantic_hash": ""
+  },
+  "src/features/policies/PolicyPageLayout.tsx": {
+    "mtime": 1790914305.1592174,
+    "ast_hash": "24186bd88d51b3552b2cf3dab891ab14",
+    "semantic_hash": ""
+  },
+  "src/pages/PrivacyNoticePage.tsx": {
+    "mtime": 1790914898.5832436,
+    "ast_hash": "e87720074cd46281f8a30d7c0729c28c",
+    "semantic_hash": ""
+  },
+  "src/pages/ReportConcernPage.tsx": {
+    "mtime": 1790914898.585249,
+    "ast_hash": "bc53033b6d243132a1bc7175acb39627",
+    "semantic_hash": ""
+  },
+  "src/pages/TermsOfUsePage.tsx": {
+    "mtime": 1790914898.584242,
+    "ast_hash": "9b1ff0f9d1c878a9f184c4a5c8444a1a",
+    "semantic_hash": ""
+  },
+  "artifacts/policy-pages-qa/privacy-notice-desktop.png": {
+    "mtime": 1790914571.470927,
+    "ast_hash": "8e6d21aca5d1e8c4f260f58ea2552b25",
+    "semantic_hash": ""
+  },
+  "artifacts/policy-pages-qa/privacy-notice-mobile.png": {
+    "mtime": 1790914572.3386574,
+    "ast_hash": "008ac25e3bbd2c9268be416fcfd0d2ea",
+    "semantic_hash": ""
+  },
+  "artifacts/policy-pages-qa/report-a-concern-desktop.png": {
+    "mtime": 1790914571.91111,
+    "ast_hash": "5702fdc0f253221eaf99a4ee4ac05b77",
+    "semantic_hash": ""
+  },
+  "artifacts/policy-pages-qa/report-a-concern-mobile.png": {
+    "mtime": 1790914572.6917505,
+    "ast_hash": "32d58c564eb79f353aa803bb31708012",
+    "semantic_hash": ""
+  },
+  "artifacts/policy-pages-qa/terms-of-use-desktop.png": {
+    "mtime": 1790914571.7044084,
+    "ast_hash": "bf4627c6052d32c45a7f92abb2e76aa3",
+    "semantic_hash": ""
+  },
+  "artifacts/policy-pages-qa/terms-of-use-mobile.png": {
+    "mtime": 1790914572.4986765,
+    "ast_hash": "59c7c2ce44683bd656c02183a8000980",
     "semantic_hash": ""
   }
 }

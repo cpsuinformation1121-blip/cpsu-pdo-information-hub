@@ -1,3 +1,6 @@
+import { PrivacyNoticePage } from "../pages/PrivacyNoticePage";
+import { TermsOfUsePage } from "../pages/TermsOfUsePage";
+import { ReportConcernPage } from "../pages/ReportConcernPage";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { PublicLayout } from "../layouts/PublicLayout";
@@ -26,6 +29,9 @@ export function AppRouter() {
           <Route path="opcr" element={<OpcrPublicPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="contact" element={<ContactPage />} />
+          <Route path="privacy-notice" element={<PrivacyNoticePage />} />
+          <Route path="terms-of-use" element={<TermsOfUsePage />} />
+          <Route path="report-a-concern" element={<ReportConcernPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
         <Route
