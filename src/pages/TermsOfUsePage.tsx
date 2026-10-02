@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { PolicyPageLayout } from "../features/policies/PolicyPageLayout";
 
 export function TermsOfUsePage() {
-  return <PolicyPageLayout title="Terms of Use" description="Guidance for browsing, referring to, and using information available on this Information Hub.">
+  return <PolicyPageLayout title="Terms of Use">
     <section><h2>Purpose of this website</h2>
       <p>The CPSU Planning and Development Office Information Hub provides public information, reports, statistics, and available document previews. These terms apply to your use of this website.</p>
     </section>

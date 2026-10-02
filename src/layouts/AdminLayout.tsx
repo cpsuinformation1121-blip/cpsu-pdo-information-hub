@@ -1,11 +1,26 @@
+import { useEffect, useRef } from "react";
 import { LogOut } from "lucide-react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import cpsuLogo from "../assets/CPSU_Logo-transparent.png";
 import { useAuth } from "../features/auth/useAuth";
 
 export function AdminLayout() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const navigationRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const navigation = navigationRef.current;
+    const activeLink = navigation?.querySelector<HTMLAnchorElement>('[aria-current="page"]');
+    if (!navigation || !activeLink) return;
+    const activeBounds = activeLink.getBoundingClientRect();
+    const navigationBounds = navigation.getBoundingClientRect();
+    navigation.scrollTo({
+      left: navigation.scrollLeft + activeBounds.left - navigationBounds.left -
+        (navigation.clientWidth - activeBounds.width) / 2,
+      behavior: "instant",
+    });
+  }, [pathname]);
   async function handleSignOut() {
     await signOut();
     navigate("/admin/login", { replace: true });
@@ -42,6 +57,7 @@ export function AdminLayout() {
             <button
               type="button"
               onClick={handleSignOut}
+              aria-label="Sign out"
               className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-primary-soft text-sm font-semibold text-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-primary sm:w-auto sm:px-4"
             >
               <LogOut className="size-4" aria-hidden="true" />
@@ -53,7 +69,7 @@ export function AdminLayout() {
           aria-label="Repository management navigation"
           className="border-b border-border bg-surface"
         >
-          <div className="mx-auto flex max-w-content snap-x gap-5 overflow-x-auto scroll-smooth px-4 sm:gap-6 sm:px-8 lg:px-10">
+          <div ref={navigationRef} className="mx-auto flex max-w-content snap-x gap-5 overflow-x-auto scroll-smooth px-4 sm:gap-6 sm:px-8 lg:px-10">
             {[
               ["/admin", "Overview"],
               ["/admin/resources", "Resources"],

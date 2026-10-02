@@ -27,9 +27,6 @@ export function ContactPage() {
         <h1 id="contact-title" className="mt-2 font-serif text-3xl tracking-tight sm:text-[2.5rem]">
           Planning and Development Office
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-          Questions about the repository? Contact the office.
-        </p>
       </div>
       <ul aria-label="Office contact details" className="mt-9 grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {contactDetails.map(({ label, value, href, icon: Icon, external }) => {

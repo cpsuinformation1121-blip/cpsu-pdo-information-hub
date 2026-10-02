@@ -60,7 +60,7 @@ export function AppDialog({
           type="button"
           onClick={onClose}
           aria-label="Close dialog"
-          className="-mr-2 inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-xl text-primary-foreground/80 hover:bg-white/15 hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-primary-foreground"
+          className="-mr-2 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-primary-foreground/80 hover:bg-white/15 hover:text-primary-foreground focus-visible:outline-2 focus-visible:outline-primary-foreground"
         >
           <X className="size-5" />
         </button>

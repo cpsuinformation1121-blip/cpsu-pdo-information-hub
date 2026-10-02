@@ -33,6 +33,7 @@ export function AdminResourceEditDialog({ resource, isPending, error, onClose, o
       },
     });
   const sectionId = useWatch({ control, name: "sectionId" });
+  const categoryId = useWatch({ control, name: "categoryId" });
   const section = structure.data?.find((item) => item.id === sectionId);
   return (
     <AppDialog title="Edit resource" description="Update the display name and repository location." onClose={onClose}>
@@ -46,7 +47,7 @@ export function AdminResourceEditDialog({ resource, isPending, error, onClose, o
           </label>
           <label className="block text-sm font-semibold">
             Section
-            <select aria-label="Section" {...register("sectionId", { onChange: () => setValue("categoryId", undefined, { shouldDirty: true, shouldValidate: true }) })}
+            <select aria-label="Section" value={sectionId} {...register("sectionId", { onChange: () => setValue("categoryId", undefined, { shouldDirty: true, shouldValidate: true }) })}
               disabled={!structure.isSuccess} aria-invalid={!!errors.sectionId} aria-describedby={errors.sectionId ? "edit-section-error" : undefined} className={fieldClass}>
               {!structure.isSuccess ? <option value={resource.sectionId}>{structure.isPending ? "Loading sections..." : resource.sectionId}</option> : null}
               {structure.data?.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
@@ -55,7 +56,7 @@ export function AdminResourceEditDialog({ resource, isPending, error, onClose, o
           </label>
           <label className="block text-sm font-semibold">
             Category
-            <select aria-label="Category" {...register("categoryId", { setValueAs: (value: string) => value || undefined })}
+            <select aria-label="Category" value={categoryId ?? ""} {...register("categoryId", { setValueAs: (value: string) => value || undefined })}
               disabled={!structure.isSuccess} aria-invalid={!!errors.categoryId} aria-describedby={errors.categoryId ? "edit-category-error" : undefined} className={fieldClass}>
               <option value="">No category</option>
               {section?.categories.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}

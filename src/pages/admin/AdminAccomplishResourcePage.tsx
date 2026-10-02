@@ -392,7 +392,7 @@ function AccomplishmentResourceEditor({
       <p className="text-xs font-bold tracking-[0.14em] text-primary">
         ADMIN WORKSPACE
       </p>
-      <div className="mt-2 flex flex-col gap-5 border-b border-strong-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mt-2 flex flex-col gap-5 border-b border-strong-border pb-6 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <h1
             id="accomplishment-title"
@@ -404,7 +404,7 @@ function AccomplishmentResourceEditor({
             Set targets and quarterly results.
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <label className="sm:w-44">
             <span className="block text-sm font-semibold">Year</span>
             <select

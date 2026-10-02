@@ -157,10 +157,6 @@ export function OpcrPublicPage() {
               >
                 Office Performance Commitment and Review (OPCR)
               </h1>
-              <p className="mt-3 text-base leading-7 text-muted-foreground">
-                View annual targets and half-year results by MFO, PAP, and
-                performance indicator.
-              </p>
             </div>
 
             <label className="w-full min-w-0 lg:col-span-1">

@@ -68,9 +68,6 @@ export function RepositoryStructureChart() {
         <h3 className="mt-2 text-xl font-semibold tracking-tight">
           {selectedSection.title}
         </h3>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          {selectedSection.description}
-        </p>
         <p className="mt-5 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
           Categories
         </p>

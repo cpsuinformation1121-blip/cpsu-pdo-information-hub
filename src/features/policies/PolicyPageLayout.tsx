@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { policyUpdatedAt, websitePolicyLinks } from "../../config/websitePolicies";
-export function PolicyPageLayout({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+export function PolicyPageLayout({ title, children }: { title: string; children: ReactNode }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     const previousTitle = document.title;
@@ -17,7 +17,6 @@ export function PolicyPageLayout({ title, description, children }: { title: stri
     </nav>
     <header className="mt-6 max-w-3xl border-l-2 border-primary pl-4 sm:pl-5">
       <h1 ref={headingRef} tabIndex={-1} className="font-serif text-3xl tracking-tight sm:text-[2.5rem]">{title}</h1>
-      <p className="mt-4 text-base leading-7 text-muted-foreground">{description}</p>
       <p className="mt-3 text-xs text-muted-foreground">Last updated: <time dateTime={policyUpdatedAt}>2 October 2026</time></p>
     </header>
     <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">

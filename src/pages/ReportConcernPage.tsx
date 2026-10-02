@@ -8,7 +8,7 @@ const topics = [
   { title: "Website concern", description: "A page or resource is not working, or you noticed something that may affect the safe use of the website." },
 ] as const;
 export function ReportConcernPage() {
-  return <PolicyPageLayout title="Report a Concern" description="Help the office identify an information error, privacy issue, copyright concern, or website problem.">
+  return <PolicyPageLayout title="Report a Concern">
     <section><h2>Contact the Planning and Development Office</h2>
       <p>Email <a href={officeEmailHref}>{officeEmail}</a> with the relevant page address, resource title or reporting year, and a short explanation.</p>
       <p>The links below open your email application with a subject. Nothing is submitted through this page; review your message and send it from your email application.</p>

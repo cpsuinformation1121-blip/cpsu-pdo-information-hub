@@ -3,7 +3,7 @@ import { PolicyPageLayout } from "../features/policies/PolicyPageLayout";
 import { officeEmail, officeEmailHref } from "../config/officeContact";
 
 export function PrivacyNoticePage() {
-  return <PolicyPageLayout title="Privacy Notice" description="How this Information Hub handles your information when you browse its pages or contact the office.">
+  return <PolicyPageLayout title="Privacy Notice">
     <section><h2>About this notice</h2>
       <p>This notice applies to public use of the CPSU Planning and Development Office Information Hub. You can browse its public information, reports, and available document previews without creating an account.</p>
       <p>For questions about your privacy on this website, email <a href={officeEmailHref}>{officeEmail}</a>.</p>

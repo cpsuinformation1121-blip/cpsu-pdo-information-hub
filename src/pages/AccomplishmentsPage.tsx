@@ -157,9 +157,6 @@ export function AccomplishmentsPage() {
               >
                 Physical Performance
               </h1>
-              <p className="mt-3 text-base leading-7 text-muted-foreground">
-                View annual targets and quarterly results.
-              </p>
             </div>
 
             <label className="w-full">

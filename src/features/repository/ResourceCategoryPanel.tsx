@@ -176,8 +176,8 @@ export function ResourceCategoryPanel({ group }: ResourceCategoryPanelProps) {
         }
       >
         {!group.isSectionRoot ? (
-          <header className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-primary/15 pb-4">
-            <div className="flex min-w-0 flex-1 items-start gap-3">
+          <header className="mb-4 flex flex-col items-start gap-3 border-b border-primary/15 pb-4 sm:flex-row sm:flex-wrap sm:justify-between">
+            <div className="flex min-w-0 w-full items-start gap-3 sm:w-auto sm:flex-1">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-surface text-primary" aria-hidden="true">
                 <FolderOpen className="size-5" strokeWidth={1.6} />
               </span>

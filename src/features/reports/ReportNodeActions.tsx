@@ -5,7 +5,7 @@ import {
 } from "./adminReportEditorModel";
 
 const actionClass =
-  "inline-flex min-h-9 cursor-pointer items-center gap-1 px-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "inline-flex min-h-11 min-w-11 justify-center sm:min-h-9 sm:min-w-0 cursor-pointer items-center gap-1 px-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 export function ReportNodeActions({
   node,

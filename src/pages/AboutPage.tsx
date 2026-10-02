@@ -50,9 +50,6 @@ export function AboutPage() {
             >
               About the Information Hub
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Public access to CPSU planning records and reports.
-            </p>
           </div>
         </div>
       </section>

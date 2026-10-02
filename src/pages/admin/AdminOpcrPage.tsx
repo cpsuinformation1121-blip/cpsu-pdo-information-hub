@@ -390,11 +390,11 @@ function OpcrResourceEditor({
       <p className="text-xs font-bold tracking-[0.14em] text-primary">
         ADMIN WORKSPACE
       </p>
-      <div className="mt-2 flex flex-col gap-5 border-b border-strong-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mt-2 flex flex-col gap-5 border-b border-strong-border pb-6 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <h1
             id="accomplishment-title"
-            className="font-serif text-3xl tracking-tight sm:whitespace-nowrap sm:text-4xl"
+            className="font-serif text-3xl tracking-tight sm:text-4xl"
           >
             Office Performance Commitment and Review (OPCR)
           </h1>
@@ -403,7 +403,7 @@ function OpcrResourceEditor({
             performance indicators.
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <label className="sm:w-44">
             <span className="block text-sm font-semibold">Year</span>
             <select

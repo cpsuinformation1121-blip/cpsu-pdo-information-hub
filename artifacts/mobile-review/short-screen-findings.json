@@ -1,0 +1,100 @@
+[
+  {
+    "label": "public-menu",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "public-years-dialog",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "admin-years-dialog",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "admin-edit-dialog",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "admin-link-form",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "admin-structure-dialog",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "admin-add-staff",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "admin-opcr-expanded",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "admin-physical-expanded",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "empty--repository",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "empty--admin-resources",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "empty--admin-opcr",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "empty--admin-structure",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  },
+  {
+    "label": "empty--admin-users",
+    "width": 320,
+    "documentWidth": 320,
+    "overflow": [],
+    "unnamedButtons": []
+  }
+]
