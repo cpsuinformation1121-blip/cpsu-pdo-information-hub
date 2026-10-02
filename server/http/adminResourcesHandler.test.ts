@@ -1,3 +1,4 @@
+import { adminResourceListResponseSchema } from "../../src/contracts/resource";
 import type { DecodedIdToken } from 'firebase-admin/auth'
 import { describe, expect, it, vi } from 'vitest'
 import type { R2Config } from '../config/r2'
@@ -123,3 +124,25 @@ describe('handleAdminResourcesRequest', () => {
     })
   })
 })
+
+describe('authenticated year-group requests', () => {
+  it('returns whole groups through the protected handler with private caching', async () => {
+    const response = await handleAdminResourcesRequest(new Request('http://localhost/api/admin/resources?groupBy=year&limit=1', {
+      headers: { authorization: 'Bearer valid-token' },
+    }), {
+      verifyIdToken: async () => verifiedAdministrator,
+      resources: {
+        config: testConfig,
+        listObjects: async () => ({ Contents: [2024, 2026].map((year) => ({
+          Key: `forms/${year}/annual-report-${year}.pdf`, Size: 100, LastModified: new Date('2026-01-01'),
+        })) }),
+      },
+    });
+    const result = adminResourceListResponseSchema.parse(await response.json());
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(result.meta).toEqual({ total: 2, groupTotal: 1, nextCursor: null });
+    expect(result.data).toHaveLength(2);
+    expect(result.data[0].key).toBe('forms/2026/annual-report-2026.pdf');
+  });
+});

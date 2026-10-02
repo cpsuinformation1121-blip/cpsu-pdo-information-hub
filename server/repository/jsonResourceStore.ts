@@ -29,17 +29,18 @@ async function readObjectBody(body: unknown, invalidBodyMessage: string) {
 export function createR2JsonResourceStore<Data>(
   options: JsonResourceStoreOptions<Data>,
 ) {
-  function createWriteCommand(bucketName: string, data: Data) {
+  function createWriteCommand(bucketName: string, data: Data, revision?: string) {
     return new PutObjectCommand({
       Bucket: bucketName,
       Key: options.key,
       Body: JSON.stringify(data),
       ContentType: "application/json",
       CacheControl: "no-store",
+      ...(revision === "missing" ? { IfNoneMatch: "*" } : revision ? { IfMatch: revision } : {}),
     });
   }
 
-  async function read(environment: NodeJS.ProcessEnv = process.env) {
+  async function readSnapshot(environment: NodeJS.ProcessEnv = process.env) {
     const config = getR2Config(environment);
 
     try {
@@ -53,9 +54,9 @@ export function createR2JsonResourceStore<Data>(
         object.Body,
         options.invalidBodyMessage,
       );
-      return options.schema.parse(JSON.parse(body));
+      return { data: options.schema.parse(JSON.parse(body)), revision: object.ETag ?? "missing" };
     } catch (error) {
-      if (isR2NotFound(error)) return structuredClone(options.defaults);
+      if (isR2NotFound(error)) return { data: structuredClone(options.defaults), revision: "missing" };
       throw error;
     }
   }
@@ -72,5 +73,15 @@ export function createR2JsonResourceStore<Data>(
     return data;
   }
 
-  return { createWriteCommand, read, write };
+  async function read(environment: NodeJS.ProcessEnv = process.env) {
+    return (await readSnapshot(environment)).data;
+  }
+  async function writeSnapshot(payload: unknown, environment: NodeJS.ProcessEnv = process.env, revision: string) {
+    const data = options.schema.parse(payload);
+    const config = getR2Config(environment);
+    const object = await createR2Client(config).send(createWriteCommand(config.bucketName, data, revision));
+    if (!object.ETag) throw new Error("The report revision is unavailable.");
+    return { data, revision: object.ETag };
+  }
+  return { createWriteCommand, read, write, readSnapshot, writeSnapshot };
 }

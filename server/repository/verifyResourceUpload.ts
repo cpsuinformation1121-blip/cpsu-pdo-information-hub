@@ -1,4 +1,5 @@
-import { HeadObjectCommand } from "@aws-sdk/client-s3";
+import { hasResourceFileSignature } from "../../src/utils/hasResourceFileSignature.ts";
+import { GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import {
   resourceUploadFileDefinitions,
   type ResourceUploadCompletionRequest,
@@ -20,10 +21,12 @@ type UploadedObject = {
   ContentLength?: number;
   ContentType?: string;
   LastModified?: Date;
+  ETag?: string;
 };
 type VerificationDependencies = {
   environment?: NodeJS.ProcessEnv;
   config?: R2Config;
+  readPrefix?: (bucket: string, key: string, etag?: string) => Promise<Uint8Array>;
   headObject?: (bucket: string, key: string) => Promise<UploadedObject>;
   structure?: readonly StructureSection[];
 };
@@ -84,6 +87,17 @@ export async function verifyResourceUpload(
     throw new ResourceUploadVerificationError(
       "The repository did not provide an upload timestamp.",
     );
+  const readPrefix = dependencies.readPrefix ?? (async (bucket, key, etag) => {
+    const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key, Range: "bytes=0-11", IfMatch: etag }));
+    if (!response.Body) throw new ResourceUploadVerificationError("The uploaded file contents could not be verified.");
+    return response.Body.transformToByteArray();
+  });
+  let bytes: Uint8Array;
+  try { bytes = await readPrefix(config.bucketName, parsedKey.key, object.ETag); }
+  catch { throw new ResourceUploadVerificationError("The uploaded file contents could not be verified. Please try again."); }
+  if (!hasResourceFileSignature(bytes, parsedKey.extension)) {
+    throw new ResourceUploadVerificationError("The uploaded file contents do not match the selected file type.");
+  }
   return {
     key: parsedKey.key,
     mimeType: object.ContentType,

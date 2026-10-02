@@ -4,10 +4,13 @@ import {
   File,
   FileImage,
   FileText,
+  FolderOpen,
   Link2,
   LoaderCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { AppDialog } from "../../components/ui/AppDialog";
+import { groupResourcesByYear } from "../../utils/groupResourcesByYear";
+import { useId, useState } from "react";
 import type { PublicResource } from "../../contracts/resource";
 import { authorizePublicResourcePreview } from "../../services/publicResourcePreview";
 import type { ResourceCategoryGroup } from "./groupResourcesByCategory";
@@ -30,6 +33,7 @@ type ResourceRowProps = {
   isWide: boolean;
   error?: string;
   onPreview: (resource: PublicResource) => void;
+  showYear?: boolean;
 };
 
 function ResourceIdentity({ resource }: { resource: PublicResource }) {
@@ -52,9 +56,11 @@ function ResourceRow({
   isWide,
   error,
   onPreview,
+  showYear = false,
 }: ResourceRowProps) {
   return (
     <li className={isWide ? "md:col-span-2" : undefined}>
+      {showYear ? <p className="mb-2 text-sm font-semibold text-primary">Year: {resource.year}</p> : null}
       {resource.fileType === "link" ? (
         <a
           href={`/api/resource-link?id=${encodeURIComponent(resource.id)}`}
@@ -124,6 +130,10 @@ function ResourceRow({
 }
 
 export function ResourceCategoryPanel({ group }: ResourceCategoryPanelProps) {
+  const categoryTitleId = useId();
+  const yearGroups = groupResourcesByYear(group.resources);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>();
+  const selectedGroup = yearGroups.find((item) => item.id === selectedGroupId);
   const [pendingId, setPendingId] = useState<string>();
   const [preview, setPreview] = useState<{
     resource: PublicResource;
@@ -157,42 +167,66 @@ export function ResourceCategoryPanel({ group }: ResourceCategoryPanelProps) {
   return (
     <>
       <article
-        className="min-w-0"
+        className={group.isSectionRoot
+          ? "min-w-0"
+          : "min-w-0 rounded-2xl border border-primary/20 bg-primary-soft/60 p-4 sm:p-6"}
+        aria-labelledby={group.isSectionRoot ? undefined : categoryTitleId}
         aria-label={
           group.isSectionRoot ? `${group.sectionTitle} resources` : undefined
         }
       >
         {!group.isSectionRoot ? (
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b border-strong-border pb-2">
-            <h4 className="font-serif text-xl tracking-tight text-foreground">
-              {group.categoryTitle}
-            </h4>
-            <p className="text-sm text-muted-foreground">
+          <header className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-primary/15 pb-4">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-surface text-primary" aria-hidden="true">
+                <FolderOpen className="size-5" strokeWidth={1.6} />
+              </span>
+              <div className="min-w-0">
+                <h4 id={categoryTitleId} className="break-words font-serif text-xl tracking-tight text-foreground">
+                  {group.categoryTitle}
+                </h4>
+              </div>
+            </div>
+            <p className="shrink-0 rounded-full border border-primary/15 bg-surface px-3 py-1 text-xs font-semibold text-primary">
               {group.resources.length}{" "}
               {group.resources.length === 1 ? "resource" : "resources"}
             </p>
-          </div>
+          </header>
         ) : null}
         <ul className="grid gap-3 md:grid-cols-2">
-          {group.resources.map((resource, index) => (
-            <ResourceRow
-              key={resource.id}
-              resource={resource}
-              isPending={pendingId === resource.id}
-              isWide={
-                group.resources.length % 2 === 1 &&
-                index === group.resources.length - 1
-              }
-              error={
-                previewError?.id === resource.id
-                  ? previewError.message
-                  : undefined
-              }
-              onPreview={handlePreview}
-            />
+          {yearGroups.map((yearGroup, index) => yearGroup.resources.length > 1 ? (
+            <li key={yearGroup.id} className={yearGroups.length % 2 === 1 && index === yearGroups.length - 1 ? "md:col-span-2" : undefined}>
+              <button type="button" onClick={() => setSelectedGroupId(yearGroup.id)}
+                aria-label={`View years for ${yearGroup.title}`} aria-haspopup="dialog"
+                className="group flex min-h-32 w-full cursor-pointer flex-col justify-between rounded-2xl border border-border bg-surface p-5 text-left shadow-[0_5px_16px_rgba(20,83,45,0.05)] hover:border-primary hover:bg-primary-soft/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                <ResourceIdentity resource={{ ...yearGroup.resources[0], displayName: yearGroup.title }} />
+                <span className="mt-5 flex flex-wrap items-center gap-2 text-sm font-semibold text-primary">
+                  View years <ChevronRight className="size-4" aria-hidden="true" />
+                  <span className="text-xs font-medium text-muted-foreground">{yearGroup.resources.length} resources · {yearGroup.years.length} {yearGroup.years.length === 1 ? "year" : "years"}</span>
+                </span>
+              </button>
+            </li>
+          ) : (
+            <ResourceRow key={yearGroup.id} resource={yearGroup.resources[0]}
+              isPending={pendingId === yearGroup.resources[0].id}
+              isWide={yearGroups.length % 2 === 1 && index === yearGroups.length - 1}
+              error={previewError?.id === yearGroup.resources[0].id ? previewError.message : undefined}
+              onPreview={handlePreview} />
           ))}
         </ul>
       </article>
+      {selectedGroup ? (
+        <AppDialog title={selectedGroup.title} description="Choose a year to view its resource." size="wide" onClose={() => setSelectedGroupId(undefined)}>
+          <ul className="grid gap-4 p-5 sm:p-6 md:grid-cols-2">
+            {selectedGroup.resources.map((resource) => (
+              <ResourceRow key={resource.id} resource={resource} showYear isWide={false}
+                isPending={pendingId === resource.id}
+                error={previewError?.id === resource.id ? previewError.message : undefined}
+                onPreview={handlePreview} />
+            ))}
+          </ul>
+        </AppDialog>
+      ) : null}
       {preview ? (
         <PublicResourcePreviewDialog
           resource={preview.resource}

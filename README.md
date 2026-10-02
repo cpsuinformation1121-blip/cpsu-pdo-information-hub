@@ -138,3 +138,19 @@ Public view mode is not digital-rights management. A browser must receive file b
 Cloudflare presigned URLs work on the R2 S3 API domain, not a public custom domain. Treat each signed URL as a temporary bearer credential: never log it, cache it, or place it in public metadata. The 60-second lifetime intentionally limits exposure. Before deployment, manually confirm that the repository and audit buckets have no enabled `r2.dev` URL or public custom domain.
 
 Administrator mutations write immutable JSON audit events to the private audit bucket using create-only R2 writes. These records include the administrator UID, action, target, timestamp, and non-sensitive action details. They never include passwords, Firebase tokens, or R2 credentials.
+
+## Editing resource details
+
+In **Admin > Resources**, select **Edit** to change a file or link's display name, section, category, or year. Both calendar years (for example, `2026`) and consecutive school years (for example, `2026-2027`) are supported. Choose **No category** to place a resource directly under a section.
+
+Editing preserves the original filename, file contents, and link destination. The exact display name is stored as encoded R2 object metadata; existing resources without this metadata keep their filename-derived names. Changes to the section, category, or year use a server-side R2 copy followed by removal of the source, with duplicate protection and an audit record. No browser re-upload is needed. Nested category paths are retained when their section and top-level category are unchanged.
+
+Listings read object metadata with bounded concurrency and reuse the existing 60-second public cache. The current server cache is cleared after an edit, and the administrator interface refreshes its resource queries. Other server instances and already open public pages may show cached information until their next refresh. Moving a resource changes its opaque public ID; previews and links opened from refreshed listings use the new ID.
+
+## Automatic year groups
+
+The public repository and Admin > Resources automatically group resources whose display names match after removing their recorded year and normalizing case, spaces, hyphens, and underscores. Grouping stays within the same section, category, and resource type; unrelated numbers and years in names remain significant. Resources with no matching name keep their existing individual presentation.
+
+Select a group's **View years** button to open a modal with its resources ordered by year, newest first. Public PDF/image previews, link opening, and XLSX staff-only metadata retain their existing behavior. Administrators can preview, download, edit, or delete each resource from the group modal. Files and links remain independent R2 objects.
+
+List requests use the optional `groupBy=year` parameter. Pagination counts complete groups, so a group's years are returned together even when they exceed the page's group limit. The response keeps the existing resource array and total resource count, and adds `meta.groupTotal` for grouped requests. Search and filters apply before grouping.

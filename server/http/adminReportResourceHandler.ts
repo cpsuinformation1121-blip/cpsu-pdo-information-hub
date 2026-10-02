@@ -1,3 +1,4 @@
+import { isR2PreconditionFailed } from "../repository/r2Errors.ts";
 import {
   AdminAuthorizationError,
   authenticateAdminRequest,
@@ -21,6 +22,8 @@ type AdminReportHandlerOptions<Data> = {
     payload: unknown,
     environment?: NodeJS.ProcessEnv,
   ) => Promise<Data>;
+  readSnapshot?: (environment?: NodeJS.ProcessEnv) => Promise<{ data: Data; revision: string }>;
+  writeSnapshot?: (payload: unknown, environment: NodeJS.ProcessEnv, revision: string) => Promise<{ data: Data; revision: string }>;
   invalidRequestMessage: string;
   unavailableCode: string;
   unavailableMessage: string;
@@ -79,6 +82,10 @@ export function createAdminReportResourceHandler<Data>(
 
     try {
       if (request.method === "GET") {
+        if (options.readSnapshot) {
+          const snapshot = await options.readSnapshot(environment);
+          return json({ data: snapshot.data }, 200, { "x-report-revision": snapshot.revision });
+        }
         return json({ data: await options.read(environment) });
       }
       if (request.method !== "PUT") {
@@ -94,6 +101,10 @@ export function createAdminReportResourceHandler<Data>(
         );
       }
 
+      const revision = request.headers.get("x-report-revision");
+      if (options.writeSnapshot && (!revision || (revision !== "missing" && !/^"[^"\r\n]{1,128}"$/u.test(revision)))) {
+        return json({ error: { code: "REPORT_REVISION_REQUIRED", message: "Reload the report before saving changes." } }, 428);
+      }
       let payload: unknown;
       try {
         payload = await readLimitedJson(request, 3 * 1024 * 1024);
@@ -129,8 +140,13 @@ export function createAdminReportResourceHandler<Data>(
         environment,
       );
 
+      if (options.writeSnapshot && revision) {
+        const snapshot = await options.writeSnapshot(parsed.data, environment, revision);
+        return json({ data: snapshot.data }, 200, { "x-report-revision": snapshot.revision });
+      }
       return json({ data: await options.write(parsed.data, environment) });
-    } catch {
+    } catch (error) {
+      if (isR2PreconditionFailed(error)) return json({ error: { code: "REPORT_CONFLICT", message: "Another administrator saved this report. Your changes are still in the editor. Reload and reconcile the latest report before saving." } }, 409);
       return json(
         {
           error: {

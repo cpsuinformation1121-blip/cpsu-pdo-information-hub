@@ -19,3 +19,6 @@ const store = createR2JsonResourceStore<OpcrResourceData>({
 export const createOpcrResourceWriteCommand = store.createWriteCommand;
 export const readOpcrResource = store.read;
 export const writeOpcrResource = store.write;
+
+export const readOpcrResourceSnapshot = store.readSnapshot;
+export const writeOpcrResourceSnapshot = store.writeSnapshot;

@@ -43,7 +43,8 @@ export const schoolYearSchema = z
   .string()
   .regex(/^\d{4}-\d{4}$/u, "Select a valid school year.")
   .refine(
-    (value) => Number(value.slice(5)) === Number(value.slice(0, 4)) + 1,
+    (value) => Number(value.slice(5)) === Number(value.slice(0, 4)) + 1 &&
+      Number(value.slice(0, 4)) >= 1900 && Number(value.slice(0, 4)) <= 2200,
     "Select a valid school year.",
   );
 export const resourceYearSchema = z.union([
@@ -78,11 +79,12 @@ export const resourceFilenameSchema = z
     (filename) =>
       filename === filename.normalize("NFKC") &&
       filename !== "." &&
-      filename !== ".." &&
+      !filename.includes("..") &&
       !/[. ]$/u.test(filename) &&
       !filename.includes("/") &&
       !filename.includes("\\") &&
       !/[\p{Cc}\p{Cf}]/u.test(filename) &&
+      !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(filename) &&
       !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu.test(filename),
     {
       message: "Filename contains unsupported characters.",
@@ -144,12 +146,14 @@ export const resourceQuerySchema = z.object({
   year: z.union([z.coerce.number().int().min(1900).max(2200), schoolYearSchema]).optional(),
   fileType: resourceFileTypeSchema.optional(),
   sort: resourceSortSchema.default("newest"),
+  groupBy: z.literal("year").optional(),
   cursor: z.string().trim().max(512).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
 const resourceListMetaSchema = z.object({
   total: z.number().int().nonnegative(),
+  groupTotal: z.number().int().nonnegative().optional(),
   nextCursor: z.string().nullable(),
 });
 

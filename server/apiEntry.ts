@@ -70,10 +70,18 @@ export function resolveApiPath(request: Request) {
 }
 
 export default {
-  fetch(request: Request) {
+  async fetch(request: Request) {
     const path = resolveApiPath(request);
     const handler = routes[path];
     if (!handler) return notFound();
-    return checkApiRateLimit(request, path) ?? handler(request);
+    try {
+      return checkApiRateLimit(request, path) ?? await handler(request);
+    } catch {
+      return new Response(JSON.stringify({ error: {
+        code: "API_UNAVAILABLE", message: "The request could not be completed. Please try again.",
+      } }), { status: 500, headers: {
+        "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8",
+      } });
+    }
   },
 };

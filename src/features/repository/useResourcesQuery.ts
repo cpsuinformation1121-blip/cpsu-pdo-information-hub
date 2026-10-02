@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ResourceQuery } from "../../contracts/resource";
-import { getResources } from "../../services/resources";
+import { getAllResources } from "../../services/resources";
 
 export const resourceQueryKeys = {
   all: ["resources"] as const,
@@ -11,6 +11,6 @@ export const resourceQueryKeys = {
 export function useResourcesQuery(query: Partial<ResourceQuery> = {}) {
   return useQuery({
     queryKey: resourceQueryKeys.list(query),
-    queryFn: ({ signal }) => getResources(query, signal),
+    queryFn: ({ signal }) => getAllResources(query, signal),
   });
 }

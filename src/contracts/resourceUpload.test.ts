@@ -51,3 +51,15 @@ describe("resource upload file restrictions", () => {
     ).toBe(false);
   });
 });
+
+it('rejects a filename that would become an invalid object key', () => {
+  expect(resourceUploadRequestSchema.safeParse({ ...baseRequest, filename: 'report..pdf' }).success).toBe(false);
+});
+it('rejects malformed Unicode filenames before URI encoding', () => {
+  expect(resourceUploadRequestSchema.safeParse({ ...baseRequest, filename: '\ud800.pdf' }).success).toBe(false);
+  expect(resourceUploadRequestSchema.safeParse({ ...baseRequest, filename: '\ud83d\udcc4.pdf' }).success).toBe(true);
+});
+
+it('rejects school years outside the supported calendar range', () => {
+  expect(resourceUploadRequestSchema.safeParse({ ...baseRequest, year: '1800-1801' }).success).toBe(false);
+});

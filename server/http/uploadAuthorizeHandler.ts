@@ -1,3 +1,4 @@
+import { readLimitedJson, jsonBodyErrorResponse } from './readLimitedJson.ts'
 import { resourceUploadRequestSchema } from '../../src/contracts/resourceUpload.ts'
 import { AdminAuthenticationError, AdminAuthorizationError, authenticateAdminRequest, type AdminAuthenticationDependencies } from '../auth/authenticateAdminRequest.ts'
 import { authorizeResourceUpload, DuplicateResourceError, InvalidResourceUploadError } from '../repository/authorizeResourceUpload.ts'
@@ -14,7 +15,7 @@ export async function handleUploadAuthorizeRequest(request: Request, dependencie
   }
 
   let payload: unknown
-  try { payload = await request.json() } catch { return json({ error: { code: 'INVALID_REQUEST', message: 'The request body must be valid JSON.' } }, 400) }
+  try { payload = await readLimitedJson(request, 16 * 1024) } catch (error) { return jsonBodyErrorResponse(error) ?? json({ error: { code: 'INVALID_REQUEST', message: 'The request body must be valid JSON.' } }, 400) }
   const result = resourceUploadRequestSchema.safeParse(payload)
   if (!result.success) return json({ error: { code: 'INVALID_UPLOAD', message: 'The upload information is invalid.', details: result.error.issues.map((issue) => ({ field: issue.path.join('.') || 'upload', message: issue.message })) } }, 400)
 

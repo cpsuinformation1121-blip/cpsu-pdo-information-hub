@@ -10,7 +10,7 @@ export function AdminResourcesPage() {
         Manage files
       </h1>
       <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-        Search, preview, rename, or delete resources.
+        Search, preview, edit, or delete resources.
       </p>
       <AdminResourceInventory />
     </section>

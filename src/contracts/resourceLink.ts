@@ -22,6 +22,8 @@ export const resourceLinkNameSchema = z
 
 export const resourceLinkUrlSchema = z
   .url("Enter a valid web address.")
+  .max(2048, "The web address is too long.")
+  .refine((value) => new TextEncoder().encode(JSON.stringify({ url: value })).byteLength <= maximumResourceLinkPayloadSize, "The web address is too long.")
   .refine((value) => {
     const url = new URL(value);
     return url.protocol === "https:" && !url.username && !url.password;

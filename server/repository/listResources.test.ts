@@ -183,3 +183,74 @@ describe('listResources', () => {
     expect(JSON.stringify(result)).not.toContain('forms.example.edu')
   })
 })
+
+describe('resource display name metadata', () => {
+  it('uses exact stored display names for search and listing without changing filenames', async () => {
+    const name = 'CPSU \u2014 \u5e74\u5ea6 report_name';
+    const result = await listResources(resourceQuerySchema.parse({ q: '\u5e74\u5ea6' }), {
+      config: testConfig,
+      listObjects: async () => ({ Contents: [{ ...objects[1] }] }),
+      headObject: async () => ({ Metadata: { 'display-name': encodeURIComponent(name) } }),
+    });
+    expect(result.data[0].displayName).toBe(name);
+    expect(result.data[0].filename).toBe(objects[1].Key.split('/').at(-1));
+    expect(result.data[0]).not.toHaveProperty('key');
+  });
+  it.each(['%', '', encodeURIComponent('bad\u0000name')])('falls back safely for invalid display metadata: %s', async (value) => {
+    const result = await listResources(resourceQuerySchema.parse({}), {
+      config: testConfig,
+      listObjects: async () => ({ Contents: [{ ...objects[1] }] }),
+      headObject: async () => ({ Metadata: { 'display-name': value } }),
+    });
+    expect(result.data[0].displayName).toBe('Accreditation report 2025');
+  });
+  it('omits an object removed during listing instead of losing the whole listing', async () => {
+    const result = await listResources(resourceQuerySchema.parse({}), {
+      config: testConfig,
+      listObjects: async () => ({ Contents: [{ ...objects[1] }] }),
+      headObject: async () => { throw { $metadata: { httpStatusCode: 404 } }; },
+    });
+    expect(result.data).toEqual([]);
+  });
+});
+
+describe('year-group pagination', () => {
+  const yearlyObjects = [
+    { Key: 'forms/2024/annual-report-2024.pdf', Size: 100, LastModified: new Date('2026-01-01') },
+    { Key: 'forms/2025/annual-report-2025.pdf', Size: 200, LastModified: new Date('2026-01-02') },
+    { Key: 'forms/2026/annual-report-2026.pdf', Size: 300, LastModified: new Date('2026-01-03') },
+    { Key: 'forms/2026/other-report.pdf', Size: 400, LastModified: new Date('2026-01-04') },
+  ];
+  const deps = { config: testConfig, listObjects: async () => ({ Contents: yearlyObjects }) };
+  it('pages complete groups and never splits a year group across API pages', async () => {
+    const first = await listResources(resourceQuerySchema.parse({ groupBy: 'year', limit: 1, sort: 'name-asc' }), deps);
+    expect(first.data.map((resource) => resource.year)).toEqual([2026, 2025, 2024]);
+    expect(first.meta).toMatchObject({ total: 4, groupTotal: 2 });
+    expect(first.meta.nextCursor).not.toBeNull();
+    const second = await listResources(resourceQuerySchema.parse({ groupBy: 'year', limit: 1, sort: 'name-asc', cursor: first.meta.nextCursor }), deps);
+    expect(second.data[0].filename).toBe('other-report.pdf');
+    expect(second.meta.nextCursor).toBeNull();
+    expect(first.data.every((resource) => !('key' in resource))).toBe(true);
+  });
+  it('uses identical groups for administrators with authenticated keys retained', async () => {
+    const result = await listAdminResources(resourceQuerySchema.parse({ groupBy: 'year', limit: 1, sort: 'name-asc' }), deps);
+    expect(result.data).toHaveLength(3);
+    expect(result.data[0].key).toBe('forms/2026/annual-report-2026.pdf');
+  });
+  it('preserves existing resource pagination when grouping is not requested', async () => {
+    const result = await listResources(resourceQuerySchema.parse({ limit: 1, sort: 'name-asc' }), deps);
+    expect(result.data).toHaveLength(1);
+    expect(result.meta).not.toHaveProperty('groupTotal');
+  });
+  it('applies search and year filters before grouping', async () => {
+    const result = await listResources(resourceQuerySchema.parse({ groupBy: 'year', year: 2025, q: 'annual' }), deps);
+    expect(result.data).toHaveLength(1);
+    expect(result.meta).toEqual({ total: 1, groupTotal: 1, nextCursor: null });
+  });
+});
+
+it('fails on repeated upstream cursors instead of issuing an endless R2 listing', async () => {
+  const listObjects = vi.fn(async () => ({ Contents: [], IsTruncated: true, NextContinuationToken: 'same-page' }));
+  await expect(listResources(resourceQuerySchema.parse({}), { config: testConfig, listObjects })).rejects.toThrow('incomplete pagination');
+  expect(listObjects).toHaveBeenCalledTimes(2);
+});

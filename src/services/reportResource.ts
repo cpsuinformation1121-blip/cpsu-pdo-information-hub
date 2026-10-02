@@ -17,13 +17,17 @@ type ReportResourceClientOptions<Data> = {
 export function createReportResourceClient<Data>(
   options: ReportResourceClientOptions<Data>,
 ) {
+  const revisions = new WeakMap<User, string>();
   async function requestAdmin(user: User, init?: RequestInit) {
     const { response, payload } = await fetchAuthenticatedJson(
       user,
       options.adminEndpoint,
       {
         ...init,
-        headers: init?.body ? { "content-type": "application/json" } : undefined,
+        headers: init?.body ? {
+          "content-type": "application/json",
+          ...(revisions.has(user) ? { "x-report-revision": revisions.get(user)! } : {}),
+        } : undefined,
       },
     );
 
@@ -32,7 +36,10 @@ export function createReportResourceClient<Data>(
       throw new Error(error.message);
     }
 
-    return options.responseSchema.parse(payload).data;
+    const data = options.responseSchema.parse(payload).data;
+    const revision = response.headers.get("x-report-revision");
+    if (revision) revisions.set(user, revision);
+    return data;
   }
 
   async function getPublic(year: number | "all", signal?: AbortSignal) {

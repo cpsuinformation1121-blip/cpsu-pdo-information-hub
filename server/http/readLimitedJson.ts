@@ -18,7 +18,7 @@ export async function readLimitedJson(request: Request, maximumBytes: number): P
       if (done) break;
       byteCount += value.byteLength;
       if (byteCount > maximumBytes) {
-        await reader.cancel();
+        await reader.cancel().catch(() => undefined);
         throw new RequestBodyTooLargeError();
       }
       chunks.push(value);
@@ -30,4 +30,15 @@ export async function readLimitedJson(request: Request, maximumBytes: number): P
   } finally {
     reader.releaseLock();
   }
+}
+
+export function jsonBodyErrorResponse(error: unknown): Response | undefined {
+  if (!(error instanceof RequestBodyTooLargeError) && !(error instanceof InvalidJsonBodyError)) return undefined;
+  const oversized = error instanceof RequestBodyTooLargeError;
+  return new Response(JSON.stringify({ error: {
+    code: oversized ? "REQUEST_TOO_LARGE" : "INVALID_REQUEST",
+    message: oversized ? "The request body is too large." : "The request body must be valid JSON.",
+  } }), { status: oversized ? 413 : 400, headers: {
+    "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8",
+  } });
 }

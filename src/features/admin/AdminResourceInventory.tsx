@@ -19,7 +19,7 @@ import type {
 } from "../../contracts/resource";
 import type { AdminResourceAccessMode } from "../../contracts/adminResourceAccess";
 import { useAdminResourcesQuery } from "./useAdminResourcesQuery";
-import { deleteResource, renameResource } from "../../services/adminOperations";
+import { deleteResource, editResource, renameResource } from "../../services/adminOperations";
 import { authorizeAdminResourceAccess } from "../../services/adminResourceAccess";
 import { useAuth } from "../auth/useAuth";
 import {
@@ -31,6 +31,8 @@ import {
   formatResourceDate,
   formatResourceFileSize,
 } from "../../utils/formatResourceMetadata";
+import { groupResourcesByYear } from "../../utils/groupResourcesByYear";
+import { AdminResourceYearDialog } from "./AdminResourceYearDialog";
 import { AdminResourceActions } from "./AdminResourceActions";
 import {
   AdminResourceDeleteDialog,
@@ -40,7 +42,8 @@ import {
   type PreviewTarget,
   type RenameTarget,
 } from "./AdminResourceDialogs";
-
+import { AdminResourceEditDialog } from "./AdminResourceEditDialog";
+import type { ResourceEdit } from "../../contracts/adminOperations";
 
 type PageState = { cursor?: string; history: (string | undefined)[] };
 
@@ -53,6 +56,8 @@ export function AdminResourceInventory() {
   const [fileType, setFileType] = useState<ResourceFileType>();
   const [sort, setSort] = useState<ResourceSort>("newest");
   const [page, setPage] = useState<PageState>({ history: [] });
+  const [selectedGroupId, setSelectedGroupId] = useState<string>();
+  const [editTarget, setEditTarget] = useState<AdminResource | null>(null);
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [previewTarget, setPreviewTarget] = useState<PreviewTarget | null>(
@@ -66,15 +71,34 @@ export function AdminResourceInventory() {
       sort,
       cursor: page.cursor,
       limit: 25,
+      groupBy: "year",
     }),
     [deferredSearch, fileType, page.cursor, section, sort],
   );
   const resourcesQuery = useAdminResourcesQuery(query);
+  const yearGroups = useMemo(() => groupResourcesByYear(resourcesQuery.data?.data ?? []), [resourcesQuery.data?.data]);
+  const entries = yearGroups.map((yearGroup) => ({ resource: yearGroup.resources[0], yearGroup }));
+  const selectedYearGroup = yearGroups.find((group) => group.id === selectedGroupId);
   const refreshResources = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ["admin-resources"] }),
       queryClient.invalidateQueries({ queryKey: ["resources"] }),
     ]);
+  const editMutation = useMutation({
+    mutationFn: (input: ResourceEdit) => {
+      if (!user) throw new Error("Please sign in to edit a resource.");
+      return editResource(user, input);
+    },
+    onSuccess: async () => {
+      setEditTarget(null);
+      setPage({ history: [] });
+      await refreshResources();
+    },
+  });
+  function openEdit(resource: AdminResource) {
+    editMutation.reset();
+    setEditTarget(resource);
+  }
   const renameMutation = useMutation({
     mutationFn: ({ key, filename }: { key: string; filename: string }) => {
       if (!user) throw new Error("Please sign in to rename a file.");
@@ -98,6 +122,7 @@ export function AdminResourceInventory() {
     },
     onSuccess: async () => {
       setDeleteTarget(null);
+      setPage({ history: [] });
       await refreshResources();
     },
   });
@@ -152,6 +177,7 @@ export function AdminResourceInventory() {
   }
 
   function openDelete(resource: AdminResource) {
+    deleteMutation.reset();
     setDeleteTarget({ key: resource.key, filename: resource.filename });
   }
 
@@ -291,17 +317,33 @@ export function AdminResourceInventory() {
       {resourcesQuery.isSuccess && resourcesQuery.data.data.length > 0 ? (
         <>
           <div className="flex flex-col gap-2 border-b border-border py-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <p>{resourcesQuery.data.meta.total} results</p>
-            <p>25 per page</p>
+            <p>{resourcesQuery.data.meta.total} resources · {resourcesQuery.data.meta.groupTotal ?? yearGroups.length} groups</p>
+            <p>25 groups per page</p>
           </div>
           <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_28px_rgba(20,83,45,0.05)] md:hidden">
-            {resourcesQuery.data.data.map((resource) => (
+            {entries.map(({ resource, yearGroup }) => yearGroup.resources.length > 1 ? (
+              <li key={yearGroup.id} className="p-4">
+                <button type="button" aria-haspopup="dialog" aria-label={`View years for ${yearGroup.title}`}
+                  onClick={() => setSelectedGroupId(yearGroup.id)}
+                  className="min-h-11 cursor-pointer break-words text-left text-sm font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                  {yearGroup.title}
+                </button>
+                <p className="mt-2 text-sm text-muted-foreground">{yearGroup.resources.length} resources · {yearGroup.years.length} {yearGroup.years.length === 1 ? "year" : "years"}</p>
+                <p className="mt-2 text-sm">{repositorySections.find((item) => item.id === resource.sectionId)?.title ?? resource.sectionId} / {resource.categoryId ? (repositoryCategoryById.get(resource.categoryId)?.title ?? resource.categoryId) : "No category"}</p>
+                <button type="button" onClick={() => setSelectedGroupId(yearGroup.id)} className="mt-4 min-h-11 cursor-pointer border border-primary px-4 text-sm font-semibold text-primary">View years</button>
+              </li>
+            ) : (
               <li key={resource.key} className="p-4">
                 <p className="break-words text-sm font-semibold leading-6 [overflow-wrap:anywhere]">
                   {resource.fileType === "link"
                     ? resource.displayName
                     : resource.filename}
                 </p>
+                {resource.fileType !== "link" ? (
+                  <p className="mt-1 break-words text-sm text-muted-foreground">
+                    Display name: {resource.displayName}
+                  </p>
+                ) : null}
                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div className="col-span-2">
                     <dt className="text-xs font-bold tracking-wide text-muted-foreground">
@@ -364,6 +406,7 @@ export function AdminResourceInventory() {
                         : undefined
                     }
                     onAccess={requestAccess}
+                    onEdit={openEdit}
                     onRename={openRename}
                     onDelete={openDelete}
                   />
@@ -394,7 +437,25 @@ export function AdminResourceInventory() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {resourcesQuery.data.data.map((resource) => (
+                {entries.map(({ resource, yearGroup }) => yearGroup.resources.length > 1 ? (
+                  <tr key={yearGroup.id} className="align-top hover:bg-primary-soft">
+                    <td className="px-5 py-5">
+                      <button type="button" aria-haspopup="dialog" aria-label={`View years for ${yearGroup.title}`}
+                        onClick={() => setSelectedGroupId(yearGroup.id)}
+                        className="min-h-11 cursor-pointer break-words text-left font-semibold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{yearGroup.title}</button>
+                      <p className="mt-1 text-sm text-muted-foreground">{yearGroup.resources.length} resources</p>
+                    </td>
+                    <td className="px-5 py-5 text-sm">
+                      <p>{repositorySections.find((item) => item.id === resource.sectionId)?.title ?? resource.sectionId}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{resource.categoryId ? (repositoryCategoryById.get(resource.categoryId)?.title ?? resource.categoryId) : "No category"}</p>
+                    </td>
+                    <td className="whitespace-nowrap px-5 py-5 text-sm">{yearGroup.years.length} {yearGroup.years.length === 1 ? "year" : "years"}</td>
+                    <td className="whitespace-nowrap px-5 py-5 text-sm">{formatResourceFileType(resource.fileType)}</td>
+                    <td className="whitespace-nowrap px-5 py-5 text-sm">{formatResourceFileSize(yearGroup.resources.reduce((sum, item) => sum + item.fileSize, 0))}</td>
+                    <td className="px-5 py-5 text-sm">Latest year: {yearGroup.years[0]}</td>
+                    <td className="px-5 py-5"><button type="button" onClick={() => setSelectedGroupId(yearGroup.id)} className="min-h-11 cursor-pointer text-sm font-semibold text-primary underline underline-offset-4">View years</button></td>
+                  </tr>
+                ) : (
                   <tr
                     key={resource.key}
                     className="align-top hover:bg-primary-soft"
@@ -405,6 +466,11 @@ export function AdminResourceInventory() {
                     ? resource.displayName
                     : resource.filename}
                       </p>
+                      {resource.fileType !== "link" ? (
+                        <p className="mt-1 break-words text-sm text-muted-foreground">
+                          Display name: {resource.displayName}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-5 py-5 text-sm">
                       <p>
@@ -452,6 +518,7 @@ export function AdminResourceInventory() {
                             : undefined
                         }
                         onAccess={requestAccess}
+                        onEdit={openEdit}
                         onRename={openRename}
                         onDelete={openDelete}
                       />
@@ -496,6 +563,24 @@ export function AdminResourceInventory() {
           </nav>
         </>
       ) : null}
+      {selectedYearGroup && !editTarget && !deleteTarget && !previewTarget ? (
+        <AdminResourceYearDialog group={selectedYearGroup} onClose={() => setSelectedGroupId(undefined)}
+          renderActions={(resource) => (
+            <AdminResourceActions resource={resource} accessDisabled={accessMutation.isPending}
+              accessPendingMode={accessMutation.isPending && accessMutation.variables?.resource.key === resource.key ? accessMutation.variables.mode : undefined}
+              accessError={accessMutation.isError && accessMutation.variables?.resource.key === resource.key ? accessMutation.error.message : undefined}
+              onAccess={requestAccess} onEdit={openEdit} onRename={openRename} onDelete={openDelete} />
+          )} />
+      ) : null}
+      {editTarget ? (
+        <AdminResourceEditDialog
+          resource={editTarget}
+          isPending={editMutation.isPending}
+          error={editMutation.isError ? editMutation.error.message : undefined}
+          onClose={() => { if (!editMutation.isPending) setEditTarget(null); }}
+          onSubmit={(input) => editMutation.mutate(input)}
+        />
+      ) : null}
       {previewTarget ? (
         <AdminResourcePreviewDialog
           target={previewTarget}
@@ -514,7 +599,7 @@ export function AdminResourceInventory() {
           }
           isPending={renameMutation.isPending}
           onChange={(value) => setRenameTarget({ ...renameTarget, value })}
-          onClose={() => setRenameTarget(null)}
+          onClose={() => { if (!renameMutation.isPending) setRenameTarget(null); }}
           onSubmit={() =>
             renameMutation.mutate({
               key: renameTarget.key,
@@ -536,7 +621,7 @@ export function AdminResourceInventory() {
               : undefined
           }
           isPending={deleteMutation.isPending}
-          onClose={() => setDeleteTarget(null)}
+          onClose={() => { if (!deleteMutation.isPending) setDeleteTarget(null); }}
           onConfirm={() =>
             deleteMutation.mutate({
               key: deleteTarget.key,

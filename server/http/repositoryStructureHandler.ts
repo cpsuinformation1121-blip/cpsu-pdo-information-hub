@@ -1,3 +1,4 @@
+import { readLimitedJson, jsonBodyErrorResponse } from './readLimitedJson.ts'
 import { structureMutationSchema } from '../../src/contracts/repositoryStructure.ts'
 import { AdminAuthorizationError, authenticateAdminRequest } from '../auth/authenticateAdminRequest.ts'
 import {
@@ -48,7 +49,7 @@ export async function handleAdminRepositoryStructureRequest(
     if (request.method === 'GET') return json({ data: await readRepositoryStructure(environment) })
     if (request.method !== 'POST') return json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Unsupported method.' } }, 405)
 
-    const payload: unknown = await request.json()
+    const payload: unknown = await readLimitedJson(request, 16 * 1024)
     const mutation = structureMutationSchema.safeParse(payload)
     if (!mutation.success) return json({ error: { code: 'INVALID_REQUEST', message: 'The repository organization change is invalid.' } }, 400)
     await (dependencies.audit ?? recordAuditEvent)({
@@ -59,6 +60,8 @@ export async function handleAdminRepositoryStructureRequest(
     }, environment)
     return json({ data: await mutateRepositoryStructure(mutation.data, environment) })
   } catch (error) {
+    const bodyError = jsonBodyErrorResponse(error)
+    if (bodyError) return bodyError
     if (error instanceof RepositoryStructureConflictError) {
       return json({ error: { code: 'STRUCTURE_CONFLICT', message: error.message } }, 409)
     }

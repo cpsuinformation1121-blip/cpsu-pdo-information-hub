@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useId, useRef } from "react";
 
 type AppDialogProps = {
   title: string;
@@ -16,6 +16,8 @@ export function AppDialog({
   onClose,
   size = "default",
 }: AppDialogProps) {
+  const titleId = useId();
+  const descriptionId = useId();
   const ref = useRef<HTMLDialogElement>(null);
   const sizeClass = {
     default: "max-w-lg",
@@ -34,6 +36,8 @@ export function AppDialog({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -45,9 +49,9 @@ export function AppDialog({
     >
       <div className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-4 bg-primary px-4 py-5 text-primary-foreground sm:px-6">
         <div>
-          <h2 className="font-serif text-2xl tracking-tight">{title}</h2>
+          <h2 id={titleId} className="font-serif text-2xl tracking-tight">{title}</h2>
           {description ? (
-            <p className="mt-2 text-sm leading-6 text-primary-foreground/75">
+            <p id={descriptionId} className="mt-2 text-sm leading-6 text-primary-foreground/75">
               {description}
             </p>
           ) : null}

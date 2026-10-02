@@ -1,3 +1,4 @@
+import { readLimitedJson, jsonBodyErrorResponse } from './readLimitedJson.ts'
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { publicResourcePreviewRequestSchema } from "../../src/contracts/publicResourcePreview.ts";
@@ -54,8 +55,10 @@ export async function handlePublicResourcePreviewRequest(
 
   let payload: unknown;
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readLimitedJson(request, 16 * 1024);
+  } catch (error) {
+    const bodyError = jsonBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     return json(
       {
         error: {

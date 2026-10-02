@@ -9,6 +9,7 @@ import { isR2NotFound, isR2PreconditionFailed } from '../repository/r2Errors.ts'
 export const auditActions = [
   'resource.uploaded',
   'resource.renamed',
+  'resource.updated',
   'resource.deleted',
   'resource.accessed',
   'structure.changed',

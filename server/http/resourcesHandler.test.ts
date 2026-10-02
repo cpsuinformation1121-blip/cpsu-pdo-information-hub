@@ -1,3 +1,4 @@
+import { publicResourceListResponseSchema } from "../../src/contracts/resource";
 import { describe, expect, it } from 'vitest'
 import { handleResourcesRequest } from './resourcesHandler'
 
@@ -108,3 +109,24 @@ describe('handleResourcesRequest', () => {
     })
   })
 })
+
+describe('public year-group requests', () => {
+  it('forwards grouping and returns complete groups without private metadata', async () => {
+    const response = await handleResourcesRequest(new Request('http://localhost/api/resources?groupBy=year&limit=1'), {
+      config: testR2Config,
+      listObjects: async () => ({ Contents: [2024, 2026].map((year) => ({
+        Key: `forms/${year}/annual-report-${year}.pdf`, Size: 100, LastModified: new Date('2026-01-01'),
+      })) }),
+    });
+    const payload = await response.json();
+    const result = publicResourceListResponseSchema.parse(payload);
+    expect(response.status).toBe(200);
+    expect(result.data).toHaveLength(2);
+    expect(result.meta).toEqual({ total: 2, groupTotal: 1, nextCursor: null });
+    expect(JSON.stringify(payload)).not.toContain('"key"');
+  });
+  it('rejects unsupported grouping modes', async () => {
+    const response = await handleResourcesRequest(new Request('http://localhost/api/resources?groupBy=arbitrary'));
+    expect(response.status).toBe(400);
+  });
+});

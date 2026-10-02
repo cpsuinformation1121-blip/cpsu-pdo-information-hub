@@ -1,3 +1,4 @@
+import { hasResourceFileSignature } from "../utils/hasResourceFileSignature";
 import type { User } from "firebase/auth";
 import { fetchAuthenticatedJson } from "./authenticatedApi";
 import {
@@ -13,6 +14,10 @@ export async function uploadResource(
   file: File,
   input: Omit<ResourceUploadRequest, "filename" | "mimeType" | "fileSize">,
 ) {
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  if (!hasResourceFileSignature(bytes, file.name.split(".").pop() ?? "")) {
+    throw new RepositoryApiError("The file contents do not match the selected file type.", "INVALID_FILE_CONTENT", 400);
+  }
   const token = await user.getIdToken();
   const {
     response: authorizationResponse,

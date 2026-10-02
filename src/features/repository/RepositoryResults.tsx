@@ -32,6 +32,7 @@ export function RepositoryResults() {
     () => ({
       fileType: filters.fileType || undefined,
       limit: 100,
+      groupBy: "year",
       q: deferredQuery || undefined,
       section: filters.section || undefined,
       sort: filters.sort,

@@ -8,13 +8,13 @@ const input: ResourceUploadCompletionRequest = { key: 'statistical-profile/stude
 
 describe('verifyResourceUpload', () => {
   it('returns actual R2 object properties after verification', async () => {
-    await expect(verifyResourceUpload(input, { config, headObject: async () => ({ ContentLength: 2048, ContentType: 'application/pdf', LastModified: new Date('2026-08-12T05:00:00.000Z') }) })).resolves.toEqual({ ...input, uploadedAt: '2026-08-12T05:00:00.000Z' })
+    await expect(verifyResourceUpload(input, { config, readPrefix: async () => new TextEncoder().encode("%PDF-1.7"), headObject: async () => ({ ContentLength: 2048, ContentType: 'application/pdf', LastModified: new Date('2026-08-12T05:00:00.000Z') }) })).resolves.toEqual({ ...input, uploadedAt: '2026-08-12T05:00:00.000Z' })
   })
   it('rejects a size mismatch', async () => {
-    await expect(verifyResourceUpload(input, { config, headObject: async () => ({ ContentLength: 4096, ContentType: 'application/pdf', LastModified: new Date() }) })).rejects.toBeInstanceOf(ResourceUploadVerificationError)
+    await expect(verifyResourceUpload(input, { config, readPrefix: async () => new TextEncoder().encode("%PDF-1.7"), headObject: async () => ({ ContentLength: 4096, ContentType: 'application/pdf', LastModified: new Date() }) })).rejects.toBeInstanceOf(ResourceUploadVerificationError)
   })
   it('rejects a content-type mismatch', async () => {
-    await expect(verifyResourceUpload(input, { config, headObject: async () => ({ ContentLength: 2048, ContentType: 'image/png', LastModified: new Date() }) })).rejects.toBeInstanceOf(ResourceUploadVerificationError)
+    await expect(verifyResourceUpload(input, { config, readPrefix: async () => new TextEncoder().encode("%PDF-1.7"), headObject: async () => ({ ContentLength: 2048, ContentType: 'image/png', LastModified: new Date() }) })).rejects.toBeInstanceOf(ResourceUploadVerificationError)
   })
   it('rejects completion for an Excel repository key', async () => {
     await expect(verifyResourceUpload({
@@ -26,6 +26,13 @@ describe('verifyResourceUpload', () => {
   it('verifies a school-year upload in an administrator-created section', async () => {
     const dynamicInput = { ...input, key: 'student-data/others/2026-2027/Sipalay - Research Plan.pdf' }
     const structure = [{ id: 'student-data', title: 'Student Data', categories: [{ id: 'others', title: 'Others' }] }]
-    await expect(verifyResourceUpload(dynamicInput, { config, structure, headObject: async () => ({ ContentLength: 2048, ContentType: 'application/pdf', LastModified: new Date('2026-08-12T05:00:00.000Z') }) })).resolves.toMatchObject({ key: dynamicInput.key, fileSize: 2048 })
+    await expect(verifyResourceUpload(dynamicInput, { config, structure, readPrefix: async () => new TextEncoder().encode("%PDF-1.7"), headObject: async () => ({ ContentLength: 2048, ContentType: 'application/pdf', LastModified: new Date('2026-08-12T05:00:00.000Z') }) })).resolves.toMatchObject({ key: dynamicInput.key, fileSize: 2048 })
   })
 })
+
+it("rejects forged PDF metadata when the R2 bytes are HTML", async () => {
+  await expect(verifyResourceUpload(input, { config,
+    headObject: async () => ({ ContentLength: 2048, ContentType: "application/pdf", LastModified: new Date(), ETag: '"revision"' }),
+    readPrefix: async (_bucket, _key, etag) => { expect(etag).toBe('"revision"'); return new TextEncoder().encode("<html>"); },
+  })).rejects.toBeInstanceOf(ResourceUploadVerificationError);
+});

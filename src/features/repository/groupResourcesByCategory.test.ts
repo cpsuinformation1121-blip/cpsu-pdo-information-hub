@@ -91,3 +91,10 @@ describe("groupResourcesByCategory", () => {
     ]);
   });
 });
+
+it("keeps matching category IDs in different sections separate", () => {
+  const sections = [{ id: "first", title: "First", categories: [{ id: "reports", title: "First reports" }] }, { id: "second", title: "Second", categories: [{ id: "reports", title: "Second reports" }] }];
+  const groups = groupResourcesByCategory([resource({ sectionId: "first", categoryId: "reports" }), resource({ sectionId: "second", categoryId: "reports" })], sections);
+  expect(groups.map(group => group.categoryTitle)).toEqual(["First reports", "Second reports"]);
+  expect(groups.every(group => group.resources.length === 1)).toBe(true);
+});

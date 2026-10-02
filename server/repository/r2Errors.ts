@@ -2,7 +2,9 @@ export function getR2ErrorStatus(error: unknown) {
   if (typeof error !== 'object' || error === null || !('$metadata' in error)) {
     return undefined
   }
-  return (error.$metadata as { httpStatusCode?: number }).httpStatusCode
+  const metadata = error.$metadata
+  if (typeof metadata !== 'object' || metadata === null || !('httpStatusCode' in metadata)) return undefined
+  return typeof metadata.httpStatusCode === 'number' ? metadata.httpStatusCode : undefined
 }
 
 export function isR2NotFound(error: unknown) {

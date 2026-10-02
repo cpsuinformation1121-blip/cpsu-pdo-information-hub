@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -28,6 +29,7 @@ function initializeAuthentication() {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const [initialization] = useState(initializeAuthentication);
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<AuthenticationStatus>(
@@ -37,10 +39,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!initialization.auth) return;
     return onAuthStateChanged(initialization.auth, (nextUser) => {
+      // Cancel in-flight requests and discard cached staff data at session changes.
+      const privateQueries = { predicate: (query: { queryKey: readonly unknown[] }) =>
+        typeof query.queryKey[0] === "string" &&
+        (query.queryKey[0].startsWith("admin") || query.queryKey[0] === "administrators") };
+      void queryClient.cancelQueries(privateQueries);
+      queryClient.removeQueries(privateQueries);
       setUser(nextUser);
       setStatus(nextUser ? "authenticated" : "unauthenticated");
     });
-  }, [initialization]);
+  }, [initialization, queryClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

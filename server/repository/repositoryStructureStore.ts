@@ -144,6 +144,7 @@ async function writeRepositoryStructure(
     if (isR2PreconditionFailed(error)) throw new RepositoryStructureConflictError()
     throw error
   }
+  publicStructureCache.clear()
   return data
 }
 

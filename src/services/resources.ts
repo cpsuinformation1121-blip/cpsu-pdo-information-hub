@@ -45,3 +45,22 @@ export async function getResources(
 
   return publicResourceListResponseSchema.parse(payload);
 }
+
+export async function getAllResources(
+  query: Partial<ResourceQuery> = {},
+  signal?: AbortSignal,
+): Promise<PublicResourceListResponse> {
+  let page = await getResources(query, signal);
+  const data = [...page.data];
+  const cursors = new Set<string>();
+  while (page.meta.nextCursor) {
+    const cursor = page.meta.nextCursor;
+    if (cursors.has(cursor) || cursors.size >= 10_000) {
+      throw new RepositoryApiError("The repository could not finish loading. Please try again.", "INVALID_PAGINATION", 502);
+    }
+    cursors.add(cursor);
+    page = await getResources({ ...query, cursor }, signal);
+    data.push(...page.data);
+  }
+  return { data, meta: page.meta };
+}

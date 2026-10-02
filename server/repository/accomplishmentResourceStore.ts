@@ -20,3 +20,6 @@ export const createAccomplishmentResourceWriteCommand =
   store.createWriteCommand;
 export const readAccomplishmentResource = store.read;
 export const writeAccomplishmentResource = store.write;
+
+export const readAccomplishmentResourceSnapshot = store.readSnapshot;
+export const writeAccomplishmentResourceSnapshot = store.writeSnapshot;

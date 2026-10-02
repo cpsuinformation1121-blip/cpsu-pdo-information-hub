@@ -13,11 +13,11 @@ describe('handleUploadCompleteRequest', () => {
     expect(response.status).toBe(401)
   })
   it('confirms a matching R2 object', async () => {
-    const response = await handleUploadCompleteRequest(new Request('http://localhost/api/admin/resources/upload-complete', { method: 'POST', headers: { authorization: 'Bearer valid' }, body: JSON.stringify(body) }), { verifyIdToken: async () => identity, verification: { config, headObject: async () => ({ ContentLength: 2048, ContentType: 'application/pdf', LastModified: new Date('2026-08-12T05:00:00.000Z') }) }, audit: async () => '_system/audit/test.json' })
+    const response = await handleUploadCompleteRequest(new Request('http://localhost/api/admin/resources/upload-complete', { method: 'POST', headers: { authorization: 'Bearer valid' }, body: JSON.stringify(body) }), { verifyIdToken: async () => identity, verification: { config, readPrefix: async () => new TextEncoder().encode("%PDF-1.7"), headObject: async () => ({ ContentLength: 2048, ContentType: 'application/pdf', LastModified: new Date('2026-08-12T05:00:00.000Z') }) }, audit: async () => '_system/audit/test.json' })
     expect(response.status).toBe(200)
   })
   it('rejects mismatched uploaded metadata', async () => {
-    const response = await handleUploadCompleteRequest(new Request('http://localhost/api/admin/resources/upload-complete', { method: 'POST', headers: { authorization: 'Bearer valid' }, body: JSON.stringify(body) }), { verifyIdToken: async () => identity, verification: { config, headObject: async () => ({ ContentLength: 999, ContentType: 'application/pdf', LastModified: new Date() }) }, audit: async () => '_system/audit/test.json' })
+    const response = await handleUploadCompleteRequest(new Request('http://localhost/api/admin/resources/upload-complete', { method: 'POST', headers: { authorization: 'Bearer valid' }, body: JSON.stringify(body) }), { verifyIdToken: async () => identity, verification: { config, readPrefix: async () => new TextEncoder().encode("%PDF-1.7"), headObject: async () => ({ ContentLength: 999, ContentType: 'application/pdf', LastModified: new Date() }) }, audit: async () => '_system/audit/test.json' })
     expect(response.status).toBe(422)
   })
   it('rejects Excel upload completion metadata', async () => {

@@ -29,16 +29,16 @@ export function groupResourcesByCategory(
     })),
   );
   const categoryById = new Map(
-    categories.map((category) => [category.id, category]),
+    categories.map((category) => [JSON.stringify([category.sectionId, category.id]), category]),
   );
 
   resources.forEach((resource) => {
     const section = sectionById.get(resource.sectionId);
     const category = resource.categoryId
-      ? categoryById.get(resource.categoryId)
+      ? categoryById.get(JSON.stringify([resource.sectionId, resource.categoryId]))
       : undefined;
     const groupId =
-      resource.categoryId ?? `${resource.sectionId}--section-files`;
+      JSON.stringify([resource.sectionId, resource.categoryId ?? null]);
 
     const existing = groups.get(groupId);
     if (existing) {
@@ -47,7 +47,7 @@ export function groupResourcesByCategory(
     }
 
     groups.set(groupId, {
-      categoryId: groupId,
+      categoryId: resource.categoryId ?? `${resource.sectionId}--section-files`,
       categoryTitle: category?.title ?? section?.title ?? resource.sectionId,
       isSectionRoot: !resource.categoryId,
       sectionId: resource.sectionId,

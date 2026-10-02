@@ -1,5 +1,24 @@
 import { z } from "zod";
-import { resourceFilenameSchema, resourceObjectKeySchema } from "./resource.ts";
+import {
+  repositorySectionIdSchema,
+  resourceFilenameSchema,
+  resourceObjectKeySchema,
+  resourceYearSchema,
+} from "./resource.ts";
+
+export const resourceDisplayNameSchema = z.string().trim().min(1, "Enter a display name.").max(200).refine(
+  (name) => !/[\p{Cc}\p{Cf}]/u.test(name) &&
+    !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(name),
+  "The display name contains unsupported characters.",
+);
+export const resourceEditSchema = z.object({
+  key: resourceObjectKeySchema,
+  displayName: resourceDisplayNameSchema,
+  sectionId: repositorySectionIdSchema,
+  categoryId: repositorySectionIdSchema.optional(),
+  year: resourceYearSchema,
+});
+export type ResourceEdit = z.infer<typeof resourceEditSchema>;
 
 export const resourceRenameSchema = z.object({
   key: resourceObjectKeySchema,

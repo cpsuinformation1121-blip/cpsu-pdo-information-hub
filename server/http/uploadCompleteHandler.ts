@@ -1,3 +1,5 @@
+import { invalidatePublicResourceCache } from '../repository/listResources.ts'
+import { readLimitedJson, jsonBodyErrorResponse } from './readLimitedJson.ts'
 import { resourceUploadCompletionRequestSchema } from '../../src/contracts/resourceUpload.ts'
 import { AdminAuthenticationError, AdminAuthorizationError, authenticateAdminRequest, type AdminAuthenticationDependencies } from '../auth/authenticateAdminRequest.ts'
 import { ResourceUploadVerificationError, verifyResourceUpload } from '../repository/verifyResourceUpload.ts'
@@ -18,7 +20,7 @@ export async function handleUploadCompleteRequest(request: Request, dependencies
     return json({ error: { code: 'UNAUTHORIZED', message: error instanceof AdminAuthenticationError ? error.message : 'Authentication is required.' } }, 401)
   }
   let payload: unknown
-  try { payload = await request.json() } catch { return json({ error: { code: 'INVALID_REQUEST', message: 'The request body must be valid JSON.' } }, 400) }
+  try { payload = await readLimitedJson(request, 16 * 1024) } catch (error) { return jsonBodyErrorResponse(error) ?? json({ error: { code: 'INVALID_REQUEST', message: 'The request body must be valid JSON.' } }, 400) }
   const result = resourceUploadCompletionRequestSchema.safeParse(payload)
   if (!result.success) return json({ error: { code: 'INVALID_UPLOAD_COMPLETION', message: 'The upload completion information is invalid.' } }, 400)
   try {
@@ -31,6 +33,7 @@ export async function handleUploadCompleteRequest(request: Request, dependencies
       details: { fileSize: resource.fileSize, mimeType: resource.mimeType },
       idempotencyKey: `${resource.key}:${resource.uploadedAt}`,
     }, dependencies.environment)
+    invalidatePublicResourceCache()
     return json({ data: resource })
   }
   catch (error) { return json({ error: { code: 'UPLOAD_VERIFICATION_FAILED', message: error instanceof ResourceUploadVerificationError ? error.message : 'The upload could not be completed. Please try again.' } }, 422) }

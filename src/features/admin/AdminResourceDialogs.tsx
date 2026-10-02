@@ -105,6 +105,7 @@ export function AdminResourceRenameDialog({
           <button
             type="button"
             onClick={onClose}
+            disabled={isPending}
             className="min-h-11 cursor-pointer border border-strong-border px-5 font-semibold"
           >
             Cancel
@@ -154,6 +155,7 @@ export function AdminResourceDeleteDialog({
           <button
             type="button"
             onClick={onClose}
+            disabled={isPending}
             className="min-h-11 cursor-pointer border border-strong-border px-5 font-semibold"
           >
             Cancel

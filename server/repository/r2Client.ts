@@ -5,6 +5,7 @@ export type R2ObjectSummary = {
   Key?: string
   LastModified?: Date
   Size?: number
+  Metadata?: Record<string, string>
 }
 
 export type R2ObjectPage = {

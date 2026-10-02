@@ -1,3 +1,48 @@
+// server/http/readLimitedJson.ts
+var RequestBodyTooLargeError = class extends Error {
+};
+var InvalidJsonBodyError = class extends Error {
+};
+async function readLimitedJson(request, maximumBytes) {
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
+    throw new RequestBodyTooLargeError();
+  }
+  if (!request.body) throw new InvalidJsonBodyError();
+  const reader = request.body.getReader();
+  const chunks = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      byteCount += value.byteLength;
+      if (byteCount > maximumBytes) {
+        await reader.cancel().catch(() => void 0);
+        throw new RequestBodyTooLargeError();
+      }
+      chunks.push(value);
+    }
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) throw error;
+    throw new InvalidJsonBodyError();
+  } finally {
+    reader.releaseLock();
+  }
+}
+function jsonBodyErrorResponse(error) {
+  if (!(error instanceof RequestBodyTooLargeError) && !(error instanceof InvalidJsonBodyError)) return void 0;
+  const oversized = error instanceof RequestBodyTooLargeError;
+  return new Response(JSON.stringify({ error: {
+    code: oversized ? "REQUEST_TOO_LARGE" : "INVALID_REQUEST",
+    message: oversized ? "The request body is too large." : "The request body must be valid JSON."
+  } }), { status: oversized ? 413 : 400, headers: {
+    "cache-control": "private, no-store",
+    "content-type": "application/json; charset=utf-8"
+  } });
+}
+
 // server/http/adminResourceAccessHandler.ts
 import { GetObjectCommand as GetObjectCommand2 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -47,7 +92,7 @@ var resourceSortOptions = [
   "file-type"
 ];
 var schoolYearSchema = z2.string().regex(/^\d{4}-\d{4}$/u, "Select a valid school year.").refine(
-  (value) => Number(value.slice(5)) === Number(value.slice(0, 4)) + 1,
+  (value) => Number(value.slice(5)) === Number(value.slice(0, 4)) + 1 && Number(value.slice(0, 4)) >= 1900 && Number(value.slice(0, 4)) <= 2200,
   "Select a valid school year."
 );
 var resourceYearSchema = z2.union([
@@ -64,7 +109,7 @@ var resourceObjectKeySchema = z2.string().min(1).max(1024).refine(
   }
 );
 var resourceFilenameSchema = z2.string().min(1).max(180).refine(
-  (filename) => filename === filename.normalize("NFKC") && filename !== "." && filename !== ".." && !/[. ]$/u.test(filename) && !filename.includes("/") && !filename.includes("\\") && !/[\p{Cc}\p{Cf}]/u.test(filename) && !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu.test(filename),
+  (filename) => filename === filename.normalize("NFKC") && filename !== "." && !filename.includes("..") && !/[. ]$/u.test(filename) && !filename.includes("/") && !filename.includes("\\") && !/[\p{Cc}\p{Cf}]/u.test(filename) && !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(filename) && !/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu.test(filename),
   {
     message: "Filename contains unsupported characters."
   }
@@ -109,11 +154,13 @@ var resourceQuerySchema = z2.object({
   year: z2.union([z2.coerce.number().int().min(1900).max(2200), schoolYearSchema]).optional(),
   fileType: resourceFileTypeSchema.optional(),
   sort: resourceSortSchema.default("newest"),
+  groupBy: z2.literal("year").optional(),
   cursor: z2.string().trim().max(512).optional(),
   limit: z2.coerce.number().int().min(1).max(100).default(50)
 });
 var resourceListMetaSchema = z2.object({
   total: z2.number().int().nonnegative(),
+  groupTotal: z2.number().int().nonnegative().optional(),
   nextCursor: z2.string().nullable()
 });
 var publicResourceListResponseSchema = z2.object({
@@ -509,7 +556,9 @@ function getR2ErrorStatus(error) {
   if (typeof error !== "object" || error === null || !("$metadata" in error)) {
     return void 0;
   }
-  return error.$metadata.httpStatusCode;
+  const metadata = error.$metadata;
+  if (typeof metadata !== "object" || metadata === null || !("httpStatusCode" in metadata)) return void 0;
+  return typeof metadata.httpStatusCode === "number" ? metadata.httpStatusCode : void 0;
 }
 function isR2NotFound(error) {
   return getR2ErrorStatus(error) === 404 || typeof error === "object" && error !== null && "name" in error && error.name === "NoSuchKey";
@@ -610,6 +659,7 @@ async function writeRepositoryStructure(data, etag, environment) {
     if (isR2PreconditionFailed(error)) throw new RepositoryStructureConflictError();
     throw error;
   }
+  publicStructureCache.clear();
   return data;
 }
 function createRepositoryStructureWriteCommand(bucketName, data, etag) {
@@ -787,8 +837,10 @@ async function handleAdminResourceAccessRequest(request, dependencies = {}) {
   }
   let payload;
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readLimitedJson(request, 16 * 1024);
+  } catch (error) {
+    const bodyError = jsonBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     return json({
       error: {
         code: "INVALID_REQUEST",
@@ -865,10 +917,21 @@ async function handleAdminResourceAccessRequest(request, dependencies = {}) {
 }
 
 // server/http/adminResourceMutationHandler.ts
-import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand as HeadObjectCommand2, PutObjectCommand as PutObjectCommand3 } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, HeadObjectCommand as HeadObjectCommand3, PutObjectCommand as PutObjectCommand3 } from "@aws-sdk/client-s3";
 
 // src/contracts/adminOperations.ts
 import { z as z8 } from "zod";
+var resourceDisplayNameSchema = z8.string().trim().min(1, "Enter a display name.").max(200).refine(
+  (name) => !/[\p{Cc}\p{Cf}]/u.test(name) && !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(name),
+  "The display name contains unsupported characters."
+);
+var resourceEditSchema = z8.object({
+  key: resourceObjectKeySchema,
+  displayName: resourceDisplayNameSchema,
+  sectionId: repositorySectionIdSchema,
+  categoryId: repositorySectionIdSchema.optional(),
+  year: resourceYearSchema
+});
 var resourceRenameSchema = z8.object({
   key: resourceObjectKeySchema,
   filename: resourceFilenameSchema
@@ -908,7 +971,7 @@ var resourceLinkNameSchema = z9.string().trim().min(1, "Enter a link name.").max
 }).refine((name) => resourceFilenameSchema.safeParse(`${name}.link`).success, {
   message: "The link name contains unsupported characters."
 });
-var resourceLinkUrlSchema = z9.url("Enter a valid web address.").refine((value) => {
+var resourceLinkUrlSchema = z9.url("Enter a valid web address.").max(2048, "The web address is too long.").refine((value) => new TextEncoder().encode(JSON.stringify({ url: value })).byteLength <= maximumResourceLinkPayloadSize, "The web address is too long.").refine((value) => {
   const url = new URL(value);
   return url.protocol === "https:" && !url.username && !url.password;
 }, "Enter a secure HTTPS address without embedded credentials.");
@@ -926,137 +989,31 @@ var resourceLinkCreateResponseSchema = z9.object({
   data: z9.object({ key: resourceObjectKeySchema })
 });
 
-// server/http/adminResourceMutationHandler.ts
-var headers2 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
-var json2 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers2 });
-function addDestinationMustNotExist(command) {
-  command.middlewareStack.add(
-    (next) => async (arguments_) => {
-      const request = arguments_.request;
-      if (request.headers) request.headers["cf-copy-destination-if-none-match"] = "*";
-      return next(arguments_);
-    },
-    { step: "build", name: "r2CopyDestinationMustNotExist" }
-  );
-  return command;
+// src/utils/groupResourcesByYear.ts
+function nameWithoutYear(resource) {
+  const name = resource.displayName.normalize("NFKC").replace(/[-_\u2013\u2014]+/gu, " ");
+  const yearParts = String(resource.year).split("-");
+  const yearPattern = yearParts.length === 2 ? `${yearParts[0]}\\s+${yearParts[1]}|${yearParts[0]}|${yearParts[1]}` : yearParts[0];
+  const stripped = name.replace(new RegExp(`(?<![\\p{L}\\p{N}])(?:${yearPattern})(?![\\p{L}\\p{N}])`, "gu"), " ").replace(/\(\s*\)|\[\s*\]/gu, " ").replace(/\s+/gu, " ").trim();
+  return stripped || resource.displayName.trim();
 }
-function authenticationFailure2(error) {
-  if (error instanceof AdminAuthorizationError) {
-    return json2({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+function groupResourcesByYear(resources) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const resource of resources) {
+    const title = nameWithoutYear(resource);
+    const id = JSON.stringify([resource.sectionId, resource.categoryId ?? "", resource.fileType, title.toLowerCase()]);
+    const group = groups.get(id);
+    if (group) group.resources.push(resource);
+    else groups.set(id, { id, title, resources: [resource], years: [] });
   }
-  return json2({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
-}
-async function handleAdminResourceMutationRequest(request, dependencies = {}) {
-  let identity;
-  try {
-    identity = await authenticateAdminRequest(request, dependencies);
-  } catch (error) {
-    return authenticationFailure2(error);
-  }
-  let payload;
-  try {
-    payload = await request.json();
-  } catch {
-    return json2({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
-  }
-  const config = dependencies.config ?? getR2Config(dependencies.environment);
-  const client = createR2Client(config);
-  const send = dependencies.send ?? ((command) => {
-    if (command instanceof HeadObjectCommand2) return client.send(command);
-    if (command instanceof CopyObjectCommand) return client.send(command);
-    if (command instanceof PutObjectCommand3) return client.send(command);
-    return client.send(command);
+  return [...groups.values()].map((group) => {
+    const sorted = [...group.resources].sort((left, right) => Number(String(right.year).slice(0, 4)) - Number(String(left.year).slice(0, 4)) || String(right.year).localeCompare(String(left.year)) || left.filename.localeCompare(right.filename) || left.id.localeCompare(right.id));
+    return { ...group, resources: sorted, years: [...new Set(sorted.map((resource) => resource.year))] };
   });
-  const audit = dependencies.audit ?? recordAuditEvent;
-  try {
-    const structure = dependencies.structure ?? await readRepositoryStructure(dependencies.environment);
-    if (request.method === "POST") {
-      const result = resourceLinkCreateSchema.safeParse(payload);
-      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The link details are invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "link", message: issue.message })) } }, 400);
-      const section = structure.find((item) => item.id === result.data.sectionId);
-      if (!section) return json2({ error: { code: "INVALID_SECTION", message: "The selected repository section is unavailable." } }, 400);
-      if (result.data.categoryId && !section.categories.some((category) => category.id === result.data.categoryId)) {
-        return json2({ error: { code: "INVALID_CATEGORY", message: "The selected category does not belong to the repository section." } }, 400);
-      }
-      const filename = `${result.data.name}.link`;
-      const targetKey = result.data.categoryId ? `${result.data.sectionId}/${result.data.categoryId}/${result.data.year}/${filename}` : `${result.data.sectionId}/${result.data.year}/${filename}`;
-      await audit({
-        action: "resource.uploaded",
-        actor: identity,
-        target: targetKey,
-        outcome: "attempted",
-        details: { resourceType: "link" }
-      }, dependencies.environment);
-      try {
-        await send(new PutObjectCommand3({
-          Bucket: config.bucketName,
-          Key: targetKey,
-          Body: JSON.stringify({ url: result.data.url }),
-          ContentType: resourceFileDefinitions.link.mimeType,
-          CacheControl: "private, no-store",
-          IfNoneMatch: "*"
-        }));
-      } catch (error) {
-        if (isR2PreconditionFailed(error)) {
-          return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A link with that name already exists in this location." } }, 409);
-        }
-        throw error;
-      }
-      return json2({ data: { key: targetKey } }, 201);
-    }
-    if (request.method === "DELETE") {
-      const result = resourceDeleteSchema.safeParse(payload);
-      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The deletion request is invalid." } }, 400);
-      const parsed = parseResourceObjectKey(result.data.key, structure);
-      if (parsed.filename !== result.data.confirmation) return json2({ error: { code: "CONFIRMATION_MISMATCH", message: "The deletion confirmation does not match this file." } }, 400);
-      await audit({ action: "resource.deleted", actor: identity, target: parsed.key, outcome: "attempted" }, dependencies.environment);
-      await send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: parsed.key }));
-      return json2({ data: { key: parsed.key } });
-    }
-    if (request.method === "PATCH") {
-      const result = resourceRenameSchema.safeParse(payload);
-      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The rename request is invalid." } }, 400);
-      const parsed = parseResourceObjectKey(result.data.key, structure);
-      const extension = parsed.filename.split(".").pop()?.toLowerCase();
-      if (result.data.filename.split(".").pop()?.toLowerCase() !== extension) return json2({ error: { code: "INVALID_EXTENSION", message: "Renaming cannot change the file type." } }, 400);
-      const targetKey = parsed.categoryId ? `${parsed.sectionId}/${parsed.categoryId}/${parsed.year}/${result.data.filename}` : `${parsed.sectionId}/${parsed.year}/${result.data.filename}`;
-      try {
-        await send(new HeadObjectCommand2({ Bucket: config.bucketName, Key: targetKey }));
-        return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A resource with that filename already exists." } }, 409);
-      } catch (error) {
-        if (!isR2NotFound(error)) throw error;
-      }
-      await audit({
-        action: "resource.renamed",
-        actor: identity,
-        target: parsed.key,
-        outcome: "attempted",
-        details: { destinationKey: targetKey }
-      }, dependencies.environment);
-      const copy = addDestinationMustNotExist(new CopyObjectCommand({
-        Bucket: config.bucketName,
-        CopySource: `${config.bucketName}/${encodeURIComponent(parsed.key).replace(/%2F/gu, "/")}`,
-        Key: targetKey
-      }));
-      try {
-        await send(copy);
-      } catch (error) {
-        if (isR2PreconditionFailed(error)) {
-          return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A resource with that filename was created before the rename completed." } }, 409);
-        }
-        throw error;
-      }
-      await send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: parsed.key }));
-      return json2({ data: { key: targetKey } });
-    }
-    return json2({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST, PATCH, and DELETE are supported." } }, 405);
-  } catch {
-    return json2({ error: { code: "RESOURCE_OPERATION_FAILED", message: "The repository operation could not be completed." } }, 500);
-  }
 }
 
 // server/repository/listResources.ts
-import { HeadObjectCommand as HeadObjectCommand3 } from "@aws-sdk/client-s3";
+import { HeadObjectCommand as HeadObjectCommand2 } from "@aws-sdk/client-s3";
 
 // server/repository/publicResourceId.ts
 import { createCipheriv, createDecipheriv, createHmac } from "node:crypto";
@@ -1094,6 +1051,9 @@ var r2PageSize = 1e3;
 var maximumListedObjects = 1e4;
 var publicListCacheLifetimeMs = 6e4;
 var publicListCache = /* @__PURE__ */ new Map();
+function invalidatePublicResourceCache() {
+  publicListCache.clear();
+}
 var InvalidResourceCursorError = class extends Error {
   constructor() {
     super("The repository cursor is invalid.");
@@ -1113,6 +1073,7 @@ function getListPrefix(query) {
 async function getAllObjectSummaries(bucketName, prefix, listObjects) {
   const objects = [];
   let continuationToken;
+  const continuationTokens = /* @__PURE__ */ new Set();
   do {
     const page = await listObjects({
       Bucket: bucketName,
@@ -1127,11 +1088,12 @@ async function getAllObjectSummaries(bucketName, prefix, listObjects) {
       );
     }
     continuationToken = page.IsTruncated ? page.NextContinuationToken : void 0;
-    if (page.IsTruncated && !continuationToken) {
+    if (page.IsTruncated && (!continuationToken || continuationTokens.has(continuationToken))) {
       throw new Error(
         "The repository returned an incomplete pagination response."
       );
     }
+    if (continuationToken) continuationTokens.add(continuationToken);
   } while (continuationToken);
   return objects;
 }
@@ -1149,6 +1111,16 @@ function getCachedPublicObjectSummaries(config, prefix, listObjects) {
   });
   return value;
 }
+function readDisplayName(metadata) {
+  try {
+    const encoded = metadata?.["display-name"];
+    if (!encoded) return void 0;
+    const result = resourceDisplayNameSchema.safeParse(decodeURIComponent(encoded));
+    return result.success ? result.data : void 0;
+  } catch {
+    return void 0;
+  }
+}
 function mapObjectToResource(object, structure, config) {
   if (!object.Key || object.Size === void 0 || !object.LastModified)
     return null;
@@ -1158,7 +1130,7 @@ function mapObjectToResource(object, structure, config) {
       id: createPublicResourceId(parsedKey.key, config),
       key: parsedKey.key,
       filename: parsedKey.filename,
-      displayName: parsedKey.displayName,
+      displayName: readDisplayName(object.Metadata) ?? parsedKey.displayName,
       sectionId: parsedKey.sectionId,
       categoryId: parsedKey.categoryId,
       year: parsedKey.year,
@@ -1239,7 +1211,27 @@ function encodeCursor(offset) {
 async function listResourceRecords(query, dependencies = {}, usePublicCache = false) {
   const config = dependencies.config ?? getR2Config(dependencies.environment);
   const structure = dependencies.structure ?? (dependencies.listObjects ? repositorySections : await (usePublicCache ? readCachedPublicRepositoryStructure(dependencies.environment) : readRepositoryStructure(dependencies.environment)));
-  const listObjects = dependencies.listObjects ?? createR2ObjectLister(createR2Client(config));
+  const client = createR2Client(config);
+  const rawListObjects = dependencies.listObjects ?? createR2ObjectLister(client);
+  const headObject = dependencies.headObject ?? (dependencies.listObjects ? void 0 : (bucket, key2) => client.send(new HeadObjectCommand2({ Bucket: bucket, Key: key2 })));
+  const listObjects = async (input) => {
+    const page = await rawListObjects(input);
+    if (!headObject) return page;
+    const objects = page.Contents ?? [];
+    for (let offset2 = 0; offset2 < objects.length; offset2 += 10) {
+      await Promise.all(objects.slice(offset2, offset2 + 10).map(async (object) => {
+        if (!object.Key || !mapObjectToResource(object, structure, config)) return;
+        try {
+          const head = await headObject(config.bucketName, object.Key);
+          object.Metadata = head.Metadata;
+        } catch (error) {
+          if (!isR2NotFound(error)) throw error;
+          object.Key = void 0;
+        }
+      }));
+    }
+    return page;
+  };
   const prefix = getListPrefix(query);
   const objectSummaries = await (usePublicCache && !dependencies.listObjects ? getCachedPublicObjectSummaries(config, prefix, listObjects) : getAllObjectSummaries(config.bucketName, prefix, listObjects));
   const resources = sortResources(
@@ -1247,13 +1239,16 @@ async function listResourceRecords(query, dependencies = {}, usePublicCache = fa
     query.sort
   );
   const offset = decodeCursor(query.cursor);
-  const data = resources.slice(offset, offset + query.limit);
-  const nextOffset = offset + data.length;
+  const groups = query.groupBy === "year" ? groupResourcesByYear(resources) : void 0;
+  const pageGroups = groups?.slice(offset, offset + query.limit);
+  const data = pageGroups ? pageGroups.flatMap((group) => group.resources) : resources.slice(offset, offset + query.limit);
+  const nextOffset = offset + (pageGroups ? pageGroups.length : data.length);
   return {
     data,
     meta: {
       total: resources.length,
-      nextCursor: nextOffset < resources.length ? encodeCursor(nextOffset) : null
+      ...groups ? { groupTotal: groups.length } : {},
+      nextCursor: nextOffset < (groups?.length ?? resources.length) ? encodeCursor(nextOffset) : null
     }
   };
 }
@@ -1267,9 +1262,9 @@ async function findResourceByPublicId(id, dependencies = {}) {
   const structure = dependencies.structure ?? (dependencies.headObject ? repositorySections : await readCachedPublicRepositoryStructure(dependencies.environment));
   try {
     parseResourceObjectKey(key2, structure);
-    const headObject = dependencies.headObject ?? (async (bucket, objectKey) => createR2Client(config).send(new HeadObjectCommand3({ Bucket: bucket, Key: objectKey })));
+    const headObject = dependencies.headObject ?? (async (bucket, objectKey) => createR2Client(config).send(new HeadObjectCommand2({ Bucket: bucket, Key: objectKey })));
     const object = await headObject(config.bucketName, key2);
-    return mapObjectToResource({ Key: key2, Size: object.ContentLength, LastModified: object.LastModified }, structure, config);
+    return mapObjectToResource({ Key: key2, Size: object.ContentLength, LastModified: object.LastModified, Metadata: object.Metadata }, structure, config);
   } catch (error) {
     if (isR2NotFound(error) || error instanceof InvalidResourceObjectKeyError) return null;
     throw error;
@@ -1283,6 +1278,194 @@ async function listResources(query, dependencies = {}) {
     ),
     meta: result.meta
   };
+}
+
+// server/http/adminResourceMutationHandler.ts
+var headers2 = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
+var json2 = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: headers2 });
+function addDestinationMustNotExist(command) {
+  command.middlewareStack.add(
+    (next) => async (arguments_) => {
+      const request = arguments_.request;
+      if (request.headers) request.headers["cf-copy-destination-if-none-match"] = "*";
+      return next(arguments_);
+    },
+    { step: "build", name: "r2CopyDestinationMustNotExist" }
+  );
+  return command;
+}
+function authenticationFailure2(error) {
+  if (error instanceof AdminAuthorizationError) {
+    return json2({ error: { code: "FORBIDDEN", message: error.message } }, 403);
+  }
+  return json2({ error: { code: "UNAUTHORIZED", message: error instanceof AdminAuthenticationError ? error.message : "Authentication is required." } }, 401);
+}
+async function handleAdminResourceMutationRequest(request, dependencies = {}) {
+  if (!["POST", "PATCH", "DELETE"].includes(request.method)) return json2({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST, PATCH, and DELETE are supported." } }, 405);
+  let identity;
+  try {
+    identity = await authenticateAdminRequest(request, dependencies);
+  } catch (error) {
+    return authenticationFailure2(error);
+  }
+  let payload;
+  try {
+    payload = await readLimitedJson(request, 16 * 1024);
+  } catch (error) {
+    return jsonBodyErrorResponse(error) ?? json2({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+  }
+  try {
+    const config = dependencies.config ?? getR2Config(dependencies.environment);
+    const client = createR2Client(config);
+    const send = dependencies.send ?? ((command) => {
+      if (command instanceof HeadObjectCommand3) return client.send(command);
+      if (command instanceof CopyObjectCommand) return client.send(command);
+      if (command instanceof PutObjectCommand3) return client.send(command);
+      return client.send(command);
+    });
+    const audit = dependencies.audit ?? recordAuditEvent;
+    const structure = dependencies.structure ?? await readRepositoryStructure(dependencies.environment);
+    if (request.method === "POST") {
+      const result = resourceLinkCreateSchema.safeParse(payload);
+      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The link details are invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "link", message: issue.message })) } }, 400);
+      const section = structure.find((item) => item.id === result.data.sectionId);
+      if (!section) return json2({ error: { code: "INVALID_SECTION", message: "The selected repository section is unavailable." } }, 400);
+      if (result.data.categoryId && !section.categories.some((category) => category.id === result.data.categoryId)) {
+        return json2({ error: { code: "INVALID_CATEGORY", message: "The selected category does not belong to the repository section." } }, 400);
+      }
+      const filename = `${result.data.name}.link`;
+      const targetKey = result.data.categoryId ? `${result.data.sectionId}/${result.data.categoryId}/${result.data.year}/${filename}` : `${result.data.sectionId}/${result.data.year}/${filename}`;
+      await audit({
+        action: "resource.uploaded",
+        actor: identity,
+        target: targetKey,
+        outcome: "attempted",
+        details: { resourceType: "link" }
+      }, dependencies.environment);
+      try {
+        await send(new PutObjectCommand3({
+          Bucket: config.bucketName,
+          Key: targetKey,
+          Body: JSON.stringify({ url: result.data.url }),
+          ContentType: resourceFileDefinitions.link.mimeType,
+          CacheControl: "private, no-store",
+          IfNoneMatch: "*"
+        }));
+      } catch (error) {
+        if (isR2PreconditionFailed(error)) {
+          return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A link with that name already exists in this location." } }, 409);
+        }
+        throw error;
+      }
+      invalidatePublicResourceCache();
+      return json2({ data: { key: targetKey } }, 201);
+    }
+    if (request.method === "DELETE") {
+      const result = resourceDeleteSchema.safeParse(payload);
+      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The deletion request is invalid." } }, 400);
+      const parsed = parseResourceObjectKey(result.data.key, structure);
+      if (parsed.filename !== result.data.confirmation) return json2({ error: { code: "CONFIRMATION_MISMATCH", message: "The deletion confirmation does not match this file." } }, 400);
+      await audit({ action: "resource.deleted", actor: identity, target: parsed.key, outcome: "attempted" }, dependencies.environment);
+      await send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: parsed.key }));
+      invalidatePublicResourceCache();
+      return json2({ data: { key: parsed.key } });
+    }
+    if (request.method === "PATCH" && typeof payload === "object" && payload !== null && "action" in payload && payload.action === "edit") {
+      const result = resourceEditSchema.safeParse(payload);
+      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The resource details are invalid." } }, 400);
+      const parsed = parseResourceObjectKey(result.data.key, structure);
+      const section = structure.find((item) => item.id === result.data.sectionId);
+      if (!section) return json2({ error: { code: "INVALID_SECTION", message: "The selected repository section is unavailable." } }, 400);
+      if (result.data.categoryId && !section.categories.some((item) => item.id === result.data.categoryId)) {
+        return json2({ error: { code: "INVALID_CATEGORY", message: "The selected category does not belong to the repository section." } }, 400);
+      }
+      const categoryPath = result.data.sectionId === parsed.sectionId && result.data.categoryId === parsed.categoryId ? parsed.categoryPath : result.data.categoryId ? [result.data.categoryId] : [];
+      const targetKey = [result.data.sectionId, ...categoryPath, result.data.year, parsed.filename].join("/");
+      parseResourceObjectKey(targetKey, structure);
+      const source = await send(new HeadObjectCommand3({ Bucket: config.bucketName, Key: parsed.key }));
+      if (targetKey !== parsed.key) {
+        try {
+          await send(new HeadObjectCommand3({ Bucket: config.bucketName, Key: targetKey }));
+          return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A resource with that filename already exists in the selected location." } }, 409);
+        } catch (error) {
+          if (!isR2NotFound(error)) throw error;
+        }
+      }
+      await audit({
+        action: "resource.updated",
+        actor: identity,
+        target: parsed.key,
+        outcome: "attempted",
+        details: { destinationKey: targetKey }
+      }, dependencies.environment);
+      const copy = new CopyObjectCommand({
+        Bucket: config.bucketName,
+        Key: targetKey,
+        CopySource: `${config.bucketName}/${encodeURIComponent(parsed.key).replace(/%2F/gu, "/")}`,
+        CopySourceIfMatch: source.ETag,
+        MetadataDirective: "REPLACE",
+        Metadata: { ...source.Metadata, "display-name": encodeURIComponent(result.data.displayName) },
+        ContentType: source.ContentType ?? parsed.mimeType,
+        CacheControl: source.CacheControl,
+        ContentDisposition: source.ContentDisposition,
+        ContentEncoding: source.ContentEncoding,
+        ContentLanguage: source.ContentLanguage,
+        Expires: source.Expires
+      });
+      try {
+        await send(targetKey === parsed.key ? copy : addDestinationMustNotExist(copy));
+      } catch (error) {
+        if (isR2PreconditionFailed(error)) return json2({ error: { code: "RESOURCE_CONFLICT", message: "The resource or destination changed while saving. Refresh and try again." } }, 409);
+        throw error;
+      }
+      if (targetKey !== parsed.key) await send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: parsed.key }));
+      invalidatePublicResourceCache();
+      return json2({ data: { key: targetKey } });
+    }
+    if (request.method === "PATCH") {
+      const result = resourceRenameSchema.safeParse(payload);
+      if (!result.success) return json2({ error: { code: "INVALID_REQUEST", message: "The rename request is invalid." } }, 400);
+      const parsed = parseResourceObjectKey(result.data.key, structure);
+      const extension = parsed.filename.split(".").pop()?.toLowerCase();
+      if (result.data.filename.split(".").pop()?.toLowerCase() !== extension) return json2({ error: { code: "INVALID_EXTENSION", message: "Renaming cannot change the file type." } }, 400);
+      const targetKey = [parsed.sectionId, ...parsed.categoryPath, parsed.year, result.data.filename].join("/");
+      parseResourceObjectKey(targetKey, structure);
+      try {
+        await send(new HeadObjectCommand3({ Bucket: config.bucketName, Key: targetKey }));
+        return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A resource with that filename already exists." } }, 409);
+      } catch (error) {
+        if (!isR2NotFound(error)) throw error;
+      }
+      await audit({
+        action: "resource.renamed",
+        actor: identity,
+        target: parsed.key,
+        outcome: "attempted",
+        details: { destinationKey: targetKey }
+      }, dependencies.environment);
+      const copy = addDestinationMustNotExist(new CopyObjectCommand({
+        Bucket: config.bucketName,
+        CopySource: `${config.bucketName}/${encodeURIComponent(parsed.key).replace(/%2F/gu, "/")}`,
+        Key: targetKey
+      }));
+      try {
+        await send(copy);
+      } catch (error) {
+        if (isR2PreconditionFailed(error)) {
+          return json2({ error: { code: "DUPLICATE_RESOURCE", message: "A resource with that filename was created before the rename completed." } }, 409);
+        }
+        throw error;
+      }
+      await send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: parsed.key }));
+      invalidatePublicResourceCache();
+      return json2({ data: { key: targetKey } });
+    }
+    return json2({ error: { code: "METHOD_NOT_ALLOWED", message: "Only POST, PATCH, and DELETE are supported." } }, 405);
+  } catch (error) {
+    if (error instanceof InvalidResourceObjectKeyError) return json2({ error: { code: "INVALID_REQUEST", message: "The resource location is invalid." } }, 400);
+    if (isR2NotFound(error)) return json2({ error: { code: "NOT_FOUND", message: "This resource is no longer available. Refresh and try again." } }, 404);
+    return json2({ error: { code: "RESOURCE_OPERATION_FAILED", message: "The repository operation could not be completed." } }, 500);
+  }
 }
 
 // server/http/resourcesHandler.ts
@@ -1473,6 +1656,7 @@ var mapUser = (user) => ({
   createdAt: user.metadata.creationTime
 });
 async function handleAdminUsersRequest(request, dependencies = {}) {
+  if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) return json3({ error: { code: "METHOD_NOT_ALLOWED", message: "Unsupported method." } }, 405);
   let identity;
   try {
     identity = await authenticateAdminRequest(request, dependencies);
@@ -1485,14 +1669,24 @@ async function handleAdminUsersRequest(request, dependencies = {}) {
   if (!canManage && request.method !== "GET") {
     return json3({ error: { code: "FORBIDDEN", message: "Only the designated account owner can manage administrators." } }, 403);
   }
-  const auth = dependencies.auth ?? getAuth2(getFirebaseAdminApp(getFirebaseAdminConfig(dependencies.environment)));
-  const audit = dependencies.audit ?? recordAuditEvent;
   try {
+    const auth = dependencies.auth ?? getAuth2(getFirebaseAdminApp(getFirebaseAdminConfig(dependencies.environment)));
+    const audit = dependencies.audit ?? recordAuditEvent;
     if (request.method === "GET") {
-      const users = (await auth.listUsers(1e3)).users.filter((user) => user.email && hasAdministratorAccess(user, dependencies.environment ?? process.env)).map(mapUser);
+      const records = [];
+      let pageToken;
+      const pageTokens = /* @__PURE__ */ new Set();
+      do {
+        const page = await auth.listUsers(1e3, pageToken);
+        records.push(...page.users);
+        pageToken = page.pageToken;
+        if (pageToken && pageTokens.has(pageToken)) throw new Error("Invalid account pagination.");
+        if (pageToken) pageTokens.add(pageToken);
+      } while (pageToken);
+      const users = records.filter((user) => user.email && hasAdministratorAccess(user, dependencies.environment ?? process.env)).map(mapUser);
       return json3({ data: users, canManage });
     }
-    const payload = await request.json();
+    const payload = await readLimitedJson(request, 16 * 1024);
     if (request.method === "POST") {
       const result = administratorCreateSchema.safeParse(payload);
       if (!result.success) return json3({ error: { code: "INVALID_REQUEST", message: "Enter a valid name, email, and password of at least 12 characters." } }, 400);
@@ -1510,6 +1704,8 @@ async function handleAdminUsersRequest(request, dependencies = {}) {
       const result = administratorUpdateSchema.safeParse(payload);
       if (!result.success) return json3({ error: { code: "INVALID_REQUEST", message: "The administrator update is invalid." } }, 400);
       if (result.data.uid === identity.uid && result.data.disabled) return json3({ error: { code: "SELF_PROTECTION", message: "You cannot disable your active account." } }, 400);
+      const target = await auth.getUser(result.data.uid);
+      if (!hasAdministratorAccess(target, dependencies.environment ?? process.env)) return json3({ error: { code: "INVALID_ADMINISTRATOR", message: "The selected account is not an administrator." } }, 400);
       await audit({
         action: "administrator.updated",
         actor: identity,
@@ -1526,12 +1722,16 @@ async function handleAdminUsersRequest(request, dependencies = {}) {
       const result = administratorDeleteSchema.safeParse(payload);
       if (!result.success) return json3({ error: { code: "INVALID_REQUEST", message: "The administrator deletion is invalid." } }, 400);
       if (result.data.uid === identity.uid) return json3({ error: { code: "SELF_PROTECTION", message: "You cannot delete your active account." } }, 400);
+      const target = await auth.getUser(result.data.uid);
+      if (!hasAdministratorAccess(target, dependencies.environment ?? process.env)) return json3({ error: { code: "INVALID_ADMINISTRATOR", message: "The selected account is not an administrator." } }, 400);
       await audit({ action: "administrator.deleted", actor: identity, target: result.data.uid, outcome: "attempted" }, dependencies.environment);
       await auth.deleteUser(result.data.uid);
       return json3({ data: { uid: result.data.uid } });
     }
     return json3({ error: { code: "METHOD_NOT_ALLOWED", message: "Unsupported method." } }, 405);
-  } catch {
+  } catch (error) {
+    const bodyError = jsonBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     return json3({ error: { code: "ADMIN_OPERATION_FAILED", message: "The administrator operation could not be completed." } }, 500);
   }
 }
@@ -1704,16 +1904,17 @@ async function readObjectBody(body, invalidBodyMessage) {
   throw new Error(invalidBodyMessage);
 }
 function createR2JsonResourceStore(options) {
-  function createWriteCommand(bucketName, data) {
+  function createWriteCommand(bucketName, data, revision) {
     return new PutObjectCommand4({
       Bucket: bucketName,
       Key: options.key,
       Body: JSON.stringify(data),
       ContentType: "application/json",
-      CacheControl: "no-store"
+      CacheControl: "no-store",
+      ...revision === "missing" ? { IfNoneMatch: "*" } : revision ? { IfMatch: revision } : {}
     });
   }
-  async function read(environment = process.env) {
+  async function readSnapshot(environment = process.env) {
     const config = getR2Config(environment);
     try {
       const object = await createR2Client(config).send(
@@ -1726,9 +1927,9 @@ function createR2JsonResourceStore(options) {
         object.Body,
         options.invalidBodyMessage
       );
-      return options.schema.parse(JSON.parse(body));
+      return { data: options.schema.parse(JSON.parse(body)), revision: object.ETag ?? "missing" };
     } catch (error) {
-      if (isR2NotFound(error)) return structuredClone(options.defaults);
+      if (isR2NotFound(error)) return { data: structuredClone(options.defaults), revision: "missing" };
       throw error;
     }
   }
@@ -1740,7 +1941,17 @@ function createR2JsonResourceStore(options) {
     );
     return data;
   }
-  return { createWriteCommand, read, write };
+  async function read(environment = process.env) {
+    return (await readSnapshot(environment)).data;
+  }
+  async function writeSnapshot(payload, environment = process.env, revision) {
+    const data = options.schema.parse(payload);
+    const config = getR2Config(environment);
+    const object = await createR2Client(config).send(createWriteCommand(config.bucketName, data, revision));
+    if (!object.ETag) throw new Error("The report revision is unavailable.");
+    return { data, revision: object.ETag };
+  }
+  return { createWriteCommand, read, write, readSnapshot, writeSnapshot };
 }
 
 // server/repository/accomplishmentResourceStore.ts
@@ -1758,40 +1969,8 @@ var store = createR2JsonResourceStore({
 var createAccomplishmentResourceWriteCommand = store.createWriteCommand;
 var readAccomplishmentResource = store.read;
 var writeAccomplishmentResource = store.write;
-
-// server/http/readLimitedJson.ts
-var RequestBodyTooLargeError = class extends Error {
-};
-var InvalidJsonBodyError = class extends Error {
-};
-async function readLimitedJson(request, maximumBytes) {
-  const declaredLength = Number(request.headers.get("content-length"));
-  if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
-    throw new RequestBodyTooLargeError();
-  }
-  if (!request.body) throw new InvalidJsonBodyError();
-  const reader = request.body.getReader();
-  const chunks = [];
-  let byteCount = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      byteCount += value.byteLength;
-      if (byteCount > maximumBytes) {
-        await reader.cancel();
-        throw new RequestBodyTooLargeError();
-      }
-      chunks.push(value);
-    }
-    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  } catch (error) {
-    if (error instanceof RequestBodyTooLargeError) throw error;
-    throw new InvalidJsonBodyError();
-  } finally {
-    reader.releaseLock();
-  }
-}
+var readAccomplishmentResourceSnapshot = store.readSnapshot;
+var writeAccomplishmentResourceSnapshot = store.writeSnapshot;
 
 // server/http/adminReportResourceHandler.ts
 var privateHeaders = {
@@ -1828,6 +2007,10 @@ function createAdminReportResourceHandler(options) {
     }
     try {
       if (request.method === "GET") {
+        if (options.readSnapshot) {
+          const snapshot = await options.readSnapshot(environment);
+          return json4({ data: snapshot.data }, 200, { "x-report-revision": snapshot.revision });
+        }
         return json4({ data: await options.read(environment) });
       }
       if (request.method !== "PUT") {
@@ -1841,6 +2024,10 @@ function createAdminReportResourceHandler(options) {
           405,
           { allow: "GET, PUT" }
         );
+      }
+      const revision = request.headers.get("x-report-revision");
+      if (options.writeSnapshot && (!revision || revision !== "missing" && !/^"[^"\r\n]{1,128}"$/u.test(revision))) {
+        return json4({ error: { code: "REPORT_REVISION_REQUIRED", message: "Reload the report before saving changes." } }, 428);
       }
       let payload;
       try {
@@ -1875,8 +2062,13 @@ function createAdminReportResourceHandler(options) {
         },
         environment
       );
+      if (options.writeSnapshot && revision) {
+        const snapshot = await options.writeSnapshot(parsed.data, environment, revision);
+        return json4({ data: snapshot.data }, 200, { "x-report-revision": snapshot.revision });
+      }
       return json4({ data: await options.write(parsed.data, environment) });
-    } catch {
+    } catch (error) {
+      if (isR2PreconditionFailed(error)) return json4({ error: { code: "REPORT_CONFLICT", message: "Another administrator saved this report. Your changes are still in the editor. Reload and reconcile the latest report before saving." } }, 409);
       return json4(
         {
           error: {
@@ -1894,6 +2086,8 @@ function createAdminReportResourceHandler(options) {
 var handleAccomplishmentResourceRequest = createAdminReportResourceHandler({
   schema: accomplishmentResourceDataSchema,
   read: readAccomplishmentResource,
+  readSnapshot: readAccomplishmentResourceSnapshot,
+  writeSnapshot: writeAccomplishmentResourceSnapshot,
   write: writeAccomplishmentResource,
   invalidRequestMessage: "The accomplishment resource data is invalid.",
   unavailableCode: "ACCOMPLISHMENT_RESOURCE_UNAVAILABLE",
@@ -1969,11 +2163,15 @@ var store2 = createR2JsonResourceStore({
 var createOpcrResourceWriteCommand = store2.createWriteCommand;
 var readOpcrResource = store2.read;
 var writeOpcrResource = store2.write;
+var readOpcrResourceSnapshot = store2.readSnapshot;
+var writeOpcrResourceSnapshot = store2.writeSnapshot;
 
 // server/http/opcrResourceHandler.ts
 var handleOpcrResourceRequest = createAdminReportResourceHandler({
   schema: opcrResourceDataSchema,
   read: readOpcrResource,
+  readSnapshot: readOpcrResourceSnapshot,
+  writeSnapshot: writeOpcrResourceSnapshot,
   write: writeOpcrResource,
   invalidRequestMessage: "The OPCR resource data is invalid.",
   unavailableCode: "OPCR_RESOURCE_UNAVAILABLE",
@@ -2082,8 +2280,10 @@ async function handlePublicResourcePreviewRequest(request, dependencies = {}) {
   }
   let payload;
   try {
-    payload = await request.json();
-  } catch {
+    payload = await readLimitedJson(request, 16 * 1024);
+  } catch (error) {
+    const bodyError = jsonBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     return json6(
       {
         error: {
@@ -2262,7 +2462,7 @@ async function handleAdminRepositoryStructureRequest(request, environment = proc
   try {
     if (request.method === "GET") return json8({ data: await readRepositoryStructure(environment) });
     if (request.method !== "POST") return json8({ error: { code: "METHOD_NOT_ALLOWED", message: "Unsupported method." } }, 405);
-    const payload = await request.json();
+    const payload = await readLimitedJson(request, 16 * 1024);
     const mutation = structureMutationSchema.safeParse(payload);
     if (!mutation.success) return json8({ error: { code: "INVALID_REQUEST", message: "The repository organization change is invalid." } }, 400);
     await (dependencies.audit ?? recordAuditEvent)({
@@ -2273,6 +2473,8 @@ async function handleAdminRepositoryStructureRequest(request, environment = proc
     }, environment);
     return json8({ data: await mutateRepositoryStructure(mutation.data, environment) });
   } catch (error) {
+    const bodyError = jsonBodyErrorResponse(error);
+    if (bodyError) return bodyError;
     if (error instanceof RepositoryStructureConflictError) {
       return json8({ error: { code: "STRUCTURE_CONFLICT", message: error.message } }, 409);
     }
@@ -2424,9 +2626,9 @@ async function handleUploadAuthorizeRequest(request, dependencies = {}) {
   }
   let payload;
   try {
-    payload = await request.json();
-  } catch {
-    return json9({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+    payload = await readLimitedJson(request, 16 * 1024);
+  } catch (error) {
+    return jsonBodyErrorResponse(error) ?? json9({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
   }
   const result = resourceUploadRequestSchema.safeParse(payload);
   if (!result.success) return json9({ error: { code: "INVALID_UPLOAD", message: "The upload information is invalid.", details: result.error.issues.map((issue) => ({ field: issue.path.join(".") || "upload", message: issue.message })) } }, 400);
@@ -2439,8 +2641,26 @@ async function handleUploadAuthorizeRequest(request, dependencies = {}) {
   }
 }
 
+// src/utils/hasResourceFileSignature.ts
+function hasResourceFileSignature(bytes, extension) {
+  const startsWith = (signature) => signature.every((value, index) => bytes[index] === value);
+  switch (extension.toLowerCase()) {
+    case "pdf":
+      return startsWith([37, 80, 68, 70, 45]);
+    case "jpg":
+    case "jpeg":
+      return startsWith([255, 216, 255]);
+    case "png":
+      return startsWith([137, 80, 78, 71, 13, 10, 26, 10]);
+    case "webp":
+      return startsWith([82, 73, 70, 70]) && bytes.length >= 12 && [87, 69, 66, 80].every((value, index) => bytes[index + 8] === value);
+    default:
+      return false;
+  }
+}
+
 // server/repository/verifyResourceUpload.ts
-import { HeadObjectCommand as HeadObjectCommand5 } from "@aws-sdk/client-s3";
+import { GetObjectCommand as GetObjectCommand6, HeadObjectCommand as HeadObjectCommand5 } from "@aws-sdk/client-s3";
 var ResourceUploadVerificationError = class extends Error {
 };
 async function verifyResourceUpload(input, dependencies = {}) {
@@ -2480,6 +2700,20 @@ async function verifyResourceUpload(input, dependencies = {}) {
     throw new ResourceUploadVerificationError(
       "The repository did not provide an upload timestamp."
     );
+  const readPrefix = dependencies.readPrefix ?? (async (bucket, key2, etag) => {
+    const response = await client.send(new GetObjectCommand6({ Bucket: bucket, Key: key2, Range: "bytes=0-11", IfMatch: etag }));
+    if (!response.Body) throw new ResourceUploadVerificationError("The uploaded file contents could not be verified.");
+    return response.Body.transformToByteArray();
+  });
+  let bytes;
+  try {
+    bytes = await readPrefix(config.bucketName, parsedKey.key, object.ETag);
+  } catch {
+    throw new ResourceUploadVerificationError("The uploaded file contents could not be verified. Please try again.");
+  }
+  if (!hasResourceFileSignature(bytes, parsedKey.extension)) {
+    throw new ResourceUploadVerificationError("The uploaded file contents do not match the selected file type.");
+  }
   return {
     key: parsedKey.key,
     mimeType: object.ContentType,
@@ -2502,9 +2736,9 @@ async function handleUploadCompleteRequest(request, dependencies = {}) {
   }
   let payload;
   try {
-    payload = await request.json();
-  } catch {
-    return json10({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
+    payload = await readLimitedJson(request, 16 * 1024);
+  } catch (error) {
+    return jsonBodyErrorResponse(error) ?? json10({ error: { code: "INVALID_REQUEST", message: "The request body must be valid JSON." } }, 400);
   }
   const result = resourceUploadCompletionRequestSchema.safeParse(payload);
   if (!result.success) return json10({ error: { code: "INVALID_UPLOAD_COMPLETION", message: "The upload completion information is invalid." } }, 400);
@@ -2518,6 +2752,7 @@ async function handleUploadCompleteRequest(request, dependencies = {}) {
       details: { fileSize: resource.fileSize, mimeType: resource.mimeType },
       idempotencyKey: `${resource.key}:${resource.uploadedAt}`
     }, dependencies.environment);
+    invalidatePublicResourceCache();
     return json10({ data: resource });
   } catch (error) {
     return json10({ error: { code: "UPLOAD_VERIFICATION_FAILED", message: error instanceof ResourceUploadVerificationError ? error.message : "The upload could not be completed. Please try again." } }, 422);
@@ -2600,11 +2835,21 @@ function resolveApiPath(request) {
   return normalizedPath ? `/api/${normalizedPath}` : "/api";
 }
 var apiEntry_default = {
-  fetch(request) {
+  async fetch(request) {
     const path = resolveApiPath(request);
     const handler = routes[path];
     if (!handler) return notFound();
-    return checkApiRateLimit(request, path) ?? handler(request);
+    try {
+      return checkApiRateLimit(request, path) ?? await handler(request);
+    } catch {
+      return new Response(JSON.stringify({ error: {
+        code: "API_UNAVAILABLE",
+        message: "The request could not be completed. Please try again."
+      } }), { status: 500, headers: {
+        "cache-control": "private, no-store",
+        "content-type": "application/json; charset=utf-8"
+      } });
+    }
   }
 };
 export {

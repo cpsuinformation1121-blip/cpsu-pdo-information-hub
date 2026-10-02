@@ -1,3 +1,5 @@
+import { groupResourcesByYear } from "../../src/utils/groupResourcesByYear.ts";
+import { resourceDisplayNameSchema } from "../../src/contracts/adminOperations.ts";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import {
   adminResourceSchema,
@@ -32,6 +34,10 @@ const maximumListedObjects = 10_000;
 const publicListCacheLifetimeMs = 60_000;
 const publicListCache = new Map<string, { expiresAt: number; value: Promise<R2ObjectSummary[]> }>();
 
+export function invalidatePublicResourceCache() {
+  publicListCache.clear();
+}
+
 export class InvalidResourceCursorError extends Error {
   constructor() {
     super("The repository cursor is invalid.");
@@ -44,7 +50,7 @@ export type ListResourcesDependencies = {
   config?: R2Config;
   listObjects?: ListR2Objects;
   structure?: readonly StructureSection[];
-  headObject?: (bucket: string, key: string) => Promise<{ ContentLength?: number; LastModified?: Date }>;
+  headObject?: (bucket: string, key: string) => Promise<{ ContentLength?: number; LastModified?: Date; Metadata?: Record<string, string> }>;
 };
 
 function getListPrefix(query: ResourceQuery): string | undefined {
@@ -67,6 +73,7 @@ async function getAllObjectSummaries(
 ): Promise<R2ObjectSummary[]> {
   const objects: R2ObjectSummary[] = [];
   let continuationToken: string | undefined;
+  const continuationTokens = new Set<string>();
 
   do {
     const page = await listObjects({
@@ -86,11 +93,12 @@ async function getAllObjectSummaries(
     continuationToken = page.IsTruncated
       ? page.NextContinuationToken
       : undefined;
-    if (page.IsTruncated && !continuationToken) {
+    if (page.IsTruncated && (!continuationToken || continuationTokens.has(continuationToken))) {
       throw new Error(
         "The repository returned an incomplete pagination response.",
       );
     }
+    if (continuationToken) continuationTokens.add(continuationToken);
   } while (continuationToken);
 
   return objects;
@@ -116,6 +124,15 @@ function getCachedPublicObjectSummaries(
   return value;
 }
 
+function readDisplayName(metadata: Record<string, string> | undefined): string | undefined {
+  try {
+    const encoded = metadata?.["display-name"];
+    if (!encoded) return undefined;
+    const result = resourceDisplayNameSchema.safeParse(decodeURIComponent(encoded));
+    return result.success ? result.data : undefined;
+  } catch { return undefined; }
+}
+
 function mapObjectToResource(
   object: R2ObjectSummary,
   structure: readonly StructureSection[],
@@ -131,7 +148,7 @@ function mapObjectToResource(
       id: createPublicResourceId(parsedKey.key, config),
       key: parsedKey.key,
       filename: parsedKey.filename,
-      displayName: parsedKey.displayName,
+      displayName: readDisplayName(object.Metadata) ?? parsedKey.displayName,
       sectionId: parsedKey.sectionId,
       categoryId: parsedKey.categoryId,
       year: parsedKey.year,
@@ -240,8 +257,30 @@ async function listResourceRecords(
       : await (usePublicCache
           ? readCachedPublicRepositoryStructure(dependencies.environment)
           : readRepositoryStructure(dependencies.environment)));
-  const listObjects =
-    dependencies.listObjects ?? createR2ObjectLister(createR2Client(config));
+  const client = createR2Client(config);
+  const rawListObjects = dependencies.listObjects ?? createR2ObjectLister(client);
+  const headObject = dependencies.headObject ?? (dependencies.listObjects
+    ? undefined
+    : (bucket: string, key: string) => client.send(new HeadObjectCommand({ Bucket: bucket, Key: key })));
+  const listObjects: ListR2Objects = async (input) => {
+    const page = await rawListObjects(input);
+    if (!headObject) return page;
+    const objects = page.Contents ?? [];
+    // Bound concurrent metadata reads and reuse the existing public listing cache.
+    for (let offset = 0; offset < objects.length; offset += 10) {
+      await Promise.all(objects.slice(offset, offset + 10).map(async (object) => {
+        if (!object.Key || !mapObjectToResource(object, structure, config)) return;
+        try {
+          const head = await headObject(config.bucketName, object.Key);
+          object.Metadata = head.Metadata;
+        } catch (error) {
+          if (!isR2NotFound(error)) throw error;
+          object.Key = undefined;
+        }
+      }));
+    }
+    return page;
+  };
   const prefix = getListPrefix(query);
   const objectSummaries = await (usePublicCache && !dependencies.listObjects
     ? getCachedPublicObjectSummaries(config, prefix, listObjects)
@@ -254,15 +293,18 @@ async function listResourceRecords(
     query.sort,
   );
   const offset = decodeCursor(query.cursor);
-  const data = resources.slice(offset, offset + query.limit);
-  const nextOffset = offset + data.length;
+  const groups = query.groupBy === "year" ? groupResourcesByYear(resources) : undefined;
+  const pageGroups = groups?.slice(offset, offset + query.limit);
+  const data = pageGroups ? pageGroups.flatMap((group) => group.resources) : resources.slice(offset, offset + query.limit);
+  const nextOffset = offset + (pageGroups ? pageGroups.length : data.length);
 
   return {
     data,
     meta: {
       total: resources.length,
+      ...(groups ? { groupTotal: groups.length } : {}),
       nextCursor:
-        nextOffset < resources.length ? encodeCursor(nextOffset) : null,
+        nextOffset < (groups?.length ?? resources.length) ? encodeCursor(nextOffset) : null,
     },
   };
 }
@@ -292,7 +334,7 @@ export async function findResourceByPublicId(
       (async (bucket: string, objectKey: string) =>
         createR2Client(config).send(new HeadObjectCommand({ Bucket: bucket, Key: objectKey })));
     const object = await headObject(config.bucketName, key);
-    return mapObjectToResource({ Key: key, Size: object.ContentLength, LastModified: object.LastModified }, structure, config);
+    return mapObjectToResource({ Key: key, Size: object.ContentLength, LastModified: object.LastModified, Metadata: object.Metadata }, structure, config);
   } catch (error) {
     if (isR2NotFound(error) || error instanceof InvalidResourceObjectKeyError) return null;
     throw error;

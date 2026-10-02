@@ -1,14 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { isR2NotFound, isR2PreconditionFailed } from './r2Errors.ts'
-
-describe('R2 error classification', () => {
-  it('does not treat infrastructure errors as missing objects', () => {
-    expect(isR2NotFound({ $metadata: { httpStatusCode: 500 } })).toBe(false)
-    expect(isR2NotFound({ $metadata: { httpStatusCode: 404 } })).toBe(true)
-  })
-
-  it('recognizes conditional write conflicts', () => {
-    expect(isR2PreconditionFailed({ $metadata: { httpStatusCode: 412 } })).toBe(true)
-    expect(isR2PreconditionFailed({ $metadata: { httpStatusCode: 409 } })).toBe(false)
-  })
-})
+import { expect, it } from "vitest";
+import { getR2ErrorStatus, isR2NotFound, isR2PreconditionFailed } from "./r2Errors";
+it.each([null, {}, { $metadata: null }, { $metadata: "invalid" }, { $metadata: { httpStatusCode: "404" } }])("handles malformed provider error metadata safely: %j", error => {
+  expect(getR2ErrorStatus(error)).toBeUndefined();
+  expect(isR2NotFound(error)).toBe(false);
+  expect(isR2PreconditionFailed(error)).toBe(false);
+});

@@ -9,7 +9,7 @@ import {
   Save,
   X,
 } from "lucide-react";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { AppDialog } from "../../components/ui/AppDialog";
 import type { AccomplishmentResourceData } from "../../contracts/accomplishmentResource";
 import { ChartColorLegend } from "../../features/accomplishments/AccomplishmentChart";
@@ -154,6 +154,8 @@ function AccomplishmentResourceEditor({
   const [barColors, setBarColors] = useState<Record<string, string>>(
     initialData.appearance?.barColors ?? {},
   );
+  const editRevision = useRef(0);
+  const savingRevision = useRef(0);
   const [saveStatus, setSaveStatus] = useState<"saved" | "unsaved">("saved");
   const [saveConfirmationVisible, setSaveConfirmationVisible] = useState(false);
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -171,12 +173,14 @@ function AccomplishmentResourceEditor({
   }, [saveConfirmationVisible]);
 
   function markUnsaved() {
+    editRevision.current += 1;
     setSaveStatus("unsaved");
     setSaveConfirmationVisible(false);
   }
 
   const saveMutation = useMutation({
     mutationFn: () => {
+      savingRevision.current = editRevision.current;
       return saveAccomplishmentResource(user, {
         version: 2,
         nodes,
@@ -190,8 +194,10 @@ function AccomplishmentResourceEditor({
       void queryClient.invalidateQueries({
         queryKey: ["public-accomplishment-resource"],
       });
-      setSaveStatus("saved");
-      setSaveConfirmationVisible(true);
+      if (savingRevision.current === editRevision.current) {
+        setSaveStatus("saved");
+        setSaveConfirmationVisible(true);
+      }
     },
   });
 
@@ -220,7 +226,7 @@ function AccomplishmentResourceEditor({
         ),
       );
     } else {
-      const id = `${editor.type}-${Date.now()}`;
+      const id = `${editor.type}-${crypto.randomUUID()}`;
       setNodes((items) => [
         ...items,
         {

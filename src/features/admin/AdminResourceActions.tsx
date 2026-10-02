@@ -10,6 +10,7 @@ type AdminResourceActionsProps = {
   onAccess: (resource: AdminResource, mode: AdminResourceAccessMode) => void;
   onDelete: (resource: AdminResource) => void;
   onRename: (resource: AdminResource) => void;
+  onEdit: (resource: AdminResource) => void;
 };
 
 const actionClassName =
@@ -22,7 +23,7 @@ export function AdminResourceActions({
   accessPendingMode,
   onAccess,
   onDelete,
-  onRename,
+  onEdit,
 }: AdminResourceActionsProps) {
   const canPreview =
     resource.fileType === "pdf" || resource.fileType === "image";
@@ -68,13 +69,9 @@ export function AdminResourceActions({
             </button>
           </>
         )}
-        <button
-          type="button"
-          onClick={() => onRename(resource)}
-          className={actionClassName}
-        >
+        <button type="button" onClick={() => onEdit(resource)} aria-label={`Edit ${resource.displayName}`} className={actionClassName}>
           <Pencil className="mr-1.5 size-4" aria-hidden="true" />
-          Rename
+          Edit
         </button>
         <button
           type="button"

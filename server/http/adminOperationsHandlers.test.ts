@@ -255,3 +255,33 @@ describe('administrator operation authorization', () => {
     expect(send).not.toHaveBeenCalled()
   })
 })
+
+it('includes administrators on later Firebase user pages', async () => {
+  const user = { uid: 'later-admin', email: 'later@example.edu', displayName: 'Later', disabled: false, customClaims: { admin: true }, metadata: { creationTime: '2026-01-01T00:00:00Z' } } as unknown as UserRecord;
+  const listUsers = vi.fn().mockResolvedValueOnce({ users: [], pageToken: 'page-two' }).mockResolvedValueOnce({ users: [user] });
+  const response = await handleAdminUsersRequest(new Request('https://example.edu/api/admin/users', { headers: { authorization: 'Bearer valid' } }), { verifyIdToken: async () => administrator, auth: { listUsers } as unknown as Auth });
+  expect(listUsers).toHaveBeenNthCalledWith(2, 1000, 'page-two');
+  await expect(response.json()).resolves.toMatchObject({ data: [{ uid: 'later-admin' }] });
+});
+it('keeps nested category prefixes when renaming a legacy resource', async () => {
+  const send = vi.fn(async (command: unknown) => { if (command instanceof HeadObjectCommand) throw { $metadata: { httpStatusCode: 404 } }; return {}; });
+  const response = await handleAdminResourceMutationRequest(new Request('https://example.edu/api/admin/resource', { method: 'PATCH', headers: { authorization: 'Bearer valid' }, body: JSON.stringify({ key: 'higher-education-performance/accreditation/undergraduate/2026/report.pdf', filename: 'renamed.pdf' }) }), { verifyIdToken: async () => administrator, config, structure: repositorySections, send, audit: async () => 'audit' });
+  expect(response.status).toBe(200);
+  const copy = send.mock.calls.map(call => call[0]).find(command => command instanceof CopyObjectCommand) as CopyObjectCommand;
+  expect(copy.input.Key).toBe('higher-education-performance/accreditation/undergraduate/2026/renamed.pdf');
+});
+
+it.each(['PATCH', 'DELETE'])('rejects modifying an ordinary Firebase account through %s', async method => {
+  const updateUser = vi.fn(); const deleteUser = vi.fn();
+  const auth = { getUser: async () => ({ uid: 'ordinary-user' }), updateUser, deleteUser } as unknown as Auth;
+  const response = await handleAdminUsersRequest(new Request('https://example.edu/api/admin/users', { method, headers: { authorization: 'Bearer valid' }, body: JSON.stringify({ uid: 'ordinary-user', displayName: 'Changed', disabled: true }) }), { verifyIdToken: async () => administrator, auth });
+  expect(response.status).toBe(400);
+  expect(updateUser).not.toHaveBeenCalled(); expect(deleteUser).not.toHaveBeenCalled();
+});
+
+it('fails safely on repeated Firebase account pagination tokens', async () => {
+  const listUsers = vi.fn(async () => ({ users: [], pageToken: 'same-page' }));
+  const response = await handleAdminUsersRequest(new Request('https://example.edu/api/admin/users', { headers: { authorization: 'Bearer valid' } }), { verifyIdToken: async () => administrator, auth: { listUsers } as unknown as Auth });
+  expect(response.status).toBe(500);
+  expect(listUsers).toHaveBeenCalledTimes(2);
+});

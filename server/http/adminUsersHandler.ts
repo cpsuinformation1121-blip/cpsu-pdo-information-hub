@@ -1,3 +1,4 @@
+import { readLimitedJson, jsonBodyErrorResponse } from './readLimitedJson.ts'
 import { getAuth, type Auth, type UserRecord } from 'firebase-admin/auth'
 import { administratorCreateSchema, administratorDeleteSchema, administratorUpdateSchema } from '../../src/contracts/adminOperations.ts'
 import {
@@ -30,6 +31,7 @@ export async function handleAdminUsersRequest(
   request: Request,
   dependencies: AdminUsersDependencies = {},
 ) {
+  if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) return json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Unsupported method.' } }, 405)
   let identity
   try {
     identity = await authenticateAdminRequest(request, dependencies)
@@ -46,17 +48,27 @@ export async function handleAdminUsersRequest(
     return json({ error: { code: 'FORBIDDEN', message: 'Only the designated account owner can manage administrators.' } }, 403)
   }
 
-  const auth = dependencies.auth ?? getAuth(getFirebaseAdminApp(getFirebaseAdminConfig(dependencies.environment)))
-  const audit = dependencies.audit ?? recordAuditEvent
   try {
+    const auth = dependencies.auth ?? getAuth(getFirebaseAdminApp(getFirebaseAdminConfig(dependencies.environment)))
+    const audit = dependencies.audit ?? recordAuditEvent
     if (request.method === 'GET') {
-      const users = (await auth.listUsers(1000)).users
+      const records: UserRecord[] = []
+      let pageToken: string | undefined
+      const pageTokens = new Set<string>()
+      do {
+        const page = await auth.listUsers(1000, pageToken)
+        records.push(...page.users)
+        pageToken = page.pageToken
+        if (pageToken && pageTokens.has(pageToken)) throw new Error('Invalid account pagination.')
+        if (pageToken) pageTokens.add(pageToken)
+      } while (pageToken)
+      const users = records
         .filter((user) => user.email && hasAdministratorAccess(user, dependencies.environment ?? process.env))
         .map(mapUser)
       return json({ data: users, canManage })
     }
 
-    const payload: unknown = await request.json()
+    const payload: unknown = await readLimitedJson(request, 16 * 1024)
     if (request.method === 'POST') {
       const result = administratorCreateSchema.safeParse(payload)
       if (!result.success) return json({ error: { code: 'INVALID_REQUEST', message: 'Enter a valid name, email, and password of at least 12 characters.' } }, 400)
@@ -75,6 +87,8 @@ export async function handleAdminUsersRequest(
       const result = administratorUpdateSchema.safeParse(payload)
       if (!result.success) return json({ error: { code: 'INVALID_REQUEST', message: 'The administrator update is invalid.' } }, 400)
       if (result.data.uid === identity.uid && result.data.disabled) return json({ error: { code: 'SELF_PROTECTION', message: 'You cannot disable your active account.' } }, 400)
+      const target = await auth.getUser(result.data.uid)
+      if (!hasAdministratorAccess(target, dependencies.environment ?? process.env)) return json({ error: { code: 'INVALID_ADMINISTRATOR', message: 'The selected account is not an administrator.' } }, 400)
       await audit({
         action: 'administrator.updated',
         actor: identity,
@@ -92,13 +106,17 @@ export async function handleAdminUsersRequest(
       const result = administratorDeleteSchema.safeParse(payload)
       if (!result.success) return json({ error: { code: 'INVALID_REQUEST', message: 'The administrator deletion is invalid.' } }, 400)
       if (result.data.uid === identity.uid) return json({ error: { code: 'SELF_PROTECTION', message: 'You cannot delete your active account.' } }, 400)
+      const target = await auth.getUser(result.data.uid)
+      if (!hasAdministratorAccess(target, dependencies.environment ?? process.env)) return json({ error: { code: 'INVALID_ADMINISTRATOR', message: 'The selected account is not an administrator.' } }, 400)
       await audit({ action: 'administrator.deleted', actor: identity, target: result.data.uid, outcome: 'attempted' }, dependencies.environment)
       await auth.deleteUser(result.data.uid)
       return json({ data: { uid: result.data.uid } })
     }
 
     return json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Unsupported method.' } }, 405)
-  } catch {
+  } catch (error) {
+    const bodyError = jsonBodyErrorResponse(error)
+    if (bodyError) return bodyError
     return json({ error: { code: 'ADMIN_OPERATION_FAILED', message: 'The administrator operation could not be completed.' } }, 500)
   }
 }

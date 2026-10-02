@@ -1,6 +1,8 @@
 import type { User } from "firebase/auth";
 import { fetchAuthenticatedJson } from "./authenticatedApi";
 import {
+  resourceEditSchema,
+  type ResourceEdit,
   administratorListSchema,
   administratorSchema,
   type Administrator,
@@ -56,6 +58,11 @@ export async function createResourceLink(
 ) {
   return resourceLinkCreateResponseSchema.parse(
     await request(user, "/api/admin/resource", "POST", input),
+  ).data.key;
+}
+export async function editResource(user: User, input: ResourceEdit) {
+  return resourceLinkCreateResponseSchema.parse(
+    await request(user, "/api/admin/resource", "PATCH", { ...resourceEditSchema.parse(input), action: "edit" }),
   ).data.key;
 }
 export async function renameResource(
